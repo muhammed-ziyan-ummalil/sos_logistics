@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../utility/api_service.dart';
 import '../../utility/shared_preference.dart';
+import '../../core/app_constants.dart';
 import 'driver_auth_state.dart';
 
 class DriverAuthCubit extends Cubit<DriverAuthState> {
@@ -28,6 +29,7 @@ class DriverAuthCubit extends Cubit<DriverAuthState> {
         phone: driver['phone'] ?? '',
         id:    driver['id'].toString(),
       );
+      await AppPrefs.saveUserRole(UserRole.driver);
       emit(DriverAuthSuccess(token));
     } else {
       emit(DriverAuthError(res['message'] ?? 'Login failed.'));

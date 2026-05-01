@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sossss.logistics"
+    namespace = "com.sossss.logistics.sossss_logistics"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
