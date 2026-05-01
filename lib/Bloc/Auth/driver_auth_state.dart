@@ -8,17 +8,17 @@ class DriverAuthInitial    extends DriverAuthState {}
 class DriverAuthLoading    extends DriverAuthState {}
 class DriverAuthSuccess    extends DriverAuthState {
   final String token;
-  const DriverAuthSuccess(this.token);
+  DriverAuthSuccess(this.token);
   @override List<Object?> get props => [token];
 }
 class DriverAuthError      extends DriverAuthState {
   final String message;
-  const DriverAuthError(this.message);
+  DriverAuthError(this.message);
   @override List<Object?> get props => [message];
 }
 class DriverLoggedOut      extends DriverAuthState {}
 class DriverSplashChecked  extends DriverAuthState {
   final bool isLoggedIn;
-  const DriverSplashChecked(this.isLoggedIn);
+  DriverSplashChecked(this.isLoggedIn);
   @override List<Object?> get props => [isLoggedIn];
 }

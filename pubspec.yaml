@@ -27,7 +27,6 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   firebase_core:
   firebase_messaging:
-  flutter_local_notifications:
 
 dev_dependencies:
   flutter_test:

@@ -10,11 +10,11 @@ class HistoryLoading  extends HistoryState {}
 class HistoryLoaded   extends HistoryState {
   final List<DeliveryHistoryItem> deliveries;
   final int page;
-  const HistoryLoaded(this.deliveries, this.page);
+  HistoryLoaded(this.deliveries, this.page);
   @override List<Object?> get props => [deliveries, page];
 }
 class HistoryError    extends HistoryState {
   final String message;
-  const HistoryError(this.message);
+  HistoryError(this.message);
   @override List<Object?> get props => [message];
 }

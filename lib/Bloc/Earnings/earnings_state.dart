@@ -9,11 +9,11 @@ class EarningsInitial extends EarningsState {}
 class EarningsLoading extends EarningsState {}
 class EarningsLoaded  extends EarningsState {
   final EarningsData data;
-  const EarningsLoaded(this.data);
+  EarningsLoaded(this.data);
   @override List<Object?> get props => [data];
 }
 class EarningsError   extends EarningsState {
   final String message;
-  const EarningsError(this.message);
+  EarningsError(this.message);
   @override List<Object?> get props => [message];
 }

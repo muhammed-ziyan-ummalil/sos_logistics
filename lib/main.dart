@@ -21,9 +21,12 @@ import 'services/firebase_notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseNotificationService.init();
-  await FirebaseNotificationService.uploadToken();
+  // Firebase is optional until flutterfire configure is run with real credentials
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await FirebaseNotificationService.init();
+    await FirebaseNotificationService.uploadToken();
+  } catch (_) {}
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

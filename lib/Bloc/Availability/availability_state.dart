@@ -8,11 +8,11 @@ class AvailabilityInitial extends AvailabilityState {}
 class AvailabilityLoading extends AvailabilityState {}
 class AvailabilityUpdated extends AvailabilityState {
   final bool isOnline;
-  const AvailabilityUpdated(this.isOnline);
+  AvailabilityUpdated(this.isOnline);
   @override List<Object?> get props => [isOnline];
 }
 class AvailabilityError extends AvailabilityState {
   final String message;
-  const AvailabilityError(this.message);
+  AvailabilityError(this.message);
   @override List<Object?> get props => [message];
 }
