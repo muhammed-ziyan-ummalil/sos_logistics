@@ -57,5 +57,8 @@ class AppRoutes {
   static const String v2DriverDisabled = '/v2/driver/disabled';
   static const String v2AddDriver      = '/v2/owner/add-driver';
   static const String v2DriverList     = '/v2/owner/drivers';
+  static const String v2DriverDetail   = '/v2/owner/driver-detail';
   static const String v2VehicleList    = '/v2/owner/vehicles';
+  static const String v2OwnerMain      = '/v2/owner/main';
+  static const String v2OwnerAnalytics = '/v2/owner/analytics';
 }
