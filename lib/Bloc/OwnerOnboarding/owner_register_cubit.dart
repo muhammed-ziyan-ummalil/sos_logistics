@@ -7,6 +7,7 @@ class OwnerRegisterCubit extends Cubit<OwnerRegisterState> {
 
   Future<void> register({
     required String name,
+    required String email,
     required String phone,
     required String password,
     String? businessName,
@@ -19,6 +20,7 @@ class OwnerRegisterCubit extends Cubit<OwnerRegisterState> {
 
     final fields = <String, dynamic>{
       'name':                name,
+      'email':               email,
       'phone':               phone,
       'password':            password,
       'vehicle_reg_number':  vehicleRegNumber,

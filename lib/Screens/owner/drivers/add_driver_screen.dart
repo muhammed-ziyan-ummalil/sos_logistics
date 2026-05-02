@@ -18,6 +18,7 @@ class AddDriverScreen extends StatefulWidget {
 class _AddDriverScreenState extends State<AddDriverScreen> {
   final _formKey       = GlobalKey<FormState>();
   final _nameCtr       = TextEditingController();
+  final _emailCtr      = TextEditingController();
   final _phoneCtr      = TextEditingController();
   final _licenseCtr    = TextEditingController();
 
@@ -27,7 +28,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
 
   @override
   void dispose() {
-    _nameCtr.dispose(); _phoneCtr.dispose(); _licenseCtr.dispose();
+    _nameCtr.dispose(); _emailCtr.dispose(); _phoneCtr.dispose(); _licenseCtr.dispose();
     super.dispose();
   }
 
@@ -69,6 +70,7 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
     if (!_formKey.currentState!.validate()) return;
     context.read<AddDriverCubit>().createDriver(
       name:           _nameCtr.text.trim(),
+      email:          _emailCtr.text.trim(),
       phone:          _phoneCtr.text.trim(),
       licenseNumber:  _licenseCtr.text.trim().isEmpty ? null : _licenseCtr.text.trim(),
       licenseDocPath: _licenseDocPath,
@@ -164,6 +166,22 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                     prefixIcon: Icon(Icons.person_outline, color: AppColors.textSecondary),
                   ),
                   validator: (v) => (v?.trim().isEmpty ?? true) ? 'Name is required' : null,
+                ),
+                SizedBox(height: 12.h),
+                TextFormField(
+                  controller: _emailCtr,
+                  keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                  ),
+                  validator: (v) {
+                    final val = v?.trim() ?? '';
+                    if (val.isEmpty) return 'Email is required';
+                    if (!val.contains('@')) return 'Enter a valid email';
+                    return null;
+                  },
                 ),
                 SizedBox(height: 12.h),
                 TextFormField(

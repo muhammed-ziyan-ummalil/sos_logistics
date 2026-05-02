@@ -18,6 +18,7 @@ class OwnerRegisterScreen extends StatefulWidget {
 class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   final _formKey        = GlobalKey<FormState>();
   final _nameCtr        = TextEditingController();
+  final _emailCtr       = TextEditingController();
   final _phoneCtr       = TextEditingController();
   final _passCtr        = TextEditingController();
   final _confPassCtr    = TextEditingController();
@@ -34,8 +35,8 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
 
   @override
   void dispose() {
-    _nameCtr.dispose(); _phoneCtr.dispose(); _passCtr.dispose();
-    _confPassCtr.dispose(); _bizNameCtr.dispose();
+    _nameCtr.dispose(); _emailCtr.dispose(); _phoneCtr.dispose();
+    _passCtr.dispose(); _confPassCtr.dispose(); _bizNameCtr.dispose();
     _vehicleRegCtr.dispose(); _capacityCtr.dispose();
     super.dispose();
   }
@@ -50,6 +51,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     context.read<OwnerRegisterCubit>().register(
       name:              _nameCtr.text.trim(),
+      email:             _emailCtr.text.trim(),
       phone:             _phoneCtr.text.trim(),
       password:          _passCtr.text.trim(),
       businessName:      _bizNameCtr.text.trim(),
@@ -132,6 +134,22 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     prefixIcon: Icon(Icons.person_outline, color: AppColors.textSecondary),
                   ),
                   validator: (v) => (v?.trim().isEmpty ?? true) ? 'Name is required' : null,
+                ),
+                SizedBox(height: 12.h),
+                TextFormField(
+                  controller: _emailCtr,
+                  keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                  ),
+                  validator: (v) {
+                    final val = v?.trim() ?? '';
+                    if (val.isEmpty) return 'Email is required';
+                    if (!val.contains('@')) return 'Enter a valid email';
+                    return null;
+                  },
                 ),
                 SizedBox(height: 12.h),
                 TextFormField(

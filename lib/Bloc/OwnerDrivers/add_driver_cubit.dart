@@ -7,6 +7,7 @@ class AddDriverCubit extends Cubit<AddDriverState> {
 
   Future<void> createDriver({
     required String name,
+    required String email,
     required String phone,
     String? licenseNumber,
     String? licenseDocPath,
@@ -17,6 +18,7 @@ class AddDriverCubit extends Cubit<AddDriverState> {
 
     final fields = <String, dynamic>{
       'name':  name,
+      'email': email,
       'phone': phone,
       if (licenseNumber != null && licenseNumber.isNotEmpty) 'license_number': licenseNumber,
       if (licenseExpiry != null && licenseExpiry.isNotEmpty) 'license_expiry': licenseExpiry,

@@ -18,10 +18,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey  = GlobalKey<FormState>();
-  final _phoneCtr = TextEditingController();
-  final _passCtr  = TextEditingController();
-  bool  _obscure  = true;
+  final _formKey   = GlobalKey<FormState>();
+  final _emailCtr  = TextEditingController();
+  final _passCtr   = TextEditingController();
+  bool  _obscure   = true;
   late  String _role;
 
   @override
@@ -32,19 +32,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _phoneCtr.dispose();
+    _emailCtr.dispose();
     _passCtr.dispose();
     super.dispose();
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final phone    = _phoneCtr.text.trim();
-    final password = _passCtr.text.trim();
-    // Use V2 AuthCubit for new unified login
     context.read<AuthCubit>().login(
-      phone:        phone,
-      password:     password,
+      email:        _emailCtr.text.trim(),
+      password:     _passCtr.text.trim(),
       selectedRole: _role,
     );
   }
@@ -159,14 +156,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   SizedBox(height: 36.h),
                   TextFormField(
-                    controller: _phoneCtr,
-                    keyboardType: TextInputType.phone,
+                    controller: _emailCtr,
+                    keyboardType: TextInputType.emailAddress,
                     style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                      prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textSecondary),
+                      labelText: 'Email Address',
+                      prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
                     ),
-                    validator: (v) => (v?.trim().isEmpty ?? true) ? 'Enter phone number' : null,
+                    validator: (v) {
+                      final val = v?.trim() ?? '';
+                      if (val.isEmpty) return 'Enter email address';
+                      if (!val.contains('@')) return 'Enter a valid email';
+                      return null;
+                    },
                   ),
                   SizedBox(height: 16.h),
                   TextFormField(
@@ -211,15 +213,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  Center(
-                    child: Text(
-                      isOwner
-                          ? 'New owner? Contact SOSSSS support to register.'
-                          : 'Contact your fleet owner to get an account.',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
-                      textAlign: TextAlign.center,
+                  if (isOwner)
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account? ",
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.v2OwnerRegister),
+                            child: Text(
+                              'Create account',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Text(
+                        'Contact your fleet owner to get an account.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

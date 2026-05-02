@@ -23,6 +23,7 @@ dependencies:
   cached_network_image: ^3.4.1
   fluttertoast:
   fl_chart: ^0.69.0
+  image_picker: ^1.1.2
   flutter_native_splash: ^2.4.4
   flutter_launcher_icons: ^0.14.4
   # firebase_core and firebase_messaging removed until flutterfire configure is run

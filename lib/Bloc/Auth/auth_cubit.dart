@@ -29,7 +29,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> login({
-    required String phone,
+    required String email,
     required String password,
     required String selectedRole,
   }) async {
@@ -37,7 +37,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     final res = await ApiServiceV2.instance.post(
       'auth/login',
-      data: {'phone': phone, 'password': password},
+      data: {'email': email, 'password': password},
       withAuth: false,
     );
 
