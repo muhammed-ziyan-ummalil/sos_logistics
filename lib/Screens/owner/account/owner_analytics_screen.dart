@@ -14,6 +14,9 @@ class OwnerAnalyticsScreen extends StatefulWidget {
 }
 
 class _OwnerAnalyticsScreenState extends State<OwnerAnalyticsScreen> {
+  String _selectedFilter = 'Today';
+  static const _filters = ['Today', 'This Week', 'This Month'];
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +86,15 @@ class _OwnerAnalyticsScreenState extends State<OwnerAnalyticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Time filter ─────────────────────────────────────────────
+                  _FilterChips(
+                    selected: _selectedFilter,
+                    filters: _filters,
+                    isDark: isDark,
+                    onSelect: (f) => setState(() => _selectedFilter = f),
+                  ),
+                  SizedBox(height: 20.h),
+
                   // ── Summary cards ───────────────────────────────────────────
                   _SectionHeader(
                       icon: Icons.dashboard_rounded,
@@ -132,7 +144,15 @@ class _OwnerAnalyticsScreenState extends State<OwnerAnalyticsScreen> {
                       isDark: isDark),
                   SizedBox(height: 12.h),
                   _EarningsBanner(
-                      todayEarnings: todayEarnings, isDark: isDark),
+                      todayEarnings: todayEarnings,
+                      selectedFilter: _selectedFilter,
+                      isDark: isDark),
+                  SizedBox(height: 16.h),
+                  _DeliveryStatsRow(
+                    completedJobs: completedJobs,
+                    missedJobs: missedJobs,
+                    isDark: isDark,
+                  ),
                   SizedBox(height: 24.h),
 
                   // ── Performance ─────────────────────────────────────────────
@@ -147,6 +167,15 @@ class _OwnerAnalyticsScreenState extends State<OwnerAnalyticsScreen> {
                     missedJobs: missedJobs,
                     isDark: isDark,
                   ),
+                  SizedBox(height: 24.h),
+
+                  // ── Activity bar chart ──────────────────────────────────────
+                  _SectionHeader(
+                      icon: Icons.bar_chart_rounded,
+                      label: 'DRIVER ACTIVITY',
+                      isDark: isDark),
+                  SizedBox(height: 12.h),
+                  _DriverBarChart(drivers: drivers, isDark: isDark),
                   SizedBox(height: 24.h),
 
                   // ── Driver breakdown ─────────────────────────────────────────
@@ -290,9 +319,13 @@ class _MetricCard extends StatelessWidget {
 
 class _EarningsBanner extends StatelessWidget {
   final double todayEarnings;
+  final String selectedFilter;
   final bool isDark;
-  const _EarningsBanner(
-      {required this.todayEarnings, required this.isDark});
+  const _EarningsBanner({
+    required this.todayEarnings,
+    required this.selectedFilter,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -317,12 +350,12 @@ class _EarningsBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Today's Earnings",
+                    Text('$selectedFilter\'s Earnings',
                         style: TextStyle(
                             fontSize: 12.sp, color: textSecondary)),
                     SizedBox(height: 4.h),
                     Text(
-                      '₦${_fmt(todayEarnings)}',
+                      '₹${_fmt(todayEarnings)}',
                       style: TextStyle(
                         fontSize: 28.sp,
                         fontWeight: FontWeight.w800,
@@ -731,4 +764,294 @@ class _EmptySection extends StatelessWidget {
           style: TextStyle(fontSize: 13.sp, color: textSecondary)),
     );
   }
+}
+
+// ─── Filter chips ─────────────────────────────────────────────────────────────
+
+class _FilterChips extends StatelessWidget {
+  final String selected;
+  final List<String> filters;
+  final bool isDark;
+  final ValueChanged<String> onSelect;
+  const _FilterChips({
+    required this.selected,
+    required this.filters,
+    required this.isDark,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+
+    return Row(
+      children: filters.map((f) {
+        final isSelected = f == selected;
+        return Padding(
+          padding: EdgeInsets.only(right: 8.w),
+          child: GestureDetector(
+            onTap: () => onSelect(f),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: isSelected ? accent : card,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(
+                  color: isSelected ? accent : divider,
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                f,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: isSelected
+                      ? FontWeight.w700
+                      : FontWeight.w400,
+                  color: isSelected ? Colors.white : textSecondary,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+// ─── Delivery stats row ───────────────────────────────────────────────────────
+
+class _DeliveryStatsRow extends StatelessWidget {
+  final int completedJobs;
+  final int missedJobs;
+  final bool isDark;
+  const _DeliveryStatsRow({
+    required this.completedJobs,
+    required this.missedJobs,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final total = completedJobs + missedJobs;
+    final error = isDark ? AppColors.error : AppLightColors.error;
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _StatPill(
+            label: 'Completed',
+            value: completedJobs.toString(),
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: _StatPill(
+            label: 'Missed',
+            value: missedJobs.toString(),
+            color: error,
+            isDark: isDark,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: _StatPill(
+            label: 'Total',
+            value: total.toString(),
+            color: accent,
+            isDark: isDark,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final bool isDark;
+  const _StatPill({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 12.h),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            style: TextStyle(color: textSecondary, fontSize: 10.sp),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Driver activity bar chart ────────────────────────────────────────────────
+
+class _DriverBarChart extends StatelessWidget {
+  final List<Map<String, dynamic>> drivers;
+  final bool isDark;
+  const _DriverBarChart(
+      {required this.drivers, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+
+    if (drivers.isEmpty) {
+      return _EmptySection(
+          label: 'No driver activity data yet.', isDark: isDark);
+    }
+
+    // Build (name, completed) pairs, sort by completed desc, top 6
+    final items = drivers.map((d) {
+      final stats = d['performance'] as Map? ?? d['stats'] as Map? ?? {};
+      final completed = stats['completed_jobs'] as int? ?? 0;
+      final name = d['name'] as String? ?? '?';
+      return _ChartItem(name: name, value: completed);
+    }).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final top = items.length > 6 ? items.sublist(0, 6) : items;
+    final chartMax = top.isNotEmpty && top.first.value > 0
+        ? top.first.value
+        : 1;
+
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: divider, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Completed deliveries per driver',
+                style:
+                    TextStyle(color: textSecondary, fontSize: 11.sp),
+              ),
+              Text(
+                'Top ${top.length}',
+                style: TextStyle(
+                    color: accent,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          SizedBox(
+            height: 130.h,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: top.map((item) {
+                final ratio = item.value / chartMax;
+                final barH = (ratio * 90.h).clamp(4.h, 90.h);
+                final initial = item.name.isNotEmpty
+                    ? item.name[0].toUpperCase()
+                    : '?';
+
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (item.value > 0)
+                      Text(
+                        item.value.toString(),
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    SizedBox(height: 3.h),
+                    Container(
+                      width: 28.w,
+                      height: barH,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(4.r)),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            accent,
+                            accent.withOpacity(0.35),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    CircleAvatar(
+                      radius: 10.r,
+                      backgroundColor: accent.withOpacity(0.12),
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartItem {
+  final String name;
+  final int value;
+  const _ChartItem({required this.name, required this.value});
 }

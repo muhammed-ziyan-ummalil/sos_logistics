@@ -31,6 +31,14 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.background : AppLightColors.background;
+    final surface = isDark ? AppColors.surface : AppLightColors.surface;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final cardColor = isDark ? AppColors.card : AppLightColors.card;
+
     return BlocConsumer<DriverDetailCubit, DriverDetailState>(
       listener: (ctx, state) {
         if (state is DriverDetailActionSuccess) {
@@ -41,7 +49,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         } else if (state is DriverDetailActionError) {
           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
             content: Text(state.message),
-            backgroundColor: AppColors.error,
+            backgroundColor: isDark ? AppColors.error : AppLightColors.error,
           ));
         }
       },
@@ -50,26 +58,30 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         final isActionLoading = state is DriverDetailActionLoading;
         final isFullLoading =
             state is DriverDetailLoading || state is DriverDetailInitial;
+
         if (isFullLoading) {
           return Scaffold(
-            backgroundColor: AppColors.background,
+            backgroundColor: bg,
             appBar: AppBar(
-                backgroundColor: AppColors.surface,
-                leading: BackButton(color: AppColors.textSecondary),
-                title: const Text('Driver Detail')),
-            body: const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.accent)),
+              backgroundColor: surface,
+              leading: BackButton(color: textSecondary),
+              title: const Text('Driver Detail'),
+            ),
+            body: Center(
+              child: CircularProgressIndicator(
+                  color: accentColor, strokeWidth: 2.5),
+            ),
           );
         }
 
         if (state is DriverDetailError && _resolveDriver(state) == null) {
           return Scaffold(
-            backgroundColor: AppColors.background,
+            backgroundColor: bg,
             appBar: AppBar(
-                backgroundColor: AppColors.surface,
-                leading: BackButton(color: AppColors.textSecondary),
-                title: const Text('Driver Detail')),
+              backgroundColor: surface,
+              leading: BackButton(color: textSecondary),
+              title: const Text('Driver Detail'),
+            ),
             body: Center(
               child: Padding(
                 padding: EdgeInsets.all(24.r),
@@ -77,18 +89,21 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.error_outline,
-                        color: AppColors.error, size: 40.r),
+                        color:
+                            isDark ? AppColors.error : AppLightColors.error,
+                        size: 40.r),
                     SizedBox(height: 12.h),
                     Text(state.message,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 13.sp)),
+                            color: textSecondary, fontSize: 13.sp)),
                     SizedBox(height: 20.h),
                     ElevatedButton(
-                        onPressed: () => context
-                            .read<DriverDetailCubit>()
-                            .fetchDriver(widget.driverId),
-                        child: const Text('Retry')),
+                      onPressed: () => context
+                          .read<DriverDetailCubit>()
+                          .fetchDriver(widget.driverId),
+                      child: const Text('Retry'),
+                    ),
                   ],
                 ),
               ),
@@ -102,10 +117,10 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         final isSuspended = status == 'suspended' || status == 'disabled';
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: bg,
           appBar: AppBar(
-            backgroundColor: AppColors.surface,
-            leading: BackButton(color: AppColors.textSecondary),
+            backgroundColor: surface,
+            leading: BackButton(color: textSecondary),
             title: Text(name),
             actions: [
               if (isActionLoading)
@@ -115,7 +130,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     width: 18.r,
                     height: 18.r,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.accent),
+                        strokeWidth: 2, color: accentColor),
                   ),
                 ),
             ],
@@ -125,19 +140,14 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Driver info card ──────────────────────────────────
                 _DriverInfoCard(driver: driver),
                 SizedBox(height: 16.h),
-
-                // ── Vehicle card ──────────────────────────────────────
                 _VehicleCard(
                   driver: driver,
                   driverId: widget.driverId,
                   isActionLoading: isActionLoading,
                 ),
                 SizedBox(height: 16.h),
-
-                // ── Status control ────────────────────────────────────
                 _SectionLabel(label: 'ACCOUNT STATUS'),
                 SizedBox(height: 10.h),
                 _StatusControlCard(
@@ -162,15 +172,14 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     message:
                         '$name will be taken offline and cannot receive any deliveries.',
                     confirmLabel: 'Suspend',
-                    confirmColor: AppColors.error,
+                    confirmColor:
+                        isDark ? AppColors.error : AppLightColors.error,
                     onConfirm: () => context
                         .read<DriverDetailCubit>()
                         .setStatus(widget.driverId, 'suspended'),
                   ),
                 ),
                 SizedBox(height: 16.h),
-
-                // ── Performance ───────────────────────────────────────
                 _SectionLabel(label: 'PERFORMANCE'),
                 SizedBox(height: 10.h),
                 _PerformanceRow(driver: driver),
@@ -199,30 +208,53 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
     required Color confirmColor,
     required VoidCallback onConfirm,
   }) async {
+    final isDark = Theme.of(ctx).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: ctx,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor:
+            isDark ? AppColors.surface : AppLightColors.surface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r)),
-        title: Text(title,
-            style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600)),
-        content: Text(message,
-            style:
-                TextStyle(color: AppColors.textSecondary, fontSize: 13.sp)),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isDark
+                ? AppColors.textPrimary
+                : AppLightColors.textPrimary,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(
+            color: isDark
+                ? AppColors.textSecondary
+                : AppLightColors.textSecondary,
+            fontSize: 13.sp,
+          ),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Cancel',
-                  style: TextStyle(color: AppColors.textSecondary))),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.textSecondary
+                    : AppLightColors.textSecondary,
+              ),
+            ),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(confirmLabel,
-                  style: TextStyle(
-                      color: confirmColor, fontWeight: FontWeight.w600))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              confirmLabel,
+              style: TextStyle(
+                  color: confirmColor, fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
@@ -238,6 +270,13 @@ class _DriverInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+
     final name = driver['name'] as String? ?? '—';
     final phone = driver['phone'] as String? ?? '—';
     final email = driver['email'] as String? ?? '—';
@@ -251,26 +290,26 @@ class _DriverInfoCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: card,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.divider, width: 0.8),
+        border: Border.all(color: divider, width: 0.8),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              // Avatar
               Stack(
                 children: [
                   CircleAvatar(
                     radius: 28.r,
-                    backgroundColor: AppColors.primary.withOpacity(0.15),
+                    backgroundColor: primary.withOpacity(0.15),
                     child: Text(
                       name.isNotEmpty ? name[0].toUpperCase() : '?',
                       style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 22.sp),
+                        color: primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 22.sp,
+                      ),
                     ),
                   ),
                   Positioned(
@@ -280,12 +319,9 @@ class _DriverInfoCard extends StatelessWidget {
                       width: 13.r,
                       height: 13.r,
                       decoration: BoxDecoration(
-                        color: isOnline
-                            ? AppColors.success
-                            : AppColors.divider,
+                        color: isOnline ? AppColors.success : divider,
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: AppColors.card, width: 2),
+                        border: Border.all(color: card, width: 2),
                       ),
                     ),
                   ),
@@ -296,11 +332,14 @@ class _DriverInfoCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700)),
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     SizedBox(height: 4.h),
                     Row(
                       children: [
@@ -315,7 +354,7 @@ class _DriverInfoCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 16.h),
-          Divider(color: AppColors.divider, height: 1),
+          Divider(color: divider, height: 1),
           SizedBox(height: 14.h),
           _InfoRow(
               icon: Icons.phone_outlined, label: 'Phone', value: phone),
@@ -356,6 +395,17 @@ class _VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final error = isDark ? AppColors.error : AppLightColors.error;
+
     final vehicle = driver['vehicle'] as Map<String, dynamic>?;
     final hasVehicle = vehicle != null;
     final plate = vehicle?['reg_number'] as String? ?? '—';
@@ -364,9 +414,9 @@ class _VehicleCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: card,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.divider, width: 0.8),
+        border: Border.all(color: divider, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,14 +424,17 @@ class _VehicleCard extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.directions_car_rounded,
-                  color: AppColors.accent, size: 16.r),
+                  color: accent, size: 16.r),
               SizedBox(width: 6.w),
-              Text('ASSIGNED VEHICLE',
-                  style: TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8)),
+              Text(
+                'ASSIGNED VEHICLE',
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
+              ),
             ],
           ),
           SizedBox(height: 14.h),
@@ -392,36 +445,40 @@ class _VehicleCard extends StatelessWidget {
                   width: 44.r,
                   height: 44.r,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(Icons.directions_car_rounded,
-                      color: AppColors.primary, size: 22.r),
+                      color: primary, size: 22.r),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(plate,
-                          style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700)),
-                      Text(type.toUpperCase(),
-                          style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 11.sp)),
+                      Text(
+                        plate,
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        type.toUpperCase(),
+                        style: TextStyle(
+                            color: textSecondary, fontSize: 11.sp),
+                      ),
                     ],
                   ),
                 ),
                 OutlinedButton(
                   onPressed: isActionLoading
                       ? null
-                      : () => _confirmRemove(context),
+                      : () => _confirmRemove(context, error),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.error.withOpacity(0.5)),
-                    foregroundColor: AppColors.error,
+                    side: BorderSide(color: error.withOpacity(0.5)),
+                    foregroundColor: error,
                     padding: EdgeInsets.symmetric(
                         horizontal: 12.w, vertical: 8.h),
                     shape: RoundedRectangleBorder(
@@ -440,17 +497,19 @@ class _VehicleCard extends StatelessWidget {
                   width: 44.r,
                   height: 44.r,
                   decoration: BoxDecoration(
-                    color: AppColors.divider.withOpacity(0.3),
+                    color: divider.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(Icons.directions_car_rounded,
-                      color: AppColors.textSecondary, size: 22.r),
+                      color: textSecondary, size: 22.r),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
-                  child: Text('No vehicle assigned',
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13.sp)),
+                  child: Text(
+                    'No vehicle assigned',
+                    style: TextStyle(
+                        color: textSecondary, fontSize: 13.sp),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: isActionLoading
@@ -462,8 +521,8 @@ class _VehicleCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.r)),
                   ),
-                  child: Text('Assign',
-                      style: TextStyle(fontSize: 11.sp)),
+                  child:
+                      Text('Assign', style: TextStyle(fontSize: 11.sp)),
                 ),
               ],
             ),
@@ -473,32 +532,54 @@ class _VehicleCard extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmRemove(BuildContext context) async {
+  Future<void> _confirmRemove(BuildContext context, Color error) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor:
+            isDark ? AppColors.surface : AppLightColors.surface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r)),
-        title: Text('Remove Vehicle',
-            style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600)),
+        title: Text(
+          'Remove Vehicle',
+          style: TextStyle(
+            color: isDark
+                ? AppColors.textPrimary
+                : AppLightColors.textPrimary,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         content: Text(
-            'The vehicle will be unlinked from this driver. The driver will need a vehicle reassigned before going online.',
-            style:
-                TextStyle(color: AppColors.textSecondary, fontSize: 13.sp)),
+          'The vehicle will be unlinked from this driver. The driver will need a vehicle reassigned before going online.',
+          style: TextStyle(
+            color: isDark
+                ? AppColors.textSecondary
+                : AppLightColors.textSecondary,
+            fontSize: 13.sp,
+          ),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel',
-                  style: TextStyle(color: AppColors.textSecondary))),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.textSecondary
+                    : AppLightColors.textSecondary,
+              ),
+            ),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('Remove',
-                  style: TextStyle(
-                      color: AppColors.error, fontWeight: FontWeight.w600))),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Remove',
+              style: TextStyle(
+                  color: error, fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
@@ -508,7 +589,6 @@ class _VehicleCard extends StatelessWidget {
   }
 
   Future<void> _showAssignSheet(BuildContext context) async {
-    // Fetch vehicles before showing
     context.read<OwnerVehiclesCubit>().fetchVehicles();
     await showModalBottomSheet(
       context: context,
@@ -532,13 +612,24 @@ class _AssignVehicleSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.surface : AppLightColors.surface;
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final error = isDark ? AppColors.error : AppLightColors.error;
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+
     return Container(
       constraints: BoxConstraints(maxHeight: 0.75.sh),
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24.r)),
+        color: surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,55 +639,91 @@ class _AssignVehicleSheet extends StatelessWidget {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2.r)),
+                color: divider,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
             ),
           ),
           SizedBox(height: 16.h),
-          Text('Assign Vehicle',
-              style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700)),
-          Text('Select a vehicle to assign to this driver',
-              style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12.sp)),
+          Text(
+            'Assign Vehicle',
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            'Only unassigned vehicles are shown',
+            style: TextStyle(color: textSecondary, fontSize: 12.sp),
+          ),
           SizedBox(height: 16.h),
           Expanded(
             child: BlocBuilder<OwnerVehiclesCubit, OwnerVehiclesState>(
               builder: (_, state) {
                 if (state is OwnerVehiclesLoading) {
-                  return const Center(
-                      child: CircularProgressIndicator(
-                          color: AppColors.accent));
+                  return Center(
+                    child: CircularProgressIndicator(
+                        color: accent, strokeWidth: 2.5),
+                  );
                 }
                 if (state is OwnerVehiclesError) {
                   return Center(
-                      child: Text(state.message,
-                          style: TextStyle(
-                              color: AppColors.error, fontSize: 13.sp)));
+                    child: Text(
+                      state.message,
+                      style: TextStyle(color: error, fontSize: 13.sp),
+                    ),
+                  );
                 }
                 if (state is OwnerVehiclesLoaded) {
+                  // Only show unassigned vehicles (enforce 1 driver ↔ 1 vehicle)
+                  final available = state.vehicles
+                      .where((v) =>
+                          v['assigned_driver_id'] == null ||
+                          v['assigned_driver_id'].toString().isEmpty)
+                      .toList();
+
                   if (state.vehicles.isEmpty) {
                     return Center(
-                      child: Text('No vehicles found.\nAdd a vehicle first.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 13.sp)),
+                      child: Text(
+                        'No vehicles found.\nAdd a vehicle first.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: textSecondary, fontSize: 13.sp),
+                      ),
+                    );
+                  }
+                  if (available.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.directions_car_rounded,
+                              color: divider, size: 36.r),
+                          SizedBox(height: 10.h),
+                          Text(
+                            'All vehicles are assigned.\nRemove a vehicle from another driver first.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: textSecondary, fontSize: 13.sp),
+                          ),
+                        ],
+                      ),
                     );
                   }
                   return ListView.builder(
-                    itemCount: state.vehicles.length,
+                    itemCount: available.length,
                     itemBuilder: (_, i) {
-                      final v = state.vehicles[i];
+                      final v = available[i];
                       final vid = v['id']?.toString() ??
                           v['vehicle_id']?.toString() ??
                           '';
                       final plate =
                           v['reg_number'] as String? ?? '—';
-                      final type =
-                          v['type'] as String? ?? '—';
+                      final type = v['type'] as String? ?? '—';
+                      final capacity =
+                          v['capacity'] as String? ?? v['capacity']?.toString();
+
                       return GestureDetector(
                         onTap: () {
                           if (vid.isEmpty) return;
@@ -609,27 +736,27 @@ class _AssignVehicleSheet extends StatelessWidget {
                           margin: EdgeInsets.only(bottom: 8.h),
                           padding: EdgeInsets.all(14.r),
                           decoration: BoxDecoration(
-                            color: AppColors.card,
+                            color: card,
                             borderRadius:
                                 BorderRadius.circular(12.r),
                             border: Border.all(
-                                color: AppColors.divider, width: 0.8),
+                                color: divider, width: 0.8),
                           ),
                           child: Row(
                             children: [
                               Container(
-                                width: 36.r,
-                                height: 36.r,
+                                width: 40.r,
+                                height: 40.r,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary
-                                      .withOpacity(0.12),
+                                  color: primary.withOpacity(0.12),
                                   borderRadius:
                                       BorderRadius.circular(10.r),
                                 ),
                                 child: Icon(
-                                    Icons.directions_car_rounded,
-                                    color: AppColors.primary,
-                                    size: 18.r),
+                                  Icons.directions_car_rounded,
+                                  color: primary,
+                                  size: 20.r,
+                                ),
                               ),
                               SizedBox(width: 12.w),
                               Expanded(
@@ -637,23 +764,42 @@ class _AssignVehicleSheet extends StatelessWidget {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.start,
                                   children: [
-                                    Text(plate,
-                                        style: TextStyle(
-                                            color: AppColors.textPrimary,
-                                            fontSize: 14.sp,
-                                            fontWeight:
-                                                FontWeight.w600)),
                                     Text(
-                                        type.toUpperCase(),
-                                        style: TextStyle(
-                                            color:
-                                                AppColors.textSecondary,
-                                            fontSize: 11.sp)),
+                                      plate,
+                                      style: TextStyle(
+                                        color: textPrimary,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      capacity != null
+                                          ? '${type.toUpperCase()} · $capacity'
+                                          : type.toUpperCase(),
+                                      style: TextStyle(
+                                        color: textSecondary,
+                                        fontSize: 11.sp,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              Icon(Icons.chevron_right_rounded,
-                                  color: AppColors.divider, size: 18.r),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w, vertical: 4.h),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text(
+                                  'Available',
+                                  style: TextStyle(
+                                    color: AppColors.success,
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -692,23 +838,35 @@ class _StatusControlCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // created (pending_admin) state — must activate first
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final error = isDark ? AppColors.error : AppLightColors.error;
+
     final isCreated =
         !isActive && !isSuspended && currentStatus != 'rejected';
+
+    final statusColor = isActive
+        ? AppColors.success
+        : isSuspended
+            ? error
+            : textSecondary;
+    final borderColor = isActive
+        ? AppColors.success.withOpacity(0.3)
+        : isSuspended
+            ? error.withOpacity(0.3)
+            : divider;
 
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: card,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: isActive
-              ? AppColors.success.withOpacity(0.3)
-              : isSuspended
-                  ? AppColors.error.withOpacity(0.3)
-                  : AppColors.divider,
-          width: 0.8,
-        ),
+        border: Border.all(color: borderColor, width: 0.8),
       ),
       child: Column(
         children: [
@@ -718,12 +876,7 @@ class _StatusControlCard extends StatelessWidget {
                 width: 40.r,
                 height: 40.r,
                 decoration: BoxDecoration(
-                  color: (isActive
-                          ? AppColors.success
-                          : isSuspended
-                              ? AppColors.error
-                              : AppColors.textSecondary)
-                      .withOpacity(0.12),
+                  color: statusColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10.r),
                 ),
                 child: Icon(
@@ -732,11 +885,7 @@ class _StatusControlCard extends StatelessWidget {
                       : isSuspended
                           ? Icons.block_rounded
                           : Icons.hourglass_top_rounded,
-                  color: isActive
-                      ? AppColors.success
-                      : isSuspended
-                          ? AppColors.error
-                          : AppColors.textSecondary,
+                  color: statusColor,
                   size: 20.r,
                 ),
               ),
@@ -752,9 +901,10 @@ class _StatusControlCard extends StatelessWidget {
                               ? 'Driver is Suspended'
                               : 'Driver Created — Pending Activation',
                       style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600),
+                        color: textPrimary,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     SizedBox(height: 2.h),
                     Text(
@@ -764,7 +914,7 @@ class _StatusControlCard extends StatelessWidget {
                               ? 'Cannot go online or receive deliveries'
                               : 'Assign a vehicle and activate to enable',
                       style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 11.sp),
+                          color: textSecondary, fontSize: 11.sp),
                     ),
                   ],
                 ),
@@ -772,7 +922,7 @@ class _StatusControlCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 14.h),
-          Divider(color: AppColors.divider, height: 1),
+          Divider(color: divider, height: 1),
           SizedBox(height: 14.h),
           if (!isActive)
             SizedBox(
@@ -780,29 +930,33 @@ class _StatusControlCard extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: isLoading ? null : onActivate,
                 icon: Icon(Icons.play_circle_rounded, size: 16.r),
-                label: Text(isCreated ? 'Activate Driver' : 'Reactivate Driver'),
+                label: Text(
+                    isCreated ? 'Activate Driver' : 'Reactivate Driver'),
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success),
-              ),
-            ),
-          if (isActive) ...[
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: isLoading ? null : onSuspend,
-                icon: Icon(Icons.pause_circle_rounded,
-                    size: 16.r, color: AppColors.error),
-                label: Text('Suspend Driver',
-                    style: TextStyle(color: AppColors.error)),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.error.withOpacity(0.4)),
+                  backgroundColor: AppColors.success,
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14.r)),
                 ),
               ),
             ),
-          ],
+          if (isActive)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: isLoading ? null : onSuspend,
+                icon: Icon(Icons.pause_circle_rounded,
+                    size: 16.r, color: error),
+                label: Text('Suspend Driver',
+                    style: TextStyle(color: error)),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: error.withOpacity(0.4)),
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r)),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -817,6 +971,10 @@ class _PerformanceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final error = isDark ? AppColors.error : AppLightColors.error;
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+
     final perf = driver['performance'] as Map<String, dynamic>? ??
         driver['stats'] as Map<String, dynamic>? ??
         {};
@@ -833,9 +991,7 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Acceptance',
             value: '${acceptanceRate.toStringAsFixed(1)}%',
             icon: Icons.thumb_up_rounded,
-            color: acceptanceRate >= 80
-                ? AppColors.success
-                : AppColors.warning,
+            color: acceptanceRate >= 80 ? AppColors.success : (isDark ? AppColors.warning : AppLightColors.warning),
           ),
         ),
         SizedBox(width: 10.w),
@@ -853,8 +1009,7 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Missed',
             value: missedJobs.toString(),
             icon: Icons.cancel_rounded,
-            color:
-                missedJobs == 0 ? AppColors.success : AppColors.error,
+            color: missedJobs == 0 ? AppColors.success : error,
           ),
         ),
         SizedBox(width: 10.w),
@@ -863,7 +1018,7 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Total',
             value: totalJobs.toString(),
             icon: Icons.receipt_long_rounded,
-            color: AppColors.accent,
+            color: accent,
           ),
         ),
       ],
@@ -884,26 +1039,36 @@ class _PerfMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final card = isDark ? AppColors.card : AppLightColors.card;
+    final divider = isDark ? AppColors.divider : AppLightColors.divider;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: card,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.divider, width: 0.8),
+        border: Border.all(color: divider, width: 0.8),
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 16.r),
           SizedBox(height: 6.h),
-          Text(value,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           SizedBox(height: 2.h),
-          Text(label,
-              style: TextStyle(
-                  color: AppColors.textSecondary, fontSize: 9.sp)),
+          Text(
+            label,
+            style: TextStyle(color: textSecondary, fontSize: 9.sp),
+          ),
         ],
       ),
     );
@@ -918,12 +1083,17 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(label,
-        style: TextStyle(
-            color: AppColors.accent,
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+    return Text(
+      label,
+      style: TextStyle(
+        color: accent,
+        fontSize: 11.sp,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    );
   }
 }
 
@@ -936,19 +1106,29 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+
     return Row(
       children: [
-        Icon(icon, color: AppColors.textSecondary, size: 15.r),
+        Icon(icon, color: textSecondary, size: 15.r),
         SizedBox(width: 8.w),
-        Text('$label: ',
-            style: TextStyle(
-                color: AppColors.textSecondary, fontSize: 12.sp)),
+        Text(
+          '$label: ',
+          style: TextStyle(color: textSecondary, fontSize: 12.sp),
+        ),
         Expanded(
-          child: Text(value,
-              style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500)),
+          child: Text(
+            value,
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ],
     );
@@ -959,13 +1139,14 @@ class _StatusBadge extends StatelessWidget {
   final String status;
   const _StatusBadge({required this.status});
 
-  static Color _color(String s) => switch (s) {
+  Color _color(String s, bool isDark) => switch (s) {
         'active' => AppColors.success,
-        'suspended' || 'disabled' || 'rejected' => AppColors.error,
-        _ => AppColors.textSecondary,
+        'suspended' || 'disabled' || 'rejected' =>
+          isDark ? AppColors.error : AppLightColors.error,
+        _ => isDark ? AppColors.textSecondary : AppLightColors.textSecondary,
       };
 
-  static String _label(String s) => switch (s) {
+  String _label(String s) => switch (s) {
         'active' => 'ACTIVE',
         'pending_admin' => 'CREATED',
         'suspended' => 'SUSPENDED',
@@ -976,16 +1157,19 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _color(status);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final c = _color(status, isDark);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
       decoration: BoxDecoration(
         color: c.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20.r),
       ),
-      child: Text(_label(status),
-          style: TextStyle(
-              color: c, fontSize: 9.sp, fontWeight: FontWeight.w700)),
+      child: Text(
+        _label(status),
+        style: TextStyle(
+            color: c, fontSize: 9.sp, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
@@ -996,11 +1180,15 @@ class _OnlineBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final color = isOnline ? AppColors.success : textSecondary;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
       decoration: BoxDecoration(
-        color: (isOnline ? AppColors.success : AppColors.textSecondary)
-            .withOpacity(0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Row(
@@ -1010,7 +1198,7 @@ class _OnlineBadge extends StatelessWidget {
             width: 5.r,
             height: 5.r,
             decoration: BoxDecoration(
-              color: isOnline ? AppColors.success : AppColors.textSecondary,
+              color: color,
               shape: BoxShape.circle,
             ),
           ),
@@ -1018,7 +1206,7 @@ class _OnlineBadge extends StatelessWidget {
           Text(
             isOnline ? 'ONLINE' : 'OFFLINE',
             style: TextStyle(
-              color: isOnline ? AppColors.success : AppColors.textSecondary,
+              color: color,
               fontSize: 9.sp,
               fontWeight: FontWeight.w700,
             ),

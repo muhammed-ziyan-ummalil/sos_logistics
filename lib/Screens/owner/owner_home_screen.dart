@@ -192,6 +192,15 @@ class _HomeBody extends StatelessWidget {
             _StatsRow(summary: state.summary, isDark: isDark),
             SizedBox(height: 20.h),
 
+            // Driver snapshot
+            if (state.drivers.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: _DriverSnapshotSection(
+                    drivers: state.drivers, isDark: isDark),
+              ),
+            if (state.drivers.isNotEmpty) SizedBox(height: 20.h),
+
             // Active deliveries — always show (empty state if none)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -249,8 +258,8 @@ class _StatsRow extends StatelessWidget {
     final activeDeliveries = summary['active_deliveries']?.toString() ?? '0';
     final earnings = summary['today_earnings'];
     final earningsStr = earnings != null
-        ? '₦${_fmtNum(double.tryParse(earnings.toString()) ?? 0)}'
-        : '₦0';
+        ? '₹${_fmtNum(double.tryParse(earnings.toString()) ?? 0)}'
+        : '₹0';
     final primaryColor =
         isDark ? AppColors.primaryLight : AppLightColors.primary;
     final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
@@ -498,24 +507,27 @@ class _DeliveryTile extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _StatusBadge(status: status, isDark: isDark),
-              if (eta != null) ...[
-                SizedBox(height: 4.h),
-                Row(
-                  children: [
-                    Icon(Icons.schedule_rounded,
-                        size: 10.r, color: textSecondary),
-                    SizedBox(width: 3.w),
-                    Text(eta,
-                        style: TextStyle(
-                            color: textSecondary, fontSize: 10.sp)),
-                  ],
-                ),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _StatusBadge(status: status, isDark: isDark),
+                if (eta != null) ...[
+                  SizedBox(height: 4.h),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule_rounded,
+                          size: 10.r, color: textSecondary),
+                      SizedBox(width: 3.w),
+                      Text(eta,
+                          style: TextStyle(
+                              color: textSecondary, fontSize: 10.sp)),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
@@ -909,6 +921,216 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 }
+
+// ─── Driver snapshot ──────────────────────────────────────────────────────────
+
+class _DriverSnapshotSection extends StatelessWidget {
+  final List<Map<String, dynamic>> drivers;
+  final bool isDark;
+  const _DriverSnapshotSection(
+      {required this.drivers, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final toShow = drivers.length > 3 ? drivers.sublist(0, 3) : drivers;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _SectionHeader(
+                icon: Icons.people_rounded,
+                label: 'DRIVER SNAPSHOT',
+                color: accentColor),
+            GestureDetector(
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.v2DriverList),
+              child: Text(
+                'See all',
+                style: TextStyle(
+                    color: accentColor,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10.h),
+        ...toShow.map((d) => Padding(
+              padding: EdgeInsets.only(bottom: 8.h),
+              child: _DriverSnapshotTile(driver: d, isDark: isDark),
+            )),
+      ],
+    );
+  }
+}
+
+class _DriverSnapshotTile extends StatelessWidget {
+  final Map<String, dynamic> driver;
+  final bool isDark;
+  const _DriverSnapshotTile(
+      {required this.driver, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor = isDark ? AppColors.card : AppLightColors.card;
+    final dividerColor =
+        isDark ? AppColors.divider : AppLightColors.divider;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final primaryColor =
+        isDark ? AppColors.primaryLight : AppLightColors.primary;
+
+    final name = driver['name'] as String? ?? '—';
+    final status = driver['status'] as String? ?? '';
+    final isOnline = driver['is_online'] == true ||
+        driver['is_online'] == 1 ||
+        driver['is_online'] == '1';
+    final vehicle = driver['vehicle'] as Map<String, dynamic>?;
+    final plate = vehicle?['reg_number'] as String? ?? 'No vehicle';
+    final vehicleType = vehicle?['type'] as String?;
+
+    final statusColor = switch (status) {
+      'active' => AppColors.success,
+      'suspended' || 'disabled' =>
+        isDark ? AppColors.error : AppLightColors.error,
+      _ => textSecondary,
+    };
+
+    return GestureDetector(
+      onTap: () {
+        final id = driver['id']?.toString() ??
+            driver['driver_id']?.toString() ??
+            '';
+        if (id.isEmpty) return;
+        Navigator.pushNamed(
+          context,
+          AppRoutes.v2DriverDetail,
+          arguments: {'driver_id': id, 'driver': driver},
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(12.r),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: dividerColor, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 18.r,
+                  backgroundColor: primaryColor.withOpacity(0.12),
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 8.r,
+                    height: 8.r,
+                    decoration: BoxDecoration(
+                      color: isOnline ? AppColors.success : dividerColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cardColor, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Row(
+                    children: [
+                      Container(
+                        width: 5.r,
+                        height: 5.r,
+                        decoration: BoxDecoration(
+                            color: statusColor, shape: BoxShape.circle),
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        status.toUpperCase().replaceAll('_', ' '),
+                        style: TextStyle(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.directions_car_rounded,
+                          size: 10.r, color: textSecondary),
+                      SizedBox(width: 3.w),
+                      Flexible(
+                        child: Text(
+                          plate,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (vehicleType != null)
+                    Text(
+                      vehicleType.toUpperCase(),
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 9.sp, color: textSecondary),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(width: 6.w),
+            Icon(Icons.chevron_right_rounded,
+                color: dividerColor, size: 16.r),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Error view ───────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
   final String message;

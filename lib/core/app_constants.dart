@@ -1,9 +1,10 @@
 class AppConstants {
-  static const String appName    = 'SOSSSS Logistics';
-  static const String baseUrl    = 'https://api.sossss.net/api/logistics/';
-  static const String v2BaseUrl  = 'https://api.sossss.net/api/logistics/v2/';
-  static const int connectTimeout = 30;
-  static const int receiveTimeout = 30;
+  static const String appName        = 'SOSSSS Logistics';
+  static const String baseUrl        = 'https://api.sossss.net/api/logistics/';
+  static const String v2BaseUrl      = 'https://api.sossss.net/api/logistics/v2/';
+  static const int    connectTimeout = 30;
+  static const int    receiveTimeout = 30;
+  static const String currencySymbol = '₹';
 }
 
 class StorageKeys {
