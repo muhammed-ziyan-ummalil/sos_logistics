@@ -118,13 +118,13 @@ class _OwnerAnalyticsScreenState extends State<OwnerAnalyticsScreen> {
                       _MetricCard(
                           label: 'Active Drivers',
                           value: activeDrivers.toString(),
-                          icon: Icons.check_circle_rounded,
+                          icon: Icons.how_to_reg_rounded,
                           color: AppColors.success,
                           isDark: isDark),
                       _MetricCard(
                           label: 'Online Now',
                           value: onlineDrivers.toString(),
-                          icon: Icons.wifi_rounded,
+                          icon: Icons.sensors_rounded,
                           color: accentColor,
                           isDark: isDark),
                       _MetricCard(

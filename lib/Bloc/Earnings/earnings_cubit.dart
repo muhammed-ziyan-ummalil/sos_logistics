@@ -8,7 +8,7 @@ class EarningsCubit extends Cubit<EarningsState> {
 
   Future<void> fetch() async {
     emit(EarningsLoading());
-    final res = await ApiService.instance.post('driver/earnings');
+    final res = await ApiServiceV2.instance.get('driver/earnings');
     if (res['status'] == 'success') {
       emit(EarningsLoaded(EarningsData.fromJson(res['data'] as Map<String, dynamic>)));
     } else {

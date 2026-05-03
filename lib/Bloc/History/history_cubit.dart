@@ -8,7 +8,7 @@ class HistoryCubit extends Cubit<HistoryState> {
 
   Future<void> fetch({int page = 1}) async {
     emit(HistoryLoading());
-    final res = await ApiService.instance.post('driver/history', data: {'page': page});
+    final res = await ApiServiceV2.instance.get('driver/history', params: {'page': page});
     if (res['status'] == 'success') {
       final list = (res['data']?['deliveries'] ?? []) as List;
       emit(HistoryLoaded(
