@@ -36,7 +36,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTheme.bg(context),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -49,7 +49,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   width: 72.r,
                   height: 72.r,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: AppTheme.primary(context),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Icon(Icons.local_shipping_rounded, color: Colors.white, size: 36.r),
@@ -59,7 +59,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               Text(
                 'Choose Your Role',
                 style: TextStyle(
-                  color: AppColors.textPrimary,
+                  color: AppTheme.textPrimary(context),
                   fontSize: 24.sp,
                   fontWeight: FontWeight.w700,
                 ),
@@ -67,7 +67,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               SizedBox(height: 6.h),
               Text(
                 'How would you like to use SOSSSS Logistics?',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp),
+                style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14.sp),
               ),
               SizedBox(height: 32.h),
               ...List.generate(_roles.length, (i) {
@@ -87,8 +87,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 child: ElevatedButton(
                   onPressed: _selectedRole != null ? _onContinue : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    disabledBackgroundColor: AppColors.card,
+                    backgroundColor: AppTheme.primary(context),
+                    disabledBackgroundColor: AppTheme.card(context),
                     padding: EdgeInsets.symmetric(vertical: 16.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14.r),
@@ -146,10 +146,10 @@ class _RoleCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary.withOpacity(0.12) : AppColors.card,
+          color: selected ? AppTheme.primary(context).withOpacity(0.12) : AppTheme.card(context),
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.divider,
+            color: selected ? AppTheme.primary(context) : AppTheme.divider(context),
             width: selected ? 1.5 : 0.8,
           ),
         ),
@@ -159,12 +159,12 @@ class _RoleCard extends StatelessWidget {
               width: 48.r,
               height: 48.r,
               decoration: BoxDecoration(
-                color: selected ? AppColors.primary : AppColors.surface,
+                color: selected ? AppTheme.primary(context) : AppTheme.surface(context),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Icon(
                 option.icon,
-                color: selected ? Colors.white : AppColors.textSecondary,
+                color: selected ? Colors.white : AppTheme.textSecondary(context),
                 size: 24.r,
               ),
             ),
@@ -176,7 +176,7 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     option.title,
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppTheme.textPrimary(context),
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w600,
                     ),
@@ -184,7 +184,7 @@ class _RoleCard extends StatelessWidget {
                   SizedBox(height: 4.h),
                   Text(
                     option.subtitle,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12.sp),
                   ),
                 ],
               ),
@@ -195,13 +195,13 @@ class _RoleCard extends StatelessWidget {
               child: selected
                   ? Icon(
                       Icons.check_circle_rounded,
-                      color: AppColors.primary,
+                      color: AppTheme.primary(context),
                       size: 24.r,
                       key: const ValueKey(true),
                     )
                   : Icon(
                       Icons.circle_outlined,
-                      color: AppColors.divider,
+                      color: AppTheme.divider(context),
                       size: 24.r,
                       key: const ValueKey(false),
                     ),

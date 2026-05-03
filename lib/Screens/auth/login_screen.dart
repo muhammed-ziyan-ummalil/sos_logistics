@@ -80,18 +80,18 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             } else if (state is AuthError) {
               ScaffoldMessenger.of(ctx).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+                SnackBar(content: Text(state.message), backgroundColor: AppTheme.error(context)),
               );
             }
           },
         ),
       ],
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: BackButton(color: AppColors.textSecondary),
+          leading: BackButton(color: AppTheme.textSecondary(context)),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 64.r,
                     height: 64.r,
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: AppTheme.primary(context),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Icon(
@@ -120,13 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: 24.h),
                   Text(
                     'Welcome back',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp),
+                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14.sp),
                   ),
                   SizedBox(height: 4.h),
                   Text(
                     isOwner ? 'Fleet Owner Login' : 'Driver Login',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppTheme.textPrimary(context),
                       fontSize: 26.sp,
                       fontWeight: FontWeight.w700,
                     ),
@@ -136,16 +136,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     isOwner
                         ? 'Sign in to manage your fleet and deliveries.'
                         : 'Sign in to start accepting delivery jobs.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
+                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
                   ),
                   SizedBox(height: 36.h),
                   TextFormField(
                     controller: _emailCtr,
                     keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14.sp),
+                    decoration: InputDecoration(
                       labelText: 'Email Address',
-                      prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary(context)),
                     ),
                     validator: (v) {
                       final val = v?.trim() ?? '';
@@ -158,14 +158,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _passCtr,
                     obscureText: _obscure,
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                    style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14.sp),
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.lock_outline, color: AppTheme.textSecondary(context)),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
+                          color: AppTheme.textSecondary(context),
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
@@ -202,14 +202,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Text(
                             "Don't have an account? ",
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
+                            style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pushNamed(context, AppRoutes.v2OwnerRegister),
                             child: Text(
                               'Create account',
                               style: TextStyle(
-                                color: AppColors.primary,
+                                color: AppTheme.primary(context),
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -222,7 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Center(
                       child: Text(
                         'Contact your fleet owner to get an account.',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                        style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12.sp),
                         textAlign: TextAlign.center,
                       ),
                     ),

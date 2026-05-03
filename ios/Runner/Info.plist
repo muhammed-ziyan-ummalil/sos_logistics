@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to the camera to upload vehicle and driver documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires access to the photo library to upload profile pictures and vehicle documents.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to the microphone for video recording.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app requires access to your location when in use to track active deliveries.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app requires access to your location always to provide real-time delivery tracking.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
