@@ -15,9 +15,11 @@ import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/theme_controller.dart';
 import '../../../utility/shared_preference.dart';
+import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import 'owner_about_screen.dart';
 import 'owner_analytics_screen.dart';
 import 'owner_bank_details_screen.dart';
+import 'owner_edit_profile_screen.dart';
 import 'owner_privacy_screen.dart';
 import 'owner_support_screen.dart';
 import 'owner_wallet_screen.dart';
@@ -214,9 +216,36 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
               ],
             ),
           ),
+          // Edit profile button
+          GestureDetector(
+            onTap: _openEditProfile,
+            child: Container(
+              padding: EdgeInsets.all(8.r),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: primaryColor.withOpacity(0.2)),
+              ),
+              child: Icon(Icons.edit_outlined,
+                  size: 18.r, color: primaryColor),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _openEditProfile() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => OwnerProfileCubit(),
+          child: const OwnerEditProfileScreen(),
+        ),
+      ),
+    );
+    if (result == true) _loadOwnerInfo();
   }
 
   // ── Services section ──────────────────────────────────────────────────────
