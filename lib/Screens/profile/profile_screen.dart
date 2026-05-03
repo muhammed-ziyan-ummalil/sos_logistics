@@ -58,24 +58,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? get _availability => _data?['availability'] as Map<String, dynamic>?;
   Map<String, dynamic>? get _owner        => _data?['owner']        as Map<String, dynamic>?;
 
-  String get _kycStatus => _driver?['kyc_status'] as String? ?? 'submitted';
+  String get _accountStatus => (_driver?['status'] as String? ?? 'active').toLowerCase();
 
-  Color _kycColor(String s) {
-    switch (s) {
-      case 'approved': return AppColors.success;
-      case 'rejected': return AppColors.error;
-      case 'submitted': return AppColors.warning;
-      default:         return AppColors.warning;
-    }
+  Color _statusColor(String s) {
+    return s == 'active' ? AppColors.success : AppColors.error;
   }
 
-  String _kycLabel(String s) {
-    switch (s) {
-      case 'approved':  return 'KYC VERIFIED';
-      case 'rejected':  return 'KYC REJECTED';
-      case 'submitted': return 'KYC SUBMITTED';
-      default:          return 'KYC PENDING';
-    }
+  String _statusLabel(String s) {
+    return s == 'active' ? 'ACTIVE' : 'SUSPENDED';
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -169,11 +159,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Profile card ──────────────────────────────────────────────────────────
   Widget _buildProfileCard(bool isDark) {
-    final surface      = isDark ? AppColors.surface : AppLightColors.surface;
-    final primary      = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary  = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final surface       = isDark ? AppColors.surface : AppLightColors.surface;
+    final primary       = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final textPrimary   = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
     final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final kycColor     = _kycColor(_kycStatus);
+    final statusColor   = _statusColor(_accountStatus);
 
     final displayName = _driver?['name'] as String? ?? _name;
 
@@ -245,16 +235,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                       decoration: BoxDecoration(
-                        color: kycColor.withOpacity(0.10),
+                        color: statusColor.withOpacity(0.10),
                         borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: kycColor.withOpacity(0.25)),
+                        border: Border.all(color: statusColor.withOpacity(0.25)),
                       ),
                       child: Text(
-                        _kycLabel(_kycStatus),
+                        _statusLabel(_accountStatus),
                         style: TextStyle(
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w700,
-                          color: kycColor,
+                          color: statusColor,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -345,12 +335,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       isDark: isDark,
       title: 'Services',
       tiles: [
-        _DriverMenuTile(
-          isDark: isDark,
-          icon: Icons.bar_chart_rounded,
-          title: 'My Earnings',
-          onTap: () {},
-        ),
         _DriverMenuTile(
           isDark: isDark,
           icon: Icons.history_rounded,

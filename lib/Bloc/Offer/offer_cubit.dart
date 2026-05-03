@@ -7,8 +7,8 @@ class OfferCubit extends Cubit<OfferState> {
   OfferCubit() : super(OfferInitial());
 
   Future<void> fetchActiveOffer() async {
-    emit(OfferLoading());
-    final res = await ApiService.instance.post('driver/active-offer');
+    // Use V2 client — Bearer token auth
+    final res = await ApiServiceV2.instance.post('driver/active-offer');
     if (res['status'] == 'success') {
       final offerJson = res['data']?['offer'];
       if (offerJson == null) {
@@ -17,24 +17,30 @@ class OfferCubit extends Cubit<OfferState> {
         emit(OfferAvailable(DeliveryOffer.fromJson(offerJson as Map<String, dynamic>)));
       }
     } else {
-      emit(OfferError(res['message'] ?? 'Failed to fetch offer.'));
+      emit(OfferError(res['message'] as String? ?? 'Failed to fetch offer.'));
     }
   }
 
   Future<void> acceptOffer(int offerId) async {
     emit(OfferLoading());
-    final res = await ApiService.instance.post('driver/offer/accept', data: {'offer_id': offerId});
+    final res = await ApiServiceV2.instance.post(
+      'driver/offer/accept',
+      data: {'offer_id': offerId},
+    );
     if (res['status'] == 'success') {
       final deliveryId = res['data']?['delivery_id'] as int? ?? 0;
       emit(OfferAccepted(deliveryId));
     } else {
-      emit(OfferError(res['message'] ?? 'Failed to accept offer.'));
+      emit(OfferError(res['message'] as String? ?? 'Failed to accept offer.'));
     }
   }
 
   Future<void> rejectOffer(int offerId) async {
     emit(OfferLoading());
-    await ApiService.instance.post('driver/offer/reject', data: {'offer_id': offerId});
+    await ApiServiceV2.instance.post(
+      'driver/offer/reject',
+      data: {'offer_id': offerId},
+    );
     emit(OfferRejected());
   }
 }

@@ -3,10 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../Bloc/Auth/auth_cubit.dart';
 import '../../Bloc/Auth/auth_state.dart';
-import '../../Bloc/Auth/driver_auth_cubit.dart';
-import '../../Bloc/Auth/driver_auth_state.dart';
-import '../../Bloc/Auth/owner_auth_cubit.dart';
-import '../../Bloc/Auth/owner_auth_state.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
 
@@ -46,8 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  bool _isLoading(DriverAuthState ds, OwnerAuthState os) =>
-      _role == UserRole.driver ? ds is DriverAuthLoading : os is OwnerAuthLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -89,16 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
               );
             }
-          },
-        ),
-        BlocListener<DriverAuthCubit, DriverAuthState>(
-          listener: (ctx, state) {
-            // Legacy listener kept for backward compat — V2 path handled above
-          },
-        ),
-        BlocListener<OwnerAuthCubit, OwnerAuthState>(
-          listener: (ctx, state) {
-            // Legacy listener kept for backward compat — V2 path handled above
           },
         ),
       ],
@@ -189,28 +173,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (v) => (v?.trim().isEmpty ?? true) ? 'Enter password' : null,
                   ),
                   SizedBox(height: 32.h),
-                  BlocBuilder<DriverAuthCubit, DriverAuthState>(
-                    builder: (_, ds) => BlocBuilder<OwnerAuthCubit, OwnerAuthState>(
-                      builder: (_, os) {
-                        final loading = _isLoading(ds, os);
-                        return SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: loading ? null : _submit,
-                            child: loading
-                                ? SizedBox(
-                                    height: 20.r,
-                                    width:  20.r,
-                                    child: const CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('Sign In'),
-                          ),
-                        );
-                      },
-                    ),
+                  BlocBuilder<AuthCubit, AuthState>(
+                    builder: (_, state) {
+                      final loading = state is AuthLoading;
+                      return SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: loading ? null : _submit,
+                          child: loading
+                              ? SizedBox(
+                                  height: 20.r,
+                                  width:  20.r,
+                                  child: const CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Sign In'),
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: 24.h),
                   if (isOwner)

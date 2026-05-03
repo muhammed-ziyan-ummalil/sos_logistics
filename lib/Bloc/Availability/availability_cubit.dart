@@ -15,12 +15,13 @@ class AvailabilityCubit extends Cubit<AvailabilityState> {
     if (lat != null) data['lat'] = lat;
     if (lng != null) data['lng'] = lng;
 
-    final res = await ApiService.instance.post('driver/availability', data: data);
+    // V2: uses Authorization: Bearer header from stored v2 token
+    final res = await ApiServiceV2.instance.post('driver/availability', data: data);
     if (res['status'] == 'success') {
       _isOnline = target == 'online';
       emit(AvailabilityUpdated(_isOnline));
     } else {
-      emit(AvailabilityError(res['message'] ?? 'Failed to update status.'));
+      emit(AvailabilityError(res['message'] as String? ?? 'Failed to update status.'));
     }
   }
 

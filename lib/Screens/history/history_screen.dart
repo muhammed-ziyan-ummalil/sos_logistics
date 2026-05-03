@@ -23,22 +23,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(title: const Text('Delivery History')),
       body: BlocBuilder<HistoryCubit, HistoryState>(
         builder: (ctx, state) {
           if (state is HistoryLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+            return Center(child: CircularProgressIndicator(color: AppTheme.accent(context)));
           }
           if (state is HistoryLoaded) {
             if (state.deliveries.isEmpty) {
               return Center(
-                child: Text('No deliveries yet.', style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp)),
+                child: Text(
+                  'No deliveries yet.',
+                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14.sp),
+                ),
               );
             }
             return RefreshIndicator(
-              color: AppColors.accent,
-              backgroundColor: AppColors.card,
+              color: AppTheme.accent(context),
+              backgroundColor: AppTheme.card(context),
               onRefresh: () => ctx.read<HistoryCubit>().fetch(),
               child: ListView.separated(
                 padding: EdgeInsets.all(16.r),
@@ -49,7 +52,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             );
           }
           if (state is HistoryError) {
-            return Center(child: Text(state.message, style: TextStyle(color: AppColors.error, fontSize: 13.sp)));
+            return Center(
+              child: Text(state.message, style: TextStyle(color: AppTheme.error(context), fontSize: 13.sp)),
+            );
           }
           return const SizedBox.shrink();
         },
@@ -64,13 +69,15 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDelivered = item.state == 'Delivered';
+    final isDelivered  = item.state == 'Delivered';
+    final statusColor  = isDelivered ? AppTheme.success(context) : AppTheme.error(context);
+
     return Container(
       padding: EdgeInsets.all(14.r),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: AppTheme.card(context),
         borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppTheme.divider(context)),
       ),
       child: Row(
         children: [
@@ -78,12 +85,12 @@ class _HistoryTile extends StatelessWidget {
             width: 40.r,
             height: 40.r,
             decoration: BoxDecoration(
-              color: (isDelivered ? AppColors.success : AppColors.error).withOpacity(0.15),
+              color: statusColor.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isDelivered ? Icons.check_circle_rounded : Icons.cancel_rounded,
-              color: isDelivered ? AppColors.success : AppColors.error,
+              color: statusColor,
               size: 20.r,
             ),
           ),
@@ -94,14 +101,18 @@ class _HistoryTile extends StatelessWidget {
               children: [
                 Text(
                   item.dropAddress,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 13.sp, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: AppTheme.textPrimary(context),
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 3.h),
                 Text(
                   item.createdAt.substring(0, 10),
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11.sp),
+                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 11.sp),
                 ),
               ],
             ),
@@ -113,7 +124,7 @@ class _HistoryTile extends StatelessWidget {
               Text(
                 '₹${item.fee.toStringAsFixed(2)}',
                 style: TextStyle(
-                  color: isDelivered ? AppColors.success : AppColors.textSecondary,
+                  color: isDelivered ? AppTheme.success(context) : AppTheme.textSecondary(context),
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
                 ),
@@ -122,13 +133,13 @@ class _HistoryTile extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: (isDelivered ? AppColors.success : AppColors.error).withOpacity(0.1),
+                  color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
                   item.state,
                   style: TextStyle(
-                    color: isDelivered ? AppColors.success : AppColors.error,
+                    color: statusColor,
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w600,
                   ),

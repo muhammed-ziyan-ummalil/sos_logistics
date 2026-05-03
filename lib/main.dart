@@ -11,7 +11,6 @@ import 'Bloc/Availability/availability_cubit.dart';
 import 'Bloc/Offer/offer_cubit.dart';
 import 'Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import 'Bloc/History/history_cubit.dart';
-import 'Bloc/Earnings/earnings_cubit.dart';
 import 'Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import 'Bloc/OwnerDrivers/add_driver_cubit.dart';
 import 'Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
@@ -66,7 +65,6 @@ class SOSLogisticsApp extends StatelessWidget {
         BlocProvider(create: (_) => OfferCubit()),
         BlocProvider(create: (_) => ActiveDeliveryCubit()),
         BlocProvider(create: (_) => HistoryCubit()),
-        BlocProvider(create: (_) => EarningsCubit()),
         // V2 cubits
         BlocProvider(create: (_) => AuthCubit()),
         BlocProvider(create: (_) => PasswordResetCubit()),
