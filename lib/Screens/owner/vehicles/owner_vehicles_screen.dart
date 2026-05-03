@@ -98,7 +98,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
   }
 
   void _showAddVehicleSheet(BuildContext context, bool isDark) {
-    final regCtr = TextEditingController();
+    final regCtr      = TextEditingController();
+    final capacityCtr = TextEditingController();
     String selectedType = 'truck';
     showModalBottomSheet(
       context: context,
@@ -153,6 +154,16 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     ),
                   ),
                   SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: capacityCtr,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'Capacity (kg)',
+                      prefixIcon: Icon(Icons.scale_outlined),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
                   Text('Vehicle Type',
                       style: TextStyle(fontSize: 12.sp, color: textSecondary)),
                   SizedBox(height: 8.h),
@@ -190,9 +201,10 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       onPressed: () {
                         final reg = regCtr.text.trim();
                         if (reg.isEmpty) return;
+                        final cap = double.tryParse(capacityCtr.text.trim());
                         Navigator.pop(sheetCtx);
                         context.read<OwnerVehiclesCubit>().addVehicle(
-                            regNumber: reg, type: selectedType);
+                            regNumber: reg, type: selectedType, capacityKg: cap);
                       },
                       child: const Text('Add Vehicle'),
                     ),

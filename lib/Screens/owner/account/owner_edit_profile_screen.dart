@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_state.dart';
 import '../../../core/app_theme.dart';
+import '../../../utility/api_service.dart';
 
 class OwnerEditProfileScreen extends StatefulWidget {
   const OwnerEditProfileScreen({super.key});
