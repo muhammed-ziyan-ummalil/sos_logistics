@@ -235,9 +235,14 @@ class _DriversListScreenState extends State<DriversListScreen>
                       final count = _countForTab(e.key);
                       return Tab(
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(e.value),
+                            Flexible(
+                              child: Text(
+                                e.value,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                             if (count > 0 && e.key > 0) ...[
                               SizedBox(width: 4.w),
                               Container(
@@ -469,26 +474,34 @@ class _DriverCard extends StatelessWidget {
             ),
 
             // Status + chevron
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 8.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(statusLabel,
+            Flexible(
+              flex: 0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    constraints: BoxConstraints(maxWidth: 90.w),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 8.w, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w700,
-                          color: statusColor)),
-                ),
-                SizedBox(height: 6.h),
-                Icon(Icons.chevron_right_rounded,
-                    size: 18.r, color: dividerColor),
-              ],
+                          color: statusColor),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 18.r, color: dividerColor),
+                ],
+              ),
             ),
           ],
         ),
