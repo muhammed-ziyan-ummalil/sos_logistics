@@ -654,13 +654,13 @@ class _AssignVehicleSheet extends StatelessWidget {
             ),
           ),
           Text(
-            'Only unassigned vehicles are shown',
+            'Tap a vehicle to assign it to this driver',
             style: TextStyle(color: textSecondary, fontSize: 12.sp),
           ),
           SizedBox(height: 16.h),
           Expanded(
             child: BlocBuilder<OwnerVehiclesCubit, OwnerVehiclesState>(
-              builder: (_, state) {
+              builder: (ctx, state) {
                 if (state is OwnerVehiclesLoading) {
                   return Center(
                     child: CircularProgressIndicator(
@@ -676,13 +676,6 @@ class _AssignVehicleSheet extends StatelessWidget {
                   );
                 }
                 if (state is OwnerVehiclesLoaded) {
-                  // Only show unassigned vehicles (enforce 1 driver ↔ 1 vehicle)
-                  final available = state.vehicles
-                      .where((v) =>
-                          v['assigned_driver_id'] == null ||
-                          v['assigned_driver_id'].toString().isEmpty)
-                      .toList();
-
                   if (state.vehicles.isEmpty) {
                     return Center(
                       child: Text(
@@ -693,41 +686,81 @@ class _AssignVehicleSheet extends StatelessWidget {
                       ),
                     );
                   }
-                  if (available.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.directions_car_rounded,
-                              color: divider, size: 36.r),
-                          SizedBox(height: 10.h),
-                          Text(
-                            'All vehicles are assigned.\nRemove a vehicle from another driver first.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: textSecondary, fontSize: 13.sp),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
                   return ListView.builder(
-                    itemCount: available.length,
+                    itemCount: state.vehicles.length,
                     itemBuilder: (_, i) {
-                      final v = available[i];
+                      final v = state.vehicles[i];
                       final vid = v['id']?.toString() ??
                           v['vehicle_id']?.toString() ??
                           '';
-                      final plate =
-                          v['reg_number'] as String? ?? '—';
+                      final plate = v['reg_number'] as String? ?? '—';
                       final type = v['type'] as String? ?? '—';
-                      final capacity =
-                          v['capacity'] as String? ?? v['capacity']?.toString();
+                      final capacityRaw = v['capacity_kg'] ?? v['capacity'];
+                      final capacity = capacityRaw?.toString();
+                      final assignedDriver =
+                          v['assigned_driver'] as Map<String, dynamic>?;
+                      final isAssigned = assignedDriver != null;
+                      final assignedName =
+                          assignedDriver?['name'] as String? ?? '';
+                      final badgeColor =
+                          isAssigned ? error : AppColors.success;
+                      final badgeLabel =
+                          isAssigned ? 'ASSIGNED' : 'AVAILABLE';
+                      final iconColor = isAssigned ? error : primary;
 
                       return GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           if (vid.isEmpty) return;
-                          context
+                          if (isAssigned) {
+                            final confirmed = await showDialog<bool>(
+                              context: ctx,
+                              builder: (_) => AlertDialog(
+                                backgroundColor: isDark
+                                    ? AppColors.surface
+                                    : AppLightColors.surface,
+                                title: Text(
+                                  'Reassign Vehicle?',
+                                  style: TextStyle(
+                                    color: textPrimary,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                content: Text(
+                                  '$plate is currently assigned to $assignedName. '
+                                  'Reassigning will remove it from them.',
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 13.sp,
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(_, false),
+                                    child: Text('Cancel',
+                                        style: TextStyle(
+                                            color: textSecondary,
+                                            fontSize: 13.sp)),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(_, true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: error,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: Text('Reassign',
+                                        style:
+                                            TextStyle(fontSize: 13.sp)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmed != true) return;
+                          }
+                          // ignore: use_build_context_synchronously
+                          ctx
                               .read<DriverDetailCubit>()
                               .assignVehicle(driverId, vid);
                           onAssigned();
@@ -737,10 +770,12 @@ class _AssignVehicleSheet extends StatelessWidget {
                           padding: EdgeInsets.all(14.r),
                           decoration: BoxDecoration(
                             color: card,
-                            borderRadius:
-                                BorderRadius.circular(12.r),
+                            borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
-                                color: divider, width: 0.8),
+                                color: isAssigned
+                                    ? error.withOpacity(0.3)
+                                    : divider,
+                                width: 0.8),
                           ),
                           child: Row(
                             children: [
@@ -748,13 +783,13 @@ class _AssignVehicleSheet extends StatelessWidget {
                                 width: 40.r,
                                 height: 40.r,
                                 decoration: BoxDecoration(
-                                  color: primary.withOpacity(0.12),
+                                  color: iconColor.withOpacity(0.12),
                                   borderRadius:
                                       BorderRadius.circular(10.r),
                                 ),
                                 child: Icon(
                                   Icons.directions_car_rounded,
-                                  color: primary,
+                                  color: iconColor,
                                   size: 20.r,
                                 ),
                               ),
@@ -774,13 +809,23 @@ class _AssignVehicleSheet extends StatelessWidget {
                                     ),
                                     Text(
                                       capacity != null
-                                          ? '${type.toUpperCase()} · $capacity'
+                                          ? '${type.toUpperCase()} · ${capacity}kg'
                                           : type.toUpperCase(),
                                       style: TextStyle(
                                         color: textSecondary,
                                         fontSize: 11.sp,
                                       ),
                                     ),
+                                    if (isAssigned && assignedName.isNotEmpty) ...[
+                                      SizedBox(height: 2.h),
+                                      Text(
+                                        'Driver: $assignedName',
+                                        style: TextStyle(
+                                          color: error.withOpacity(0.8),
+                                          fontSize: 10.sp,
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -788,13 +833,14 @@ class _AssignVehicleSheet extends StatelessWidget {
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 8.w, vertical: 4.h),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8.r),
+                                  color: badgeColor.withOpacity(0.1),
+                                  borderRadius:
+                                      BorderRadius.circular(8.r),
                                 ),
                                 child: Text(
-                                  'Available',
+                                  badgeLabel,
                                   style: TextStyle(
-                                    color: AppColors.success,
+                                    color: badgeColor,
                                     fontSize: 9.sp,
                                     fontWeight: FontWeight.w700,
                                   ),
