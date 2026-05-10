@@ -85,6 +85,7 @@ class SOSLogisticsApp extends StatelessWidget {
           builder: (context, themeMode, __) => MaterialApp(
             title: AppConstants.appName,
             debugShowCheckedModeBanner: false,
+            navigatorKey: navigatorKey,
             themeMode: themeMode,
             theme: buildAppThemeLight(),
             darkTheme: buildAppThemeDark(),

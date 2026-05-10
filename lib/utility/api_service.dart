@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import '../core/app_constants.dart';
 import 'shared_preference.dart';
-
 // ignore_for_file: prefer_single_quotes
 
 class ApiService {
@@ -73,6 +72,18 @@ class ApiServiceV2 {
       connectTimeout: const Duration(seconds: AppConstants.connectTimeout),
       receiveTimeout: const Duration(seconds: AppConstants.receiveTimeout),
       validateStatus: (_) => true,
+    ));
+    _dio.interceptors.add(InterceptorsWrapper(
+      onResponse: (response, handler) async {
+        if (response.statusCode == 401) {
+          await AppPrefs.clearV2();
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            AppRoutes.login,
+            (_) => false,
+          );
+        }
+        handler.next(response);
+      },
     ));
     _dio.interceptors.add(PrettyDioLogger(requestBody: true, responseBody: true));
   }

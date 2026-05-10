@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class AppConstants {
   static const String appName        = 'SOSSSS Logistics';
   static const String baseUrl        = 'https://api.sossss.net/api/logistics/';

@@ -17,7 +17,7 @@ dependencies:
   dio: ^5.8.0+1
   pretty_dio_logger:
   shared_preferences: ^2.5.3
-  # flutter_secure_storage removed — SharedPreferences used instead (avoids Keystore init blocking startup)
+  flutter_secure_storage: ^9.2.2
   google_fonts: ^6.2.1
   intl: ^0.19.0
   cached_network_image: ^3.4.1
