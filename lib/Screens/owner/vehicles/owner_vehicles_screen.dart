@@ -98,8 +98,11 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
   }
 
   void _showAddVehicleSheet(BuildContext context, bool isDark) {
-    final regCtr      = TextEditingController();
-    final capacityCtr = TextEditingController();
+    final regCtr        = TextEditingController();
+    final capacityCtr   = TextEditingController();
+    final minFeeCtr     = TextEditingController();
+    final perKmFeeCtr   = TextEditingController();
+    final maxDistCtr    = TextEditingController();
     String selectedType = 'truck';
     showModalBottomSheet(
       context: context,
@@ -164,6 +167,36 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     ),
                   ),
                   SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: minFeeCtr,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'Minimum Fee (₹)',
+                      prefixIcon: Icon(Icons.currency_rupee_rounded),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: perKmFeeCtr,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'Per KM Fee (₹)',
+                      prefixIcon: Icon(Icons.currency_rupee_rounded),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: maxDistCtr,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'Max Delivery Distance (km)',
+                      prefixIcon: Icon(Icons.route_rounded),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
                   Text('Vehicle Type',
                       style: TextStyle(fontSize: 12.sp, color: textSecondary)),
                   SizedBox(height: 8.h),
@@ -204,7 +237,13 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         final cap = double.tryParse(capacityCtr.text.trim());
                         Navigator.pop(sheetCtx);
                         context.read<OwnerVehiclesCubit>().addVehicle(
-                            regNumber: reg, type: selectedType, capacityKg: cap);
+                          regNumber: reg,
+                          type: selectedType,
+                          capacityKg: cap,
+                          minimumFee: double.tryParse(minFeeCtr.text.trim()),
+                          perKmFee: double.tryParse(perKmFeeCtr.text.trim()),
+                          maxDeliveryDistanceKm: double.tryParse(maxDistCtr.text.trim()),
+                        );
                       },
                       child: const Text('Add Vehicle'),
                     ),
@@ -241,6 +280,9 @@ class _VehicleTile extends StatelessWidget {
     final isAssigned = assignedDriver != null;
     final capacityKg = vehicle['capacity_kg'];
     final insuranceExpiry = vehicle['insurance_expiry'] as String?;
+    final minimumFee = vehicle['minimum_fee'];
+    final perKmFee = vehicle['per_km_fee'];
+    final maxDist = vehicle['max_delivery_distance_km'];
 
     return Container(
       padding: EdgeInsets.all(14.r),
@@ -278,6 +320,17 @@ class _VehicleTile extends StatelessWidget {
                   SizedBox(height: 2.h),
                   Text('Capacity: ${capacityKg}kg',
                       style: TextStyle(fontSize: 11.sp, color: textSecondary)),
+                ],
+                if (minimumFee != null || perKmFee != null) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    [
+                      if (minimumFee != null) 'Min ₹$minimumFee',
+                      if (perKmFee != null) '₹$perKmFee/km',
+                      if (maxDist != null) '≤${maxDist}km',
+                    ].join(' · '),
+                    style: TextStyle(fontSize: 10.sp, color: textSecondary),
+                  ),
                 ],
               ],
             ),

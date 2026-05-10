@@ -24,6 +24,9 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     String? rcDocPath,
     String? insuranceDocPath,
     String? insuranceExpiry,
+    double? minimumFee,
+    double? perKmFee,
+    double? maxDeliveryDistanceKm,
   }) async {
     emit(OwnerVehiclesLoading());
 
@@ -32,6 +35,9 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       'type':       type,
       if (capacityKg != null) 'capacity_kg': capacityKg,
       if (insuranceExpiry != null && insuranceExpiry.isNotEmpty) 'insurance_expiry': insuranceExpiry,
+      if (minimumFee != null) 'minimum_fee': minimumFee,
+      if (perKmFee != null) 'per_km_fee': perKmFee,
+      if (maxDeliveryDistanceKm != null) 'max_delivery_distance_km': maxDeliveryDistanceKm,
     };
 
     final files = <String, String>{};
@@ -48,6 +54,45 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       await fetchVehicles();
     } else {
       emit(OwnerVehiclesError(res['message'] as String? ?? 'Failed to add vehicle.'));
+    }
+  }
+
+  Future<void> updateVehicle({
+    required int vehicleId,
+    String? type,
+    double? capacityKg,
+    String? insuranceExpiry,
+    double? minimumFee,
+    double? perKmFee,
+    double? maxDeliveryDistanceKm,
+    String? rcDocPath,
+    String? insuranceDocPath,
+  }) async {
+    emit(OwnerVehiclesLoading());
+
+    final fields = <String, dynamic>{
+      if (type != null) 'type': type,
+      if (capacityKg != null) 'capacity_kg': capacityKg,
+      if (insuranceExpiry != null && insuranceExpiry.isNotEmpty) 'insurance_expiry': insuranceExpiry,
+      if (minimumFee != null) 'minimum_fee': minimumFee,
+      if (perKmFee != null) 'per_km_fee': perKmFee,
+      if (maxDeliveryDistanceKm != null) 'max_delivery_distance_km': maxDeliveryDistanceKm,
+    };
+
+    final files = <String, String>{};
+    if (rcDocPath != null) files['rc_doc'] = rcDocPath;
+    if (insuranceDocPath != null) files['insurance_doc'] = insuranceDocPath;
+
+    final res = await ApiServiceV2.instance.postMultipart(
+      'owner/vehicles/$vehicleId/update',
+      fields,
+      filePaths: files.isEmpty ? null : files,
+    );
+
+    if (res['status'] == 'success') {
+      await fetchVehicles();
+    } else {
+      emit(OwnerVehiclesError(res['message'] as String? ?? 'Failed to update vehicle.'));
     }
   }
 }
