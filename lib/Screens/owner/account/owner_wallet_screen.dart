@@ -172,7 +172,7 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Payment gateway integration pending. Amount: ₦$amount'),
+                  'Payment gateway integration pending. Amount: ₹$amount'),
               backgroundColor:
                   isDark ? AppColors.warning : AppLightColors.warning,
             ),
@@ -250,7 +250,7 @@ class _BalanceCard extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  '₦${_fmt(balance)}',
+                  '₹${_fmt(balance)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 34,
@@ -420,7 +420,7 @@ class _PendingWithdrawalCard extends StatelessWidget {
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                         color: textPrimary)),
-                Text('₦$amount · $status',
+                Text('₹$amount · $status',
                     style: TextStyle(
                         fontSize: 11.sp, color: textSecondary)),
               ],
@@ -601,7 +601,7 @@ class _TransactionTile extends StatelessWidget {
             ),
           ),
           Text(
-            '${isCredit ? '+' : '-'}₦$amount',
+            '${isCredit ? '+' : '-'}₹$amount',
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
@@ -713,7 +713,7 @@ class _AddMoneySheet extends StatelessWidget {
                       border: Border.all(
                           color: AppColors.primary.withOpacity(0.2)),
                     ),
-                    child: Text('₦$v',
+                    child: Text('₹$v',
                         style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.primaryLight,
@@ -730,7 +730,7 @@ class _AddMoneySheet extends StatelessWidget {
                   color: textPrimary, fontSize: 15.sp),
               decoration: const InputDecoration(
                 labelText: 'Amount',
-                prefixText: '₦ ',
+                prefixText: '₹ ',
               ),
             ),
             SizedBox(height: 20.h),
@@ -833,7 +833,7 @@ class _WithdrawSheet extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: textPrimary)),
             Text(
-                'Available: ₦${balance.toStringAsFixed(2)} · Credit within 24 hours',
+                'Available: ₹${balance.toStringAsFixed(2)} · Credit within 24 hours',
                 style:
                     TextStyle(fontSize: 12.sp, color: textSecondary)),
             SizedBox(height: 16.h),
@@ -843,7 +843,7 @@ class _WithdrawSheet extends StatelessWidget {
               style: TextStyle(color: textPrimary, fontSize: 15.sp),
               decoration: const InputDecoration(
                 labelText: 'Withdrawal Amount',
-                prefixText: '₦ ',
+                prefixText: '₹ ',
               ),
             ),
             SizedBox(height: 16.h),

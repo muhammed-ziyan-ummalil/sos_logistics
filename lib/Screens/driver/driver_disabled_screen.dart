@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../Bloc/Auth/auth_cubit.dart';
-import '../../Bloc/Auth/auth_state.dart';
+import 'package:sos_auth/sos_auth.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
 
@@ -13,7 +12,7 @@ class DriverDisabledScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (ctx, state) {
-        if (state is AuthLoggedOut) {
+        if (state is AuthUnauthenticated) {
           Navigator.pushReplacementNamed(ctx, AppRoutes.roleSelection);
         }
       },

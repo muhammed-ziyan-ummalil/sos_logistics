@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../Bloc/Auth/auth_cubit.dart';
-import '../../Bloc/Auth/auth_state.dart';
+import 'package:sos_auth/sos_auth.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
 
@@ -36,9 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     context.read<AuthCubit>().login(
-      email:        _emailCtr.text.trim(),
-      password:     _passCtr.text.trim(),
-      selectedRole: _role,
+      _emailCtr.text.trim(),
+      _passCtr.text.trim(),
     );
   }
 
@@ -50,16 +48,23 @@ class _LoginScreenState extends State<LoginScreen> {
       listeners: [
         BlocListener<AuthCubit, AuthState>(
           listener: (ctx, state) {
-            if (state is AuthSuccess) {
-              if (state.mustReset) {
-                Navigator.pushReplacementNamed(ctx, AppRoutes.v2PasswordReset);
-                return;
-              }
-              if (state.selectedRole == UserRole.owner) {
-                if (state.roles.contains(UserRole.owner)) {
+            if (state is AuthMustResetPassword) {
+              Navigator.pushReplacementNamed(ctx, AppRoutes.v2PasswordReset);
+              return;
+            }
+            if (state is AuthAuthenticated) {
+              final caps = state.person.capabilities;
+
+              // Capability-driven routing — ignore the UI _role selection for
+              // determining the destination; use it only for the "not found" error.
+              if (_role == UserRole.owner) {
+                final ownerCap = caps
+                    .where((c) => c.capability == Capability.fleetOwner)
+                    .firstOrNull;
+                if (ownerCap != null) {
                   Navigator.pushReplacementNamed(
                     ctx,
-                    (state.ownerStatus == 'approved')
+                    ownerCap.status == 'active'
                         ? AppRoutes.v2OwnerDashboard
                         : AppRoutes.v2OwnerPending,
                   );
@@ -67,10 +72,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   Navigator.pushReplacementNamed(ctx, AppRoutes.v2NotAnOwner);
                 }
               } else {
-                if (state.roles.contains(UserRole.driver)) {
+                final driverCap = caps
+                    .where((c) => c.capability == Capability.driver)
+                    .firstOrNull;
+                if (driverCap != null) {
                   Navigator.pushReplacementNamed(
                     ctx,
-                    (state.driverStatus == 'active')
+                    driverCap.status == 'active'
                         ? AppRoutes.home
                         : AppRoutes.v2DriverDisabled,
                   );
@@ -176,6 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (_, state) {
                       final loading = state is AuthLoading;
+
                       return SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(

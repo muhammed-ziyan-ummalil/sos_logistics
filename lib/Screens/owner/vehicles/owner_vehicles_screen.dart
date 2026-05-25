@@ -103,7 +103,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     final minFeeCtr     = TextEditingController();
     final perKmFeeCtr   = TextEditingController();
     final maxDistCtr    = TextEditingController();
-    String selectedType = 'truck';
+    String selectedType = 'bike';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -202,7 +202,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                   SizedBox(height: 8.h),
                   Wrap(
                     spacing: 8.w,
-                    children: ['truck', 'van', 'bike', 'pickup'].map((t) {
+                    children: ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'].map((t) {
                       final sel = selectedType == t;
                       final primary =
                           isDark ? AppColors.primaryLight : AppLightColors.primary;

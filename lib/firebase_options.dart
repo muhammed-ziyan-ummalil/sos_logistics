@@ -1,6 +1,21 @@
-// Generated file — replace with your actual Firebase config via `flutterfire configure`
-import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+// Firebase stub — Firebase not yet configured for this app.
+// Run `flutterfire configure` with a real Firebase project to replace this file.
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+
+class FirebaseOptions {
+  const FirebaseOptions({
+    required this.apiKey,
+    required this.appId,
+    required this.messagingSenderId,
+    required this.projectId,
+    this.storageBucket,
+  });
+  final String apiKey;
+  final String appId;
+  final String messagingSenderId;
+  final String projectId;
+  final String? storageBucket;
+}
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -8,11 +23,11 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       default:
-        throw UnsupportedError('DefaultFirebaseOptions have not been configured for this platform.');
+        throw UnsupportedError(
+            'DefaultFirebaseOptions have not been configured for this platform.');
     }
   }
 
-  // Replace values below with your firebase_options.dart output
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'REPLACE_ME',
     appId: 'REPLACE_ME',

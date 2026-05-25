@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sos_auth/sos_auth.dart';
 import '../../Bloc/Auth/password_reset_cubit.dart';
 import '../../Bloc/Auth/password_reset_state.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
-import '../../utility/shared_preference.dart';
 
 class PasswordResetScreen extends StatefulWidget {
   const PasswordResetScreen({super.key});
@@ -36,27 +36,47 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     );
   }
 
-  Future<void> _navigateAfterReset() async {
-    final roles        = await AppPrefs.getV2Roles();
-    final selectedRole = await AppPrefs.getV2SelectedRole() ?? '';
-    final session      = await AppPrefs.getV2Session();
-    if (!mounted) return;
-
-    if (selectedRole == UserRole.owner && roles.contains(UserRole.owner)) {
-      final ownerStatus = session['ownerStatus'] ?? '';
-      Navigator.pushReplacementNamed(
-        context,
-        ownerStatus == 'approved' ? AppRoutes.v2OwnerDashboard : AppRoutes.v2OwnerPending,
-      );
-    } else if (selectedRole == UserRole.driver && roles.contains(UserRole.driver)) {
-      final driverStatus = session['driverStatus'] ?? '';
-      Navigator.pushReplacementNamed(
-        context,
-        driverStatus == 'active' ? AppRoutes.home : AppRoutes.v2DriverDisabled,
-      );
-    } else {
-      Navigator.pushReplacementNamed(context, AppRoutes.roleSelection);
+  void _navigateAfterReset(BuildContext context) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is! AuthAuthenticated) {
+      // Fallback: auth state not ready — send to role selection.
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.roleSelection, (_) => false);
+      return;
     }
+
+    final caps      = authState.person.capabilities;
+    final hasOwner  = caps.any((c) => c.capability == Capability.fleetOwner);
+    final hasDriver = caps.any((c) => c.capability == Capability.driver);
+
+    if (hasOwner && hasDriver) {
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.roleSelection, (_) => false);
+      return;
+    }
+
+    if (hasOwner) {
+      final ownerCap = caps.where((c) => c.capability == Capability.fleetOwner).firstOrNull;
+      if (ownerCap == null) {
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.roleSelection, (_) => false);
+        return;
+      }
+      final route = ownerCap.status == 'active' ? AppRoutes.v2OwnerDashboard : AppRoutes.v2OwnerPending;
+      Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
+      return;
+    }
+
+    if (hasDriver) {
+      final driverCap = caps.where((c) => c.capability == Capability.driver).firstOrNull;
+      if (driverCap == null) {
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.roleSelection, (_) => false);
+        return;
+      }
+      final route = driverCap.status == 'active' ? AppRoutes.home : AppRoutes.v2DriverDisabled;
+      Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
+      return;
+    }
+
+    // No relevant caps.
+    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.roleSelection, (_) => false);
   }
 
   @override
@@ -64,7 +84,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
     return BlocListener<PasswordResetCubit, PasswordResetState>(
       listener: (ctx, state) {
         if (state is PasswordResetSuccess) {
-          _navigateAfterReset();
+          _navigateAfterReset(ctx);
         } else if (state is PasswordResetError) {
           ScaffoldMessenger.of(ctx).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: AppColors.error),

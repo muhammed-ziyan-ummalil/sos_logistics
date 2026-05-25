@@ -7,8 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../Bloc/Auth/owner_auth_cubit.dart';
-import '../../../Bloc/Auth/owner_auth_state.dart';
+import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
 import '../../../Bloc/OwnerWallet/owner_wallet_cubit.dart';
 import '../../../core/app_constants.dart';
@@ -55,9 +54,9 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BlocListener<OwnerAuthCubit, OwnerAuthState>(
+    return BlocListener<AuthCubit, AuthState>(
       listener: (ctx, state) {
-        if (state is OwnerLoggedOut) {
+        if (state is AuthUnauthenticated) {
           Navigator.pushReplacementNamed(ctx, AppRoutes.roleSelection);
         }
       },
@@ -70,8 +69,20 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             _buildProfileCard(isDark),
             Expanded(
               child: SingleChildScrollView(
-                child: Column(
+                child: Builder(builder: (context) {
+                  final authState = context.watch<AuthCubit>().state;
+                  final hasMarketplace = authState is AuthAuthenticated &&
+                      (authState.person.hasCap(Capability.buyer) ||
+                          authState.person.hasCap(Capability.seller));
+                  return Column(
                   children: [
+                    if (hasMarketplace) ...[
+                      SizedBox(height: 8.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w),
+                        child: const _MarketplaceBadge(),
+                      ),
+                    ],
                     SizedBox(height: 8.h),
                     _buildServicesSection(isDark),
                     SizedBox(height: 8.h),
@@ -89,7 +100,8 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                     ),
                     SizedBox(height: 80.h),
                   ],
-                ),
+                );
+                }),
               ),
             ),
           ],
@@ -541,7 +553,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
       ),
     );
     if (confirmed == true && mounted) {
-      context.read<OwnerAuthCubit>().logout();
+      context.read<AuthCubit>().logout();
     }
   }
 
@@ -575,6 +587,79 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         Container(color: cardColor, child: Column(children: tiles)),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _MarketplaceBadge — shown when owner also has buyer or seller capability
+// ─────────────────────────────────────────────────────────────────────────────
+class _MarketplaceBadge extends StatelessWidget {
+  const _MarketplaceBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.surface : AppLightColors.surface;
+    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final textPrimary =
+        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+    final textSecondary =
+        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+
+    return GestureDetector(
+      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Open the SOS Farmer app on your device to buy & sell crops'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      ),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: primary.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(7.r),
+              decoration: BoxDecoration(
+                color: primary.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(Icons.storefront_rounded,
+                  size: 18.r, color: primary),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Marketplace Access',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Open SOS Farmer app to buy & sell crops',
+                    style: TextStyle(
+                        fontSize: 11.sp, color: textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.open_in_new_rounded,
+                size: 14.r, color: textSecondary),
+          ],
+        ),
+      ),
     );
   }
 }

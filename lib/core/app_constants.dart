@@ -4,7 +4,6 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class AppConstants {
   static const String appName        = 'SOSSSS Logistics';
-  static const String baseUrl        = 'https://api.sossss.net/api/logistics/';
   static const String v2BaseUrl      = 'https://api.sossss.net/api/logistics/v2/';
   static const int    connectTimeout = 30;
   static const int    receiveTimeout = 30;
@@ -12,16 +11,6 @@ class AppConstants {
 }
 
 class StorageKeys {
-  // Legacy
-  static const String accessToken      = 'driver_access_token';
-  static const String driverName       = 'driver_name';
-  static const String driverPhone      = 'driver_phone';
-  static const String driverId         = 'driver_id';
-  static const String ownerAccessToken = 'owner_access_token';
-  static const String ownerName        = 'owner_name';
-  static const String ownerPhone       = 'owner_phone';
-  static const String ownerId          = 'owner_id';
-  static const String userRole         = 'user_role';
   // V2
   static const String v2Token        = 'v2_access_token';
   static const String v2UserId       = 'v2_user_id';
@@ -42,16 +31,10 @@ class UserRole {
 }
 
 class AppRoutes {
-  // Legacy
   static const String splash         = '/';
   static const String roleSelection  = '/role-selection';
   static const String login          = '/login';
   static const String home           = '/home';
-  static const String ownerHome      = '/owner-home';
-  static const String activeOffer    = '/active-offer';
-  static const String activeDelivery = '/active-delivery';
-  static const String pickupOtp      = '/pickup-otp';
-  static const String dropOtp        = '/drop-otp';
   // V2
   static const String v2PasswordReset  = '/v2/password-reset';
   static const String v2NotAnOwner     = '/v2/not-an-owner';

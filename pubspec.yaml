@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  sos_auth:
+    path: ../packages/sos_auth
   cupertino_icons: ^1.0.8
   flutter_screenutil: ^5.9.3
   flutter_bloc: ^9.1.1
@@ -23,6 +25,7 @@ dependencies:
   cached_network_image: ^3.4.1
   fluttertoast:
   fl_chart: ^0.69.0
+  url_launcher: ^6.3.1
   image_picker: ^1.1.2
   flutter_native_splash: ^2.4.4
   flutter_launcher_icons: ^0.14.4

@@ -2,95 +2,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_constants.dart';
 
-// Sensitive token keys stored in encrypted secure storage.
+// V2 token stored in encrypted secure storage.
 // Non-sensitive metadata (name, phone, roles) stored in SharedPreferences.
 const _secureStorage = FlutterSecureStorage(
   aOptions: AndroidOptions(encryptedSharedPreferences: true),
 );
 
-const _tokenKeys = {
-  StorageKeys.accessToken,
-  StorageKeys.ownerAccessToken,
-  StorageKeys.v2Token,
-};
-
 class AppPrefs {
   static Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
-
-  // ── Driver ───────────────────────────────────────────────────────────────────
-  static Future<void> saveToken(String token) async =>
-      _secureStorage.write(key: StorageKeys.accessToken, value: token);
-
-  static Future<String?> getToken() async =>
-      _secureStorage.read(key: StorageKeys.accessToken);
-
-  static Future<void> saveDriverInfo({
-    required String name,
-    required String phone,
-    required String id,
-  }) async {
-    final p = await _prefs;
-    await p.setString(StorageKeys.driverName, name);
-    await p.setString(StorageKeys.driverPhone, phone);
-    await p.setString(StorageKeys.driverId, id);
-  }
-
-  static Future<Map<String, String?>> getDriverInfo() async {
-    final p = await _prefs;
-    return {
-      'name':  p.getString(StorageKeys.driverName),
-      'phone': p.getString(StorageKeys.driverPhone),
-      'id':    p.getString(StorageKeys.driverId),
-    };
-  }
-
-  // ── Owner ────────────────────────────────────────────────────────────────────
-  static Future<void> saveOwnerToken(String token) async =>
-      _secureStorage.write(key: StorageKeys.ownerAccessToken, value: token);
-
-  static Future<String?> getOwnerToken() async =>
-      _secureStorage.read(key: StorageKeys.ownerAccessToken);
-
-  static Future<void> saveOwnerInfo({
-    required String name,
-    required String phone,
-    required String id,
-  }) async {
-    final p = await _prefs;
-    await p.setString(StorageKeys.ownerName, name);
-    await p.setString(StorageKeys.ownerPhone, phone);
-    await p.setString(StorageKeys.ownerId, id);
-  }
-
-  static Future<Map<String, String?>> getOwnerInfo() async {
-    final p = await _prefs;
-    return {
-      'name':  p.getString(StorageKeys.ownerName),
-      'phone': p.getString(StorageKeys.ownerPhone),
-      'id':    p.getString(StorageKeys.ownerId),
-    };
-  }
-
-  // ── Role ─────────────────────────────────────────────────────────────────────
-  static Future<void> saveUserRole(String role) async =>
-      (await _prefs).setString(StorageKeys.userRole, role);
-
-  static Future<String?> getUserRole() async =>
-      (await _prefs).getString(StorageKeys.userRole);
-
-  // ── Active token (role-aware, used by ApiService) ────────────────────────────
-  static Future<String?> getActiveToken() async {
-    final role = await getUserRole();
-    return role == UserRole.owner ? getOwnerToken() : getToken();
-  }
-
-  // ── Clear ────────────────────────────────────────────────────────────────────
-  static Future<void> clearAll() async {
-    await (await _prefs).clear();
-    for (final key in _tokenKeys) {
-      await _secureStorage.delete(key: key);
-    }
-  }
 
   // ── V2 Session ───────────────────────────────────────────────────────────────
   static Future<void> saveV2Session({
@@ -163,5 +82,11 @@ class AppPrefs {
     ]) {
       await p.remove(key);
     }
+  }
+
+  // ── Clear all (full wipe) ─────────────────────────────────────────────────
+  static Future<void> clearAll() async {
+    await (await _prefs).clear();
+    await _secureStorage.delete(key: StorageKeys.v2Token);
   }
 }
