@@ -4,6 +4,102 @@ import '../core/app_constants.dart';
 import 'shared_preference.dart';
 // ignore_for_file: prefer_single_quotes
 
+/// Unified V2 API client — for /api/v2/* endpoints (capGuard-protected).
+/// Uses same JWT token as [ApiServiceV2] but targets the unified API base.
+class ApiServiceUnified {
+  static ApiServiceUnified? _instance;
+  late final Dio _dio;
+
+  ApiServiceUnified._() {
+    _dio = Dio(BaseOptions(
+      baseUrl: 'https://api.sossss.net/api/v2/',
+      connectTimeout: const Duration(seconds: AppConstants.connectTimeout),
+      receiveTimeout: const Duration(seconds: AppConstants.receiveTimeout),
+      validateStatus: (_) => true,
+    ));
+
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        if (options.extra['withAuth'] != false) {
+          final token = await AppPrefs.getV2Token();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+        }
+        handler.next(options);
+      },
+    ));
+
+    _dio.interceptors.add(InterceptorsWrapper(
+      onResponse: (response, handler) async {
+        if (response.statusCode == 401) {
+          await ApiServiceV2._handleUnauthorized();
+        }
+        handler.next(response);
+      },
+    ));
+
+    _dio.interceptors.add(PrettyDioLogger(requestBody: true, responseBody: true));
+  }
+
+  static ApiServiceUnified get instance => _instance ??= ApiServiceUnified._();
+
+  Future<Map<String, dynamic>> post(
+    String endpoint, {
+    Map<String, dynamic>? data,
+    bool withAuth = true,
+  }) async {
+    try {
+      final res = await _dio.post(
+        endpoint,
+        data: FormData.fromMap(data ?? {}),
+        options: withAuth ? null : Options(extra: {'withAuth': false}),
+      );
+      return res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : {'status': 'error', 'message': 'Invalid response'};
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    Map<String, dynamic>? params,
+    bool withAuth = true,
+  }) async {
+    try {
+      final res = await _dio.get(
+        endpoint,
+        queryParameters: params,
+        options: withAuth ? null : Options(extra: {'withAuth': false}),
+      );
+      return res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : {'status': 'error', 'message': 'Invalid response'};
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
+  // --- Named delivery feed helpers ---
+
+  Future<Map<String, dynamic>> getDeliveryFeed() =>
+      get('owner/delivery-feed');
+
+  Future<Map<String, dynamic>> getDeliveryFeedDetail(int id) =>
+      get('owner/delivery-feed/$id');
+
+  Future<Map<String, dynamic>> submitDeliveryQuote(int requestId, int vehicleId) =>
+      post('owner/delivery-quote', data: {'request_id': requestId, 'vehicle_id': vehicleId});
+
+  Future<Map<String, dynamic>> getMyQuotes() =>
+      get('owner/my-quotes');
+
+  Future<Map<String, dynamic>> getQuoteVehicles(int requestId) =>
+      post('owner/quote-vehicles', data: {'request_id': requestId});
+}
+
 /// V2 API client — JWT auth with custom interceptors.
 ///
 /// Token attachment: custom onRequest interceptor checks `extra['withAuth']`

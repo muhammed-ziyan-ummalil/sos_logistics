@@ -16,6 +16,9 @@ import 'Bloc/Fleet/fleet_dashboard_cubit.dart';
 import 'Bloc/Fleet/driver_detail_cubit.dart';
 import 'Bloc/OwnerWallet/owner_wallet_cubit.dart';
 import 'Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
+import 'Bloc/DeliveryFeed/delivery_feed_cubit.dart';
+import 'Bloc/QuoteSubmit/quote_submit_cubit.dart';
+import 'Bloc/MyQuotes/my_quotes_cubit.dart';
 import 'Screens/owner/owner_main_screen.dart';
 import 'Screens/auth/splash_screen.dart';
 import 'Screens/auth/role_selection_screen.dart';
@@ -75,6 +78,9 @@ class SOSLogisticsApp extends StatelessWidget {
         BlocProvider(create: (_) => DriverDetailCubit()),
         BlocProvider(create: (_) => OwnerWalletCubit()),
         BlocProvider(create: (_) => OwnerBankDetailsCubit()),
+        BlocProvider(create: (_) => DeliveryFeedCubit()),
+        BlocProvider(create: (_) => QuoteSubmitCubit()),
+        BlocProvider(create: (_) => MyQuotesCubit()),
       ],
       child: ScreenUtilInit(
         designSize: const Size(390, 844),
