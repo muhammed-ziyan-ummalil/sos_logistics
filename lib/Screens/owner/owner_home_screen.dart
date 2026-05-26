@@ -7,6 +7,8 @@ import '../../Bloc/Fleet/fleet_dashboard_state.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
 import '../../utility/shared_preference.dart';
+import 'delivery/delivery_feed_screen.dart';
+import 'delivery/my_quotes_screen.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -843,6 +845,71 @@ class _ManageShortcuts extends StatelessWidget {
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w600,
                               color: accentColor)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10.h),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DeliveryFeedScreen()),
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                        color: AppColors.success.withOpacity(0.25)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.local_shipping,
+                          color: AppColors.success, size: 22.r),
+                      SizedBox(height: 6.h),
+                      Text('Available Deliveries',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.success)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MyQuotesScreen()),
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                        color: Colors.blue.withOpacity(0.25)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.receipt_long,
+                          color: Colors.blue, size: 22.r),
+                      SizedBox(height: 6.h),
+                      Text('My Quotes',
+                          style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue)),
                     ],
                   ),
                 ),
