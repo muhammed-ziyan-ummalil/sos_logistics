@@ -7,8 +7,7 @@ import '../../../Bloc/DeliveryFeed/delivery_feed_state.dart';
 import '../../../Model/delivery_request_model.dart';
 import '../../../core/app_theme.dart';
 
-// TODO: import detail screen when created in Task 26
-// import 'delivery_request_detail_screen.dart';
+import 'delivery_request_detail_screen.dart';
 
 class DeliveryFeedScreen extends StatefulWidget {
   const DeliveryFeedScreen({super.key});
@@ -251,10 +250,13 @@ class _DeliveryRequestCard extends StatelessWidget {
       padding: EdgeInsets.only(bottom: 12.h),
       child: GestureDetector(
         onTap: () {
-          // TODO: Navigate to DeliveryRequestDetailScreen (Task 26)
-          // Navigator.push(context, MaterialPageRoute(
-          //   builder: (_) => DeliveryRequestDetailScreen(requestId: request.id),
-          // ));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  DeliveryRequestDetailScreen(requestId: request.id),
+            ),
+          );
         },
         child: Container(
           decoration: BoxDecoration(
