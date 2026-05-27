@@ -14,6 +14,11 @@ class ActiveDeliveryLoaded    extends ActiveDeliveryState {
   @override List<Object?> get props => [delivery];
 }
 class ActiveDeliveryCompleted extends ActiveDeliveryState {}
+class ActiveDeliveryOtpReady  extends ActiveDeliveryState {
+  final bool isPickup;
+  ActiveDeliveryOtpReady({required this.isPickup});
+  @override List<Object?> get props => [isPickup];
+}
 class ActiveDeliveryOtpError  extends ActiveDeliveryState {
   final String message;
   final bool   isDispute;

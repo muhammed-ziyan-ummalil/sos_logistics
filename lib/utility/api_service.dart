@@ -201,6 +201,26 @@ class ApiServiceV2 {
     }
   }
 
+  // --- On-demand OTP methods ---
+
+  Future<Map<String, dynamic>> generatePickupOtp(int deliveryId) =>
+      post('delivery/generate-pickup-otp', data: {'delivery_id': deliveryId});
+
+  Future<Map<String, dynamic>> verifyPickupOtp(int deliveryId, String otp) =>
+      post('delivery/verify-pickup-otp', data: {'delivery_id': deliveryId, 'otp': otp});
+
+  Future<Map<String, dynamic>> generateDropOtp(int deliveryId) =>
+      post('delivery/generate-drop-otp', data: {'delivery_id': deliveryId});
+
+  Future<Map<String, dynamic>> verifyDropOtp(int deliveryId, String otp) =>
+      post('delivery/verify-drop-otp', data: {'delivery_id': deliveryId, 'otp': otp});
+
+  Future<Map<String, dynamic>> resendPickupOtp(int deliveryId) =>
+      post('delivery/resend-pickup-otp', data: {'delivery_id': deliveryId});
+
+  Future<Map<String, dynamic>> resendDropOtp(int deliveryId) =>
+      post('delivery/resend-drop-otp', data: {'delivery_id': deliveryId});
+
   Future<Map<String, dynamic>> postMultipart(
     String endpoint,
     Map<String, dynamic> fields, {

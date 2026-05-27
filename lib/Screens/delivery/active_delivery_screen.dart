@@ -66,98 +66,251 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen> {
   }
 }
 
-class _DeliveryDetail extends StatelessWidget {
+class _DeliveryDetail extends StatefulWidget {
   final ActiveDelivery delivery;
   const _DeliveryDetail({required this.delivery});
 
   @override
+  State<_DeliveryDetail> createState() => _DeliveryDetailState();
+}
+
+class _DeliveryDetailState extends State<_DeliveryDetail> {
+  bool _pickupOtpGenerated = false;
+  bool _dropOtpGenerated   = false;
+  final _pickupOtpController = TextEditingController();
+  final _dropOtpController   = TextEditingController();
+
+  @override
+  void dispose() {
+    _pickupOtpController.dispose();
+    _dropOtpController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final delivery    = widget.delivery;
     final isAssigned  = delivery.state == 'Assigned';
     final isInTransit = delivery.state == 'InTransit' || delivery.state == 'PickedUp';
 
-    return ListView(
-      padding: EdgeInsets.all(20.r),
-      children: [
-        // State badge
-        Center(
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
-            decoration: BoxDecoration(
-              color: _stateColor(delivery.state).withOpacity(0.15),
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(color: _stateColor(delivery.state).withOpacity(0.4)),
-            ),
-            child: Text(
-              delivery.state,
-              style: TextStyle(
-                color: _stateColor(delivery.state),
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
+    return BlocListener<ActiveDeliveryCubit, ActiveDeliveryState>(
+      listener: (ctx, state) {
+        if (state is ActiveDeliveryOtpReady) {
+          setState(() {
+            if (state.isPickup) {
+              _pickupOtpGenerated = true;
+            } else {
+              _dropOtpGenerated = true;
+            }
+          });
+        } else if (state is ActiveDeliveryOtpError) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+          );
+        }
+      },
+      child: ListView(
+        padding: EdgeInsets.all(20.r),
+        children: [
+          // State badge
+          Center(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: _stateColor(delivery.state).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(color: _stateColor(delivery.state).withOpacity(0.4)),
+              ),
+              child: Text(
+                delivery.state,
+                style: TextStyle(
+                  color: _stateColor(delivery.state),
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
-        ),
-        SizedBox(height: 24.h),
+          SizedBox(height: 24.h),
 
-        // Route card
-        Container(
-          padding: EdgeInsets.all(16.r),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: AppColors.divider),
+          // Route card
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Column(
+              children: [
+                _AddressRow(label: 'Pickup', address: delivery.pickupAddress, color: AppColors.success),
+                Divider(color: AppColors.divider, height: 24.h),
+                _AddressRow(label: 'Drop', address: delivery.dropAddress, color: AppColors.error),
+              ],
+            ),
           ),
-          child: Column(
+          SizedBox(height: 16.h),
+
+          // Stats
+          Row(
             children: [
-              _AddressRow(label: 'Pickup', address: delivery.pickupAddress, color: AppColors.success),
-              Divider(color: AppColors.divider, height: 24.h),
-              _AddressRow(label: 'Drop', address: delivery.dropAddress, color: AppColors.error),
+              _InfoCard(label: 'Distance', value: '${delivery.distanceKm.toStringAsFixed(1)} km'),
+              SizedBox(width: 12.w),
+              _InfoCard(label: 'Fee', value: '₹${delivery.fee.toStringAsFixed(2)}'),
+              SizedBox(width: 12.w),
+              _InfoCard(label: 'Type', value: _typeLabel(delivery.deliveryType)),
             ],
           ),
-        ),
-        SizedBox(height: 16.h),
+          SizedBox(height: 32.h),
 
-        // Stats
-        Row(
-          children: [
-            _InfoCard(label: 'Distance', value: '${delivery.distanceKm.toStringAsFixed(1)} km'),
-            SizedBox(width: 12.w),
-            _InfoCard(label: 'Fee', value: '₹${delivery.fee.toStringAsFixed(2)}'),
-            SizedBox(width: 12.w),
-            _InfoCard(label: 'Type', value: _typeLabel(delivery.deliveryType)),
+          // ── Pickup phase ────────────────────────────────────────────────
+          if (isAssigned) ...[
+            if (!_pickupOtpGenerated)
+              ElevatedButton.icon(
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: const Text('Ready for Pickup'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: () => context.read<ActiveDeliveryCubit>().generatePickupOtp(
+                      deliveryId: delivery.id,
+                    ),
+              )
+            else ...[
+              Text(
+                'Enter Pickup OTP',
+                style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8.h),
+              TextField(
+                controller: _pickupOtpController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 12,
+                ),
+                decoration: InputDecoration(
+                  hintText: '------',
+                  counterText: '',
+                  hintStyle: TextStyle(
+                      color: AppColors.divider,
+                      fontSize: 28.sp,
+                      letterSpacing: 12),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  onPressed: () {
+                    final otp = _pickupOtpController.text.trim();
+                    if (otp.length != 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Enter the 6-digit OTP.')),
+                      );
+                      return;
+                    }
+                    context.read<ActiveDeliveryCubit>().confirmPickup(
+                          deliveryId: delivery.id,
+                          otp: otp,
+                        );
+                  },
+                  child: const Text('Confirm Pickup'),
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Center(
+                child: TextButton(
+                  onPressed: () => context.read<ActiveDeliveryCubit>().resendPickupOtp(
+                        deliveryId: delivery.id,
+                      ),
+                  child: Text('Resend OTP',
+                      style: TextStyle(color: AppColors.accent, fontSize: 13.sp)),
+                ),
+              ),
+            ],
           ],
-        ),
-        SizedBox(height: 32.h),
 
-        // Action button
-        if (isAssigned)
-          ElevatedButton.icon(
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            label: const Text('Enter Pickup OTP'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () => _showOtpSheet(context, isPickup: true),
-          ),
-
-        if (isInTransit)
-          ElevatedButton.icon(
-            icon: const Icon(Icons.check_circle_rounded),
-            label: const Text('Confirm Delivery OTP'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-            onPressed: () => _showOtpSheet(context, isPickup: false),
-          ),
-      ],
-    );
-  }
-
-  void _showOtpSheet(BuildContext context, {required bool isPickup}) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24.r))),
-      isScrollControlled: true,
-      builder: (_) => OtpEntrySheet(
-        deliveryId: delivery.id,
-        isPickup:   isPickup,
+          // ── Drop phase ──────────────────────────────────────────────────
+          if (isInTransit) ...[
+            if (!_dropOtpGenerated)
+              ElevatedButton.icon(
+                icon: const Icon(Icons.check_circle_rounded),
+                label: const Text('Ready to Deliver'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                onPressed: () => context.read<ActiveDeliveryCubit>().generateDropOtp(
+                      deliveryId: delivery.id,
+                    ),
+              )
+            else ...[
+              Text(
+                'Enter Delivery OTP',
+                style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8.h),
+              TextField(
+                controller: _dropOtpController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 12,
+                ),
+                decoration: InputDecoration(
+                  hintText: '------',
+                  counterText: '',
+                  hintStyle: TextStyle(
+                      color: AppColors.divider,
+                      fontSize: 28.sp,
+                      letterSpacing: 12),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                  onPressed: () {
+                    final otp = _dropOtpController.text.trim();
+                    if (otp.length != 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Enter the 6-digit OTP.')),
+                      );
+                      return;
+                    }
+                    context.read<ActiveDeliveryCubit>().confirmDelivery(
+                          deliveryId: delivery.id,
+                          otp: otp,
+                        );
+                  },
+                  child: const Text('Confirm Delivery'),
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Center(
+                child: TextButton(
+                  onPressed: () => context.read<ActiveDeliveryCubit>().resendDropOtp(
+                        deliveryId: delivery.id,
+                      ),
+                  child: Text('Resend OTP',
+                      style: TextStyle(color: AppColors.accent, fontSize: 13.sp)),
+                ),
+              ),
+            ],
+          ],
+        ],
       ),
     );
   }
