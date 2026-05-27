@@ -3,15 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../Bloc/Availability/availability_cubit.dart';
 import '../../Bloc/Availability/availability_state.dart';
-import '../../Bloc/Offer/offer_cubit.dart';
-import '../../Bloc/Offer/offer_state.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
 import '../delivery/active_delivery_screen.dart';
 import '../history/history_screen.dart';
-import '../offer/offer_screen.dart';
 import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -42,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _poll() {
     if (!mounted) return;
-    context.read<OfferCubit>().fetchActiveOffer();
     context.read<ActiveDeliveryCubit>().fetchActiveDelivery();
   }
 
@@ -74,7 +70,6 @@ class _DashboardTab extends StatelessWidget {
         color: AppTheme.accent(context),
         backgroundColor: AppTheme.card(context),
         onRefresh: () async {
-          context.read<OfferCubit>().fetchActiveOffer();
           context.read<ActiveDeliveryCubit>().fetchActiveDelivery();
         },
         child: ListView(
@@ -123,28 +118,8 @@ class _DashboardTab extends StatelessWidget {
               },
             ),
 
-            // ── Offer card ───────────────────────────────────────────────
-            BlocBuilder<OfferCubit, OfferState>(
-              builder: (ctx, state) {
-                if (state is OfferAvailable) {
-                  return OfferCard(
-                    offer: state.offer,
-                    onAccept: () => ctx.read<OfferCubit>().acceptOffer(state.offer.offerId),
-                    onReject: () => ctx.read<OfferCubit>().rejectOffer(state.offer.offerId),
-                  );
-                }
-                if (state is OfferAccepted) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    Navigator.push(
-                      ctx,
-                      MaterialPageRoute(builder: (_) => const ActiveDeliveryScreen()),
-                    );
-                    ctx.read<OfferCubit>().fetchActiveOffer();
-                  });
-                }
-                return _WaitingCard();
-              },
-            ),
+            // Drivers now receive delivery jobs via the owner quote marketplace
+            _WaitingCard(),
           ],
         ),
       ),
