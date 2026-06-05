@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_state.dart';
 import '../../../core/app_constants.dart';
@@ -47,20 +48,71 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     if (file != null) setState(() => _kycDocPath = file.path);
   }
 
-  void _submit() {
+  bool _isSendingOtp = false;
+
+  void _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSendingOtp = true);
+    try {
+      final authService  = context.read<AuthCubit>().authService;
+      final tokenStorage = context.read<AuthCubit>().tokenStorage;
+      final session = await authService.sendRegistrationOtps(
+        email: _emailCtr.text.trim(),
+        phone: _phoneCtr.text.trim(),
+      );
+      final pendingSession = PendingRegistrationSession(
+        sessionId:  session.sessionId,
+        email:      _emailCtr.text.trim(),
+        phone:      _phoneCtr.text.trim(),
+        expiresAt:  session.expiresAt,
+        name:       _nameCtr.text.trim(),
+        password:   _passCtr.text.trim(),
+        capability: 'fleet_owner',
+        extra: {
+          'business_name':      _bizNameCtr.text.trim(),
+          'vehicle_reg_number': _vehicleRegCtr.text.trim(),
+          'vehicle_type':       _vehicleType,
+          'capacity_kg':        double.tryParse(_capacityCtr.text.trim()) ?? 0.0,
+          'kyc_doc_path':       _kycDocPath ?? '',
+        },
+      );
+      await tokenStorage.savePendingRegistration(pendingSession);
+      if (!mounted) return;
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => DualOtpCubit(authService: authService, tokenStorage: tokenStorage),
+          child: DualOtpVerificationScreen(
+            session: pendingSession,
+            onBothVerified: (sessionId) => _completeRegistration(pendingSession, sessionId),
+          ),
+        ),
+      ));
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send OTPs. Please try again.')));
+    } finally {
+      if (mounted) setState(() => _isSendingOtp = false);
+    }
+  }
+
+  void _completeRegistration(PendingRegistrationSession pending, String sessionId) {
     context.read<OwnerRegisterCubit>().register(
-      name:              _nameCtr.text.trim(),
-      email:             _emailCtr.text.trim(),
-      phone:             _phoneCtr.text.trim(),
-      password:          _passCtr.text.trim(),
-      businessName:      _bizNameCtr.text.trim(),
-      kycDocPath:        _kycDocPath,
-      vehicleRegNumber:  _vehicleRegCtr.text.trim(),
-      vehicleType:       _vehicleType,
-      capacityKg: _capacityCtr.text.isNotEmpty
-          ? double.tryParse(_capacityCtr.text.trim())
-          : null,
+      name:             pending.name,
+      email:            pending.email,
+      phone:            pending.phone,
+      password:         pending.password,
+      sessionId:        sessionId,
+      businessName:     pending.extra['business_name'] as String?,
+      kycDocPath:       (pending.extra['kyc_doc_path'] as String?)?.isEmpty == true
+                          ? null
+                          : pending.extra['kyc_doc_path'] as String?,
+      vehicleRegNumber: pending.extra['vehicle_reg_number'] as String? ?? '',
+      vehicleType:      pending.extra['vehicle_type'] as String? ?? 'bike',
+      capacityKg:       pending.extra['capacity_kg'] as double?,
     );
   }
 
@@ -294,7 +346,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
 
                 BlocBuilder<OwnerRegisterCubit, OwnerRegisterState>(
                   builder: (_, state) {
-                    final loading = state is OwnerRegisterLoading;
+                    final loading = state is OwnerRegisterLoading || _isSendingOtp;
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

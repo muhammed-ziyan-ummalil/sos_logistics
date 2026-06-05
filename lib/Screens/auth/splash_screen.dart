@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sos_auth/sos_auth.dart';
+import '../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
 
@@ -16,10 +17,50 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Delay slightly for splash visibility, then init auth.
     Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) context.read<AuthCubit>().init();
+      if (mounted) _checkPendingRegistration();
     });
+  }
+
+  Future<void> _checkPendingRegistration() async {
+    final tokenStorage = context.read<AuthCubit>().tokenStorage;
+    final pending      = await tokenStorage.getPendingRegistration();
+
+    if (pending != null && !pending.isExpired) {
+      if (!mounted) return;
+      final authService = context.read<AuthCubit>().authService;
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (ctx) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => DualOtpCubit(
+                  authService: authService, tokenStorage: tokenStorage),
+            ),
+            BlocProvider.value(value: ctx.read<OwnerRegisterCubit>()),
+          ],
+          child: DualOtpVerificationScreen(
+            session: pending,
+            onBothVerified: (sessionId) {
+              ctx.read<OwnerRegisterCubit>().register(
+                name:             pending.name,
+                email:            pending.email,
+                phone:            pending.phone,
+                password:         pending.password,
+                sessionId:        sessionId,
+                businessName:     pending.extra['business_name'] as String?,
+                vehicleRegNumber: pending.extra['vehicle_reg_number'] as String? ?? '',
+                vehicleType:      pending.extra['vehicle_type'] as String? ?? 'bike',
+                capacityKg:       pending.extra['capacity_kg'] as double?,
+              );
+            },
+          ),
+        ),
+      ));
+      return;
+    }
+
+    if (pending != null) await tokenStorage.clearPendingRegistration();
+    if (mounted) context.read<AuthCubit>().init();
   }
 
   void _routeFromAuth(BuildContext context, AuthAuthenticated state) {
