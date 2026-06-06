@@ -9,6 +9,8 @@ import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_state.dart';
 import '../../../core/app_theme.dart';
 import '../../../utility/api_service.dart';
+import '../../../utility/form_validators.dart';
+import '../../../utility/pincode_autofill_field.dart';
 
 class OwnerEditProfileScreen extends StatefulWidget {
   const OwnerEditProfileScreen({super.key});
@@ -354,19 +356,11 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                     ),
 
                     _label('Pincode', textPrimary),
-                    _field(
+                    PincodeAutofillField(
                       controller: _pincodeCtrl,
-                      icon: Icons.pin_drop_outlined,
-                      hint: 'e.g. 560034',
-                      keyboardType: TextInputType.number,
-                      primaryColor: primaryColor,
-                      cardColor: cardColor,
-                      dividerColor: dividerColor,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Pincode is required';
-                        if (v.trim().length < 4) return 'Enter a valid pincode';
-                        return null;
-                      },
+                      cityController: _cityCtrl,
+                      stateController: _stateCtrl,
+                      validator: FormValidators.pincode,
                     ),
 
                     SizedBox(height: 32.h),
