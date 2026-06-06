@@ -16,6 +16,12 @@ class OwnerRegisterCubit extends Cubit<OwnerRegisterState> {
     required String vehicleRegNumber,
     required String vehicleType,
     double? capacityKg,
+    String? gender,
+    String? addressLine,
+    String? area,
+    String? city,
+    String? state,
+    String? pincode,
   }) async {
     emit(OwnerRegisterLoading());
 
@@ -29,21 +35,31 @@ class OwnerRegisterCubit extends Cubit<OwnerRegisterState> {
       'vehicle_type':        vehicleType,
       if (businessName != null && businessName.isNotEmpty) 'business_name': businessName,
       if (capacityKg != null) 'vehicle_capacity_kg': capacityKg,
+      if (gender != null && gender.isNotEmpty) 'gender': gender,
+      if (addressLine != null && addressLine.isNotEmpty) 'address_line': addressLine,
+      if (area != null && area.isNotEmpty) 'area': area,
+      if (city != null && city.isNotEmpty) 'city': city,
+      if (state != null && state.isNotEmpty) 'state': state,
+      if (pincode != null && pincode.isNotEmpty) 'pincode': pincode,
     };
 
     final files = kycDocPath != null ? <String, String>{'kyc_doc': kycDocPath} : null;
 
-    final res = await ApiServiceV2.instance.postMultipart(
-      'owner/register',
-      fields,
-      filePaths: files,
-      withAuth: false,
-    );
+    try {
+      final res = await ApiServiceV2.instance.postMultipart(
+        'owner/register',
+        fields,
+        filePaths: files,
+        withAuth: false,
+      );
 
-    if (res['status'] == 'success') {
-      emit(OwnerRegisterSuccess());
-    } else {
-      emit(OwnerRegisterError(res['message'] as String? ?? 'Registration failed.'));
+      if (res['status'] == 'success') {
+        emit(OwnerRegisterSuccess());
+      } else {
+        emit(OwnerRegisterError(res['message'] as String? ?? 'Registration failed.'));
+      }
+    } catch (e) {
+      emit(OwnerRegisterError('Network error. Please try again.'));
     }
   }
 }

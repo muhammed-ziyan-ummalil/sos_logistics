@@ -8,6 +8,8 @@ import '../../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_state.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
+import '../../../utility/pincode_autofill_field.dart';
+import '../../../utility/form_validators.dart';
 
 class OwnerRegisterScreen extends StatefulWidget {
   const OwnerRegisterScreen({super.key});
@@ -31,14 +33,24 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   bool   _obscureConf  = true;
   String _vehicleType  = 'bike';
   String? _kycDocPath;
+  String? _selectedGender;
 
   static const _vehicleTypes = ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'];
+  static const _genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
+  final _addressLineCtrl = TextEditingController();
+  final _areaCtrl        = TextEditingController();
+  final _cityCtrl        = TextEditingController();
+  final _stateCtrl       = TextEditingController();
+  final _pincodeCtrl     = TextEditingController();
 
   @override
   void dispose() {
     _nameCtr.dispose(); _emailCtr.dispose(); _phoneCtr.dispose();
     _passCtr.dispose(); _confPassCtr.dispose(); _bizNameCtr.dispose();
     _vehicleRegCtr.dispose(); _capacityCtr.dispose();
+    _addressLineCtrl.dispose(); _areaCtrl.dispose(); _cityCtrl.dispose();
+    _stateCtrl.dispose(); _pincodeCtrl.dispose();
     super.dispose();
   }
 
@@ -74,6 +86,12 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
           'vehicle_type':       _vehicleType,
           'capacity_kg':        double.tryParse(_capacityCtr.text.trim()) ?? 0.0,
           'kyc_doc_path':       _kycDocPath ?? '',
+          'gender':             (_selectedGender ?? 'male').toLowerCase(),
+          'address_line':       _addressLineCtrl.text.trim(),
+          'area':               _areaCtrl.text.trim(),
+          'city':               _cityCtrl.text.trim(),
+          'state':              _stateCtrl.text.trim(),
+          'pincode':            _pincodeCtrl.text.trim(),
         },
       );
       await tokenStorage.savePendingRegistration(pendingSession);
@@ -100,6 +118,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   }
 
   void _completeRegistration(PendingRegistrationSession pending, String sessionId) {
+    final kycPath = pending.extra['kyc_doc_path'] as String?;
     context.read<OwnerRegisterCubit>().register(
       name:             pending.name,
       email:            pending.email,
@@ -107,12 +126,16 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
       password:         pending.password,
       sessionId:        sessionId,
       businessName:     pending.extra['business_name'] as String?,
-      kycDocPath:       (pending.extra['kyc_doc_path'] as String?)?.isEmpty == true
-                          ? null
-                          : pending.extra['kyc_doc_path'] as String?,
+      kycDocPath:       (kycPath == null || kycPath.isEmpty) ? null : kycPath,
       vehicleRegNumber: pending.extra['vehicle_reg_number'] as String? ?? '',
       vehicleType:      pending.extra['vehicle_type'] as String? ?? 'bike',
       capacityKg:       pending.extra['capacity_kg'] as double?,
+      gender:           pending.extra['gender'] as String?,
+      addressLine:      pending.extra['address_line'] as String?,
+      area:             pending.extra['area'] as String?,
+      city:             pending.extra['city'] as String?,
+      state:            pending.extra['state'] as String?,
+      pincode:          pending.extra['pincode'] as String?,
     );
   }
 
@@ -219,6 +242,20 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   },
                 ),
                 SizedBox(height: 12.h),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedGender,
+                  dropdownColor: AppColors.card,
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                  decoration: const InputDecoration(
+                    labelText: 'Gender (Optional)',
+                    prefixIcon: Icon(Icons.wc_outlined, color: AppColors.textSecondary),
+                  ),
+                  items: _genderOptions
+                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedGender = v),
+                ),
+                SizedBox(height: 12.h),
                 TextFormField(
                   controller: _passCtr,
                   obscureText: _obscurePass,
@@ -270,6 +307,55 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     labelText: 'Business Name (Optional)',
                     prefixIcon: Icon(Icons.business_outlined, color: AppColors.textSecondary),
                   ),
+                ),
+
+                // Address
+                _sectionLabel('ADDRESS'),
+                TextFormField(
+                  controller: _addressLineCtrl,
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                  decoration: const InputDecoration(
+                    labelText: 'Flat / Building / Street',
+                    prefixIcon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                TextFormField(
+                  controller: _areaCtrl,
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                  decoration: const InputDecoration(
+                    labelText: 'Area / Locality',
+                    prefixIcon: Icon(Icons.place_outlined, color: AppColors.textSecondary),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Row(children: [
+                  Expanded(child: TextFormField(
+                    controller: _cityCtrl,
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'City',
+                      prefixIcon: Icon(Icons.location_city_outlined, color: AppColors.textSecondary),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'City required' : null,
+                  )),
+                  SizedBox(width: 12.w),
+                  Expanded(child: TextFormField(
+                    controller: _stateCtrl,
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'State',
+                      prefixIcon: Icon(Icons.map_outlined, color: AppColors.textSecondary),
+                    ),
+                  )),
+                ]),
+                SizedBox(height: 12.h),
+                PincodeAutofillField(
+                  controller: _pincodeCtrl,
+                  cityController: _cityCtrl,
+                  stateController: _stateCtrl,
+                  validator: FormValidators.pincode,
                 ),
 
                 // KYC
