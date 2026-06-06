@@ -7,6 +7,7 @@ class PincodeAutofillField extends StatefulWidget {
   final TextEditingController controller;
   final TextEditingController cityController;
   final TextEditingController stateController;
+  final TextEditingController? areaController;
   final String? Function(String?)? validator;
 
   const PincodeAutofillField({
@@ -14,6 +15,7 @@ class PincodeAutofillField extends StatefulWidget {
     required this.controller,
     required this.cityController,
     required this.stateController,
+    this.areaController,
     this.validator,
   });
 
@@ -39,8 +41,9 @@ class _PincodeAutofillFieldState extends State<PincodeAutofillField> {
           orElse: () => null,
         );
         if (office != null && mounted) {
-          widget.cityController.text = office['District'] ?? '';
-          widget.stateController.text = office['State'] ?? '';
+          widget.cityController.text  = office['District'] ?? '';
+          widget.stateController.text = office['State']    ?? '';
+          widget.areaController?.text = (office['Name']    ?? '').toString();
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

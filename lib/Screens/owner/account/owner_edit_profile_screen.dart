@@ -360,6 +360,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                       controller: _pincodeCtrl,
                       cityController: _cityCtrl,
                       stateController: _stateCtrl,
+                      areaController: _areaCtrl,
                       validator: FormValidators.pincode,
                     ),
 

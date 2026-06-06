@@ -355,6 +355,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   controller: _pincodeCtrl,
                   cityController: _cityCtrl,
                   stateController: _stateCtrl,
+                  areaController: _areaCtrl,
                   validator: FormValidators.pincode,
                 ),
 
