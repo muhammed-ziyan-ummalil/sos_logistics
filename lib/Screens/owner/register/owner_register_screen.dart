@@ -311,6 +311,14 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
 
                 // Address
                 _sectionLabel('ADDRESS'),
+                PincodeAutofillField(
+                  controller: _pincodeCtrl,
+                  cityController: _cityCtrl,
+                  stateController: _stateCtrl,
+                  areaController: _areaCtrl,
+                  validator: FormValidators.pincode,
+                ),
+                SizedBox(height: 12.h),
                 TextFormField(
                   controller: _addressLineCtrl,
                   style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
@@ -350,14 +358,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     ),
                   )),
                 ]),
-                SizedBox(height: 12.h),
-                PincodeAutofillField(
-                  controller: _pincodeCtrl,
-                  cityController: _cityCtrl,
-                  stateController: _stateCtrl,
-                  areaController: _areaCtrl,
-                  validator: FormValidators.pincode,
-                ),
 
                 // KYC
                 _sectionLabel('KYC DOCUMENT'),
