@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -20,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
-  bool _polled = false;
+  Timer? _pollTimer;
 
   final List<Widget> _pages = const [
     _DashboardTab(),
@@ -31,10 +33,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    if (!_polled) {
-      _polled = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _poll());
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _poll());
+    // Live-refresh the active-delivery banner so a newly assigned job appears
+    // without the driver leaving and re-entering the home screen.
+    _pollTimer = Timer.periodic(const Duration(seconds: 20), (_) => _poll());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   void _poll() {

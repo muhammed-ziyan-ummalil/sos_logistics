@@ -64,16 +64,16 @@ class _OwnerAnalyticsScreenState extends State<OwnerAnalyticsScreen> {
             performance = state.performance;
           }
 
-          final totalDrivers = summary['total_drivers'] as int? ?? 0;
-          final activeDrivers = summary['active_drivers'] as int? ?? 0;
-          final onlineDrivers = summary['online_drivers'] as int? ?? 0;
-          final activeDeliveries = summary['active_deliveries'] as int? ?? 0;
+          final totalDrivers = (summary['total_drivers'] as num?)?.toInt() ?? 0;
+          final activeDrivers = (summary['active_drivers'] as num?)?.toInt() ?? 0;
+          final onlineDrivers = (summary['online_drivers'] as num?)?.toInt() ?? 0;
+          final activeDeliveries = (summary['active_deliveries'] as num?)?.toInt() ?? 0;
           final todayEarnings =
               (summary['today_earnings'] as num?)?.toDouble() ?? 0.0;
           final acceptanceRate =
               (performance['acceptance_rate'] as num?)?.toDouble() ?? 0.0;
-          final completedJobs = performance['completed_jobs'] as int? ?? 0;
-          final missedJobs = performance['missed_jobs'] as int? ?? 0;
+          final completedJobs = (performance['completed_jobs'] as num?)?.toInt() ?? 0;
+          final missedJobs = (performance['missed_jobs'] as num?)?.toInt() ?? 0;
 
           return RefreshIndicator(
             color: accentColor,
@@ -570,8 +570,8 @@ class _DriverAnalyticsRow extends StatelessWidget {
         driver['is_online'] == 1 ||
         driver['is_online'] == '1';
     final stats = driver['performance'] as Map? ?? driver['stats'] as Map? ?? {};
-    final completed = stats['completed_jobs'] as int? ?? 0;
-    final missed = stats['missed_jobs'] as int? ?? 0;
+    final completed = (stats['completed_jobs'] as num?)?.toInt() ?? 0;
+    final missed = (stats['missed_jobs'] as num?)?.toInt() ?? 0;
     final total = completed + missed;
     final rate = total > 0 ? (completed / total * 100) : 0.0;
 
@@ -946,7 +946,7 @@ class _DriverBarChart extends StatelessWidget {
     // Build (name, completed) pairs, sort by completed desc, top 6
     final items = drivers.map((d) {
       final stats = d['performance'] as Map? ?? d['stats'] as Map? ?? {};
-      final completed = stats['completed_jobs'] as int? ?? 0;
+      final completed = (stats['completed_jobs'] as num?)?.toInt() ?? 0;
       final name = d['name'] as String? ?? '?';
       return _ChartItem(name: name, value: completed);
     }).toList()

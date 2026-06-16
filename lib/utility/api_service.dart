@@ -157,8 +157,10 @@ class ApiServiceV2 {
     final token = await AppPrefs.getV2Token();
     if (token == null || token.isEmpty) return; // not a session expiry — ignore
     await AppPrefs.clearV2();
+    // Route to role selection (not login) so an owner whose session expired
+    // is not forced into the driver-login framing (login defaults role=driver).
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
-      AppRoutes.login,
+      AppRoutes.roleSelection,
       (_) => false,
     );
   }

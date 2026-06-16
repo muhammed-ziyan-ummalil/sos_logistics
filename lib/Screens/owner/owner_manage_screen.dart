@@ -287,7 +287,9 @@ class _VehiclesManageCard extends StatelessWidget {
               if (state is OwnerVehiclesLoaded) {
                 total = state.vehicles.length;
                 assigned = state.vehicles
-                    .where((v) => v['assigned_driver_id'] != null)
+                    .where((v) =>
+                        v['assigned_driver'] != null ||
+                        v['assigned_driver_id'] != null)
                     .length;
                 available = total - assigned;
               }
@@ -340,7 +342,11 @@ class _VehiclesManageCard extends StatelessWidget {
                     label: 'Add Vehicle',
                     isPrimary: false,
                     isDark: isDark,
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.v2VehicleList),
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.v2VehicleList,
+                      arguments: {'openAdd': true},
+                    ),
                   ),
                 ),
               ],

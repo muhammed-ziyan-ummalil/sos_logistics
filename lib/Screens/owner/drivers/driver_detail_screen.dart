@@ -1026,9 +1026,9 @@ class _PerformanceRow extends StatelessWidget {
         {};
     final acceptanceRate =
         (perf['acceptance_rate'] as num?)?.toDouble() ?? 0.0;
-    final missedJobs = perf['missed_jobs'] as int? ?? 0;
-    final completedJobs = perf['completed_jobs'] as int? ?? 0;
-    final totalJobs = perf['total_jobs'] as int? ?? 0;
+    final missedJobs = (perf['missed_jobs'] as num?)?.toInt() ?? 0;
+    final completedJobs = (perf['completed_jobs'] as num?)?.toInt() ?? 0;
+    final totalJobs = (perf['total_jobs'] as num?)?.toInt() ?? 0;
 
     return Row(
       children: [

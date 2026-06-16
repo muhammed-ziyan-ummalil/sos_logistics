@@ -208,7 +208,7 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                       onPressed: () =>
                                           ctx.read<QuoteSubmitCubit>().submitQuote(
                                                 requestId,
-                                                v['id'] as int,
+                                                int.tryParse('${v['id']}') ?? 0,
                                               ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: accentColor,

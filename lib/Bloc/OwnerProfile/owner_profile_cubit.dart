@@ -34,7 +34,8 @@ class OwnerProfileCubit extends Cubit<OwnerProfileState> {
 
     final fields = <String, dynamic>{
       'name': name,
-      if (gender != null && gender.isNotEmpty) 'gender': gender,
+      // Normalize lowercase to match registration ('male'/'female'/...).
+      if (gender != null && gender.isNotEmpty) 'gender': gender.toLowerCase(),
       if (addressLine != null) 'address_line': addressLine,
       if (area != null) 'area': area,
       if (city != null) 'city': city,

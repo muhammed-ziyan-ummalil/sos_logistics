@@ -18,6 +18,14 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
   void initState() {
     super.initState();
     context.read<OwnerVehiclesCubit>().fetchVehicles();
+    // Auto-open the add sheet when navigated here via the "Add Vehicle" action.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map && args['openAdd'] == true && mounted) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        _showAddVehicleSheet(context, isDark);
+      }
+    });
   }
 
   @override

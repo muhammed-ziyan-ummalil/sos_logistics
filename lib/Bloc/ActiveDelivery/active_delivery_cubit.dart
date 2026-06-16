@@ -70,6 +70,8 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
     final res = await ApiServiceV2.instance.verifyDropOtp(deliveryId, otp);
     if (res['status'] == 'success') {
       emit(ActiveDeliveryCompleted());
+      // Re-sync so the home banner clears (server now has no active delivery).
+      await fetchActiveDelivery();
     } else {
       final isDispute = res['code'] == 'DISPUTE';
       emit(ActiveDeliveryOtpError(

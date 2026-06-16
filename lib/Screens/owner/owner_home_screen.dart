@@ -629,8 +629,8 @@ class _PerformanceSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final acceptanceRate =
         (performance['acceptance_rate'] as num?)?.toDouble() ?? 0.0;
-    final missedJobs = performance['missed_jobs'] as int? ?? 0;
-    final completedJobs = performance['completed_jobs'] as int? ?? 0;
+    final missedJobs = (performance['missed_jobs'] as num?)?.toInt() ?? 0;
+    final completedJobs = (performance['completed_jobs'] as num?)?.toInt() ?? 0;
     final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
     final errorColor = isDark ? AppColors.error : AppLightColors.error;
     final rateColor = acceptanceRate >= 80

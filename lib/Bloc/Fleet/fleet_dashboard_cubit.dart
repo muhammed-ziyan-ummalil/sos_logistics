@@ -78,9 +78,9 @@ class FleetDashboardCubit extends Cubit<FleetDashboardState> {
       int totalJobs      = 0;
       for (final d in drivers) {
         final stats = d['performance'] as Map? ?? {};
-        totalCompleted += (stats['completed_jobs'] as int? ?? 0);
-        totalMissed    += (stats['missed_jobs']    as int? ?? 0);
-        totalJobs      += (stats['total_jobs']     as int? ?? 0);
+        totalCompleted += ((stats['completed_jobs'] as num?)?.toInt() ?? 0);
+        totalMissed    += ((stats['missed_jobs']    as num?)?.toInt() ?? 0);
+        totalJobs      += ((stats['total_jobs']     as num?)?.toInt() ?? 0);
       }
       final rate = totalJobs > 0
           ? ((totalCompleted / totalJobs) * 100).clamp(0.0, 100.0)

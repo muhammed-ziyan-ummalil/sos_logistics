@@ -66,9 +66,15 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
     _stateCtrl.text       = (owner['state']          ?? '').toString();
     _pincodeCtrl.text     = (owner['pincode']        ?? '').toString();
     _existingPhotoUrl     = (owner['profile_photo_url'] ?? '').toString();
+    // Backend stores gender lowercase ('male'); options are capitalized.
+    // Match case-insensitively so the dropdown prefills correctly.
     final g = (owner['gender'] ?? '').toString();
-    if (g.isNotEmpty && _genderOptions.contains(g)) {
-      setState(() => _selectedGender = g);
+    if (g.isNotEmpty) {
+      final match = _genderOptions.firstWhere(
+        (o) => o.toLowerCase() == g.toLowerCase(),
+        orElse: () => '',
+      );
+      if (match.isNotEmpty) setState(() => _selectedGender = match);
     }
   }
 
