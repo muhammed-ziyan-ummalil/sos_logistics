@@ -94,7 +94,15 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                 itemCount: state.vehicles.length,
                 itemBuilder: (_, i) => Padding(
                   padding: EdgeInsets.only(bottom: 10.h),
-                  child: _VehicleTile(vehicle: state.vehicles[i], isDark: isDark),
+                  child: _VehicleTile(
+                    vehicle: state.vehicles[i],
+                    isDark: isDark,
+                    onEdit: () => _showAddVehicleSheet(
+                      context,
+                      isDark,
+                      vehicle: state.vehicles[i],
+                    ),
+                  ),
                 ),
               ),
             );
@@ -105,15 +113,34 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     );
   }
 
-  void _showAddVehicleSheet(BuildContext context, bool isDark) {
-    final regCtr          = TextEditingController();
-    final capacityCtr     = TextEditingController();
-    final minFeeCtr       = TextEditingController();
-    final includedKmCtr   = TextEditingController(text: '25');
-    final perKmFeeCtr     = TextEditingController();
-    final maxDistCtr      = TextEditingController();
-    final gstPctCtr       = TextEditingController(text: '12');
-    String selectedType = 'bike';
+  void _showAddVehicleSheet(
+    BuildContext context,
+    bool isDark, {
+    Map<String, dynamic>? vehicle,
+  }) {
+    final isEdit = vehicle != null;
+
+    String fieldText(String key) {
+      final v = vehicle?[key];
+      return v == null ? '' : v.toString();
+    }
+
+    final regCtr          = TextEditingController(text: fieldText('reg_number'));
+    final capacityCtr     = TextEditingController(text: fieldText('capacity_kg'));
+    final minFeeCtr       = TextEditingController(text: fieldText('minimum_fee'));
+    final includedKmCtr   = TextEditingController(
+        text: isEdit ? fieldText('included_distance_km') : '25');
+    final perKmFeeCtr     = TextEditingController(text: fieldText('per_km_fee'));
+    final maxDistCtr      = TextEditingController(
+        text: fieldText('max_delivery_distance_km'));
+    final gstPctCtr       = TextEditingController(
+        text: isEdit ? fieldText('logistic_gst_percent') : '12');
+    const vehicleTypes = ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'];
+    final initialType = (vehicle?['type'] as String?)?.toLowerCase();
+    String selectedType =
+        (initialType != null && vehicleTypes.contains(initialType))
+            ? initialType
+            : 'bike';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -149,16 +176,20 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  Text('Add Vehicle',
+                  Text(isEdit ? 'Edit Vehicle' : 'Add Vehicle',
                       style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
                           color: textPrimary)),
-                  Text('Register a new vehicle to your fleet',
+                  Text(
+                      isEdit
+                          ? 'Update this vehicle\'s details'
+                          : 'Register a new vehicle to your fleet',
                       style: TextStyle(fontSize: 12.sp, color: textSecondary)),
                   SizedBox(height: 16.h),
                   TextFormField(
                     controller: regCtr,
+                    enabled: !isEdit,
                     textCapitalization: TextCapitalization.characters,
                     style: TextStyle(color: textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
@@ -237,7 +268,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                   SizedBox(height: 8.h),
                   Wrap(
                     spacing: 8.w,
-                    children: ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'].map((t) {
+                    children: vehicleTypes.map((t) {
                       final sel = selectedType == t;
                       final primary =
                           isDark ? AppColors.primaryLight : AppLightColors.primary;
@@ -268,7 +299,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         final reg = regCtr.text.trim();
-                        if (reg.isEmpty) return;
+                        if (!isEdit && reg.isEmpty) return;
                         final minFee     = double.tryParse(minFeeCtr.text.trim());
                         final includedKm = double.tryParse(includedKmCtr.text.trim());
                         final perKm      = double.tryParse(perKmFeeCtr.text.trim());
@@ -290,18 +321,31 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         }
                         final cap = double.tryParse(capacityCtr.text.trim());
                         Navigator.pop(sheetCtx);
-                        context.read<OwnerVehiclesCubit>().addVehicle(
-                          regNumber: reg,
-                          type: selectedType,
-                          capacityKg: cap,
-                          minimumFee: minFee,
-                          includedDistanceKm: includedKm,
-                          perKmFee: perKm,
-                          logisticGstPercent: gstPct,
-                          maxDeliveryDistanceKm: maxDist,
-                        );
+                        if (isEdit) {
+                          context.read<OwnerVehiclesCubit>().updateVehicle(
+                            vehicleId: vehicle['id'] as int,
+                            type: selectedType,
+                            capacityKg: cap,
+                            minimumFee: minFee,
+                            includedDistanceKm: includedKm,
+                            perKmFee: perKm,
+                            logisticGstPercent: gstPct,
+                            maxDeliveryDistanceKm: maxDist,
+                          );
+                        } else {
+                          context.read<OwnerVehiclesCubit>().addVehicle(
+                            regNumber: reg,
+                            type: selectedType,
+                            capacityKg: cap,
+                            minimumFee: minFee,
+                            includedDistanceKm: includedKm,
+                            perKmFee: perKm,
+                            logisticGstPercent: gstPct,
+                            maxDeliveryDistanceKm: maxDist,
+                          );
+                        }
                       },
-                      child: const Text('Add Vehicle'),
+                      child: Text(isEdit ? 'Save Changes' : 'Add Vehicle'),
                     ),
                   ),
                 ],
@@ -319,7 +363,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
 class _VehicleTile extends StatelessWidget {
   final Map<String, dynamic> vehicle;
   final bool isDark;
-  const _VehicleTile({required this.vehicle, required this.isDark});
+  final VoidCallback onEdit;
+  const _VehicleTile(
+      {required this.vehicle, required this.isDark, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -408,6 +454,15 @@ class _VehicleTile extends StatelessWidget {
                 ),
               ],
             ],
+          ),
+          SizedBox(width: 4.w),
+          IconButton(
+            onPressed: onEdit,
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(minWidth: 32.r, minHeight: 32.r),
+            tooltip: 'Edit vehicle',
+            icon: Icon(Icons.edit_outlined, size: 18.r, color: textSecondary),
           ),
         ],
       ),

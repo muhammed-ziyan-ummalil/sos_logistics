@@ -98,6 +98,28 @@ class ApiServiceUnified {
 
   Future<Map<String, dynamic>> getQuoteVehicles(int requestId) =>
       post('owner/quote-vehicles', data: {'request_id': requestId});
+
+  // --- On-demand driver OTP methods ---
+  // These resolve to api/v2/delivery/* (capGuard:driver). They live on this
+  // client because the legacy api/logistics/v2/* group does NOT expose them.
+
+  Future<Map<String, dynamic>> generatePickupOtp(int deliveryId) =>
+      post('delivery/generate-pickup-otp', data: {'delivery_id': deliveryId});
+
+  Future<Map<String, dynamic>> verifyPickupOtp(int deliveryId, String otp) =>
+      post('delivery/verify-pickup-otp', data: {'delivery_id': deliveryId, 'otp': otp});
+
+  Future<Map<String, dynamic>> generateDropOtp(int deliveryId) =>
+      post('delivery/generate-drop-otp', data: {'delivery_id': deliveryId});
+
+  Future<Map<String, dynamic>> verifyDropOtp(int deliveryId, String otp) =>
+      post('delivery/verify-drop-otp', data: {'delivery_id': deliveryId, 'otp': otp});
+
+  Future<Map<String, dynamic>> resendPickupOtp(int deliveryId) =>
+      post('delivery/resend-pickup-otp', data: {'delivery_id': deliveryId});
+
+  Future<Map<String, dynamic>> resendDropOtp(int deliveryId) =>
+      post('delivery/resend-drop-otp', data: {'delivery_id': deliveryId});
 }
 
 /// V2 API client — JWT auth with custom interceptors.
@@ -202,26 +224,6 @@ class ApiServiceV2 {
       return {'status': 'error', 'message': e.toString()};
     }
   }
-
-  // --- On-demand OTP methods ---
-
-  Future<Map<String, dynamic>> generatePickupOtp(int deliveryId) =>
-      post('delivery/generate-pickup-otp', data: {'delivery_id': deliveryId});
-
-  Future<Map<String, dynamic>> verifyPickupOtp(int deliveryId, String otp) =>
-      post('delivery/verify-pickup-otp', data: {'delivery_id': deliveryId, 'otp': otp});
-
-  Future<Map<String, dynamic>> generateDropOtp(int deliveryId) =>
-      post('delivery/generate-drop-otp', data: {'delivery_id': deliveryId});
-
-  Future<Map<String, dynamic>> verifyDropOtp(int deliveryId, String otp) =>
-      post('delivery/verify-drop-otp', data: {'delivery_id': deliveryId, 'otp': otp});
-
-  Future<Map<String, dynamic>> resendPickupOtp(int deliveryId) =>
-      post('delivery/resend-pickup-otp', data: {'delivery_id': deliveryId});
-
-  Future<Map<String, dynamic>> resendDropOtp(int deliveryId) =>
-      post('delivery/resend-drop-otp', data: {'delivery_id': deliveryId});
 
   Future<Map<String, dynamic>> postMultipart(
     String endpoint,
