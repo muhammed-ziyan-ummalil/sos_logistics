@@ -180,17 +180,22 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(color: textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
-                      labelText: 'Minimum Fee (₹)',
+                      labelText: 'Minimum charge (covers first 25 km) (₹)',
                       prefixIcon: Icon(Icons.currency_rupee_rounded),
                     ),
                   ),
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Minimum charge covers the first 25 km; per-km applies beyond that, up to max distance.',
+                    style: TextStyle(fontSize: 11.sp, color: textSecondary),
+                  ),
+                  SizedBox(height: 8.h),
                   TextFormField(
                     controller: perKmFeeCtr,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(color: textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
-                      labelText: 'Per KM Fee (₹)',
+                      labelText: 'Per-km charge (after 25 km) (₹)',
                       prefixIcon: Icon(Icons.currency_rupee_rounded),
                     ),
                   ),
@@ -200,7 +205,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(color: textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
-                      labelText: 'Max Delivery Distance (km)',
+                      labelText: 'Max delivery distance (km)',
                       prefixIcon: Icon(Icons.route_rounded),
                     ),
                   ),
@@ -242,15 +247,30 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       onPressed: () {
                         final reg = regCtr.text.trim();
                         if (reg.isEmpty) return;
+                        final minFee = double.tryParse(minFeeCtr.text.trim());
+                        final perKm  = double.tryParse(perKmFeeCtr.text.trim());
+                        final maxDist = double.tryParse(maxDistCtr.text.trim());
+                        if (minFee == null || minFee < 0 ||
+                            perKm == null || perKm < 0 ||
+                            maxDist == null || maxDist < 25) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Enter valid fees. Max distance must be at least 25 km.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
                         final cap = double.tryParse(capacityCtr.text.trim());
                         Navigator.pop(sheetCtx);
                         context.read<OwnerVehiclesCubit>().addVehicle(
                           regNumber: reg,
                           type: selectedType,
                           capacityKg: cap,
-                          minimumFee: double.tryParse(minFeeCtr.text.trim()),
-                          perKmFee: double.tryParse(perKmFeeCtr.text.trim()),
-                          maxDeliveryDistanceKm: double.tryParse(maxDistCtr.text.trim()),
+                          minimumFee: minFee,
+                          perKmFee: perKm,
+                          maxDeliveryDistanceKm: maxDist,
                         );
                       },
                       child: const Text('Add Vehicle'),
