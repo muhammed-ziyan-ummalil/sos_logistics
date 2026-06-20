@@ -27,6 +27,8 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     double? minimumFee,
     double? perKmFee,
     double? maxDeliveryDistanceKm,
+    double? includedDistanceKm,
+    double? logisticGstPercent,
   }) async {
     emit(OwnerVehiclesLoading());
 
@@ -38,6 +40,8 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       if (minimumFee != null) 'minimum_fee': minimumFee,
       if (perKmFee != null) 'per_km_fee': perKmFee,
       if (maxDeliveryDistanceKm != null) 'max_delivery_distance_km': maxDeliveryDistanceKm,
+      if (includedDistanceKm != null) 'included_distance_km': includedDistanceKm,
+      if (logisticGstPercent != null) 'logistic_gst_percent': logisticGstPercent,
     };
 
     final files = <String, String>{};
@@ -65,6 +69,8 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     double? minimumFee,
     double? perKmFee,
     double? maxDeliveryDistanceKm,
+    double? includedDistanceKm,
+    double? logisticGstPercent,
     String? rcDocPath,
     String? insuranceDocPath,
   }) async {
@@ -77,6 +83,8 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       if (minimumFee != null) 'minimum_fee': minimumFee,
       if (perKmFee != null) 'per_km_fee': perKmFee,
       if (maxDeliveryDistanceKm != null) 'max_delivery_distance_km': maxDeliveryDistanceKm,
+      if (includedDistanceKm != null) 'included_distance_km': includedDistanceKm,
+      if (logisticGstPercent != null) 'logistic_gst_percent': logisticGstPercent,
     };
 
     final files = <String, String>{};

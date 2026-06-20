@@ -106,11 +106,13 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
   }
 
   void _showAddVehicleSheet(BuildContext context, bool isDark) {
-    final regCtr        = TextEditingController();
-    final capacityCtr   = TextEditingController();
-    final minFeeCtr     = TextEditingController();
-    final perKmFeeCtr   = TextEditingController();
-    final maxDistCtr    = TextEditingController();
+    final regCtr          = TextEditingController();
+    final capacityCtr     = TextEditingController();
+    final minFeeCtr       = TextEditingController();
+    final includedKmCtr   = TextEditingController(text: '25');
+    final perKmFeeCtr     = TextEditingController();
+    final maxDistCtr      = TextEditingController();
+    final gstPctCtr       = TextEditingController(text: '12');
     String selectedType = 'bike';
     showModalBottomSheet(
       context: context,
@@ -180,13 +182,23 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(color: textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
-                      labelText: 'Minimum charge (covers first 25 km) (₹)',
+                      labelText: 'Minimum charge (covers included distance) (₹)',
                       prefixIcon: Icon(Icons.currency_rupee_rounded),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: includedKmCtr,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'Included distance (km) - covered by min charge',
+                      prefixIcon: Icon(Icons.straighten_rounded),
                     ),
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    'Minimum charge covers the first 25 km; per-km applies beyond that, up to max distance.',
+                    'Minimum charge covers the included distance; per-km applies beyond it, up to max distance.',
                     style: TextStyle(fontSize: 11.sp, color: textSecondary),
                   ),
                   SizedBox(height: 8.h),
@@ -195,8 +207,18 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(color: textPrimary, fontSize: 14.sp),
                     decoration: const InputDecoration(
-                      labelText: 'Per-km charge (after 25 km) (₹)',
+                      labelText: 'Per-km charge (beyond included distance) (₹)',
                       prefixIcon: Icon(Icons.currency_rupee_rounded),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  TextFormField(
+                    controller: gstPctCtr,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
+                    decoration: const InputDecoration(
+                      labelText: 'Logistic GST %',
+                      prefixIcon: Icon(Icons.percent_rounded),
                     ),
                   ),
                   SizedBox(height: 12.h),
@@ -247,16 +269,20 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       onPressed: () {
                         final reg = regCtr.text.trim();
                         if (reg.isEmpty) return;
-                        final minFee = double.tryParse(minFeeCtr.text.trim());
-                        final perKm  = double.tryParse(perKmFeeCtr.text.trim());
-                        final maxDist = double.tryParse(maxDistCtr.text.trim());
+                        final minFee     = double.tryParse(minFeeCtr.text.trim());
+                        final includedKm = double.tryParse(includedKmCtr.text.trim());
+                        final perKm      = double.tryParse(perKmFeeCtr.text.trim());
+                        final gstPct     = double.tryParse(gstPctCtr.text.trim());
+                        final maxDist    = double.tryParse(maxDistCtr.text.trim());
                         if (minFee == null || minFee < 0 ||
+                            includedKm == null || includedKm < 0 ||
                             perKm == null || perKm < 0 ||
-                            maxDist == null || maxDist < 25) {
+                            gstPct == null || gstPct < 0 || gstPct > 100 ||
+                            maxDist == null || maxDist < 0 || maxDist < includedKm) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'Enter valid fees. Max distance must be at least 25 km.',
+                                'Enter valid values. GST must be 0-100. Max distance must be at least the included distance.',
                               ),
                             ),
                           );
@@ -269,7 +295,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           type: selectedType,
                           capacityKg: cap,
                           minimumFee: minFee,
+                          includedDistanceKm: includedKm,
                           perKmFee: perKm,
+                          logisticGstPercent: gstPct,
                           maxDeliveryDistanceKm: maxDist,
                         );
                       },
