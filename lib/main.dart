@@ -33,6 +33,7 @@ import 'Screens/owner/drivers/add_driver_screen.dart';
 import 'Screens/owner/drivers/driver_detail_screen.dart';
 import 'Screens/owner/vehicles/owner_vehicles_screen.dart';
 import 'Screens/driver/driver_disabled_screen.dart';
+import 'Screens/dev/widget_gallery_screen.dart';
 import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'core/theme_controller.dart';
@@ -120,6 +121,7 @@ class SOSLogisticsApp extends StatelessWidget {
                 );
               },
               AppRoutes.v2VehicleList: (_) => const OwnerVehiclesScreen(),
+              '/dev/gallery': (_) => const WidgetGalleryScreen(),
             },
           ),
         ),
