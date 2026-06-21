@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
 import '../../../Bloc/OwnerBankDetails/owner_bank_details_state.dart';
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 class OwnerBankDetailsScreen extends StatefulWidget {
   const OwnerBankDetailsScreen({super.key});
@@ -55,7 +56,7 @@ class _OwnerBankDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
 
     return BlocConsumer<OwnerBankDetailsCubit, OwnerBankDetailsState>(
       listener: (ctx, state) {
@@ -65,15 +66,14 @@ class _OwnerBankDetailsScreenState
         if (state is OwnerBankDetailsSaved) {
           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
             content: const Text('Bank details saved.'),
-            backgroundColor:
-                isDark ? AppColors.success : AppLightColors.success,
+            backgroundColor: AppDesignTokens.success,
           ));
+          context.read<OwnerBankDetailsCubit>().fetchDetails();
         }
         if (state is OwnerBankDetailsSaveError) {
           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
             content: Text(state.message),
-            backgroundColor:
-                isDark ? AppColors.error : AppLightColors.error,
+            backgroundColor: scheme.error,
           ));
         }
       },
@@ -83,28 +83,9 @@ class _OwnerBankDetailsScreenState
             state is OwnerBankDetailsInitial;
 
         return Scaffold(
-          backgroundColor:
-              isDark ? AppColors.background : AppLightColors.background,
-          appBar: AppBar(
-            backgroundColor:
-                isDark ? AppColors.surface : AppLightColors.surface,
-            leading: BackButton(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppLightColors.textSecondary),
-            title: Text('Bank Details',
-                style: TextStyle(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppLightColors.textPrimary)),
-            centerTitle: true,
-          ),
+          appBar: const SosAppBar(title: 'Bank Details'),
           body: isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                      color: isDark
-                          ? AppColors.accent
-                          : AppLightColors.accent))
+              ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
                       horizontal: 20.w, vertical: 16.h),
@@ -114,27 +95,25 @@ class _OwnerBankDetailsScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Info banner
-                        _InfoBanner(isDark: isDark),
+                        _InfoBanner(),
                         SizedBox(height: 20.h),
 
-                        _label('BANK INFORMATION', isDark),
+                        _label('BANK INFORMATION', scheme),
                         SizedBox(height: 10.h),
 
-                        _field(
-                          controller: _bankNameCtr,
+                        SosTextField(
                           label: 'Bank Name',
-                          icon: Icons.account_balance_outlined,
-                          isDark: isDark,
+                          controller: _bankNameCtr,
+                          prefixIcon: Icons.account_balance_outlined,
                           validator: (v) => (v?.trim().isEmpty ?? true)
                               ? 'Bank name is required'
                               : null,
                         ),
                         SizedBox(height: 12.h),
-                        _field(
-                          controller: _accountNumberCtr,
+                        SosTextField(
                           label: 'Account Number',
-                          icon: Icons.credit_card_rounded,
-                          isDark: isDark,
+                          controller: _accountNumberCtr,
+                          prefixIcon: Icons.credit_card_rounded,
                           keyboardType: TextInputType.number,
                           validator: (v) {
                             if (v?.trim().isEmpty ?? true) {
@@ -147,23 +126,19 @@ class _OwnerBankDetailsScreenState
                           },
                         ),
                         SizedBox(height: 12.h),
-                        _field(
-                          controller: _holderNameCtr,
+                        SosTextField(
                           label: 'Account Holder Name',
-                          icon: Icons.person_outline,
-                          isDark: isDark,
+                          controller: _holderNameCtr,
+                          prefixIcon: Icons.person_outline,
                           validator: (v) => (v?.trim().isEmpty ?? true)
                               ? 'Account holder name is required'
                               : null,
                         ),
                         SizedBox(height: 12.h),
-                        _field(
-                          controller: _ifscCtr,
+                        SosTextField(
                           label: 'IFSC Code',
-                          icon: Icons.tag_rounded,
-                          isDark: isDark,
-                          textCapitalization:
-                              TextCapitalization.characters,
+                          controller: _ifscCtr,
+                          prefixIcon: Icons.tag_rounded,
                           validator: (v) {
                             if (v?.trim().isEmpty ?? true) {
                               return 'IFSC code is required';
@@ -173,20 +148,10 @@ class _OwnerBankDetailsScreenState
                         ),
                         SizedBox(height: 32.h),
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isSaving ? null : _submit,
-                            child: isSaving
-                                ? SizedBox(
-                                    height: 20.r,
-                                    width: 20.r,
-                                    child: const CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2),
-                                  )
-                                : const Text('Save Bank Details'),
-                          ),
+                        SosButton(
+                          label: 'Save',
+                          loading: isSaving,
+                          onPressed: isSaving ? null : _submit,
                         ),
                         SizedBox(height: 24.h),
                       ],
@@ -198,60 +163,31 @@ class _OwnerBankDetailsScreenState
     );
   }
 
-  Widget _label(String text, bool isDark) {
+  Widget _label(String text, ColorScheme scheme) {
     return Text(
       text,
       style: TextStyle(
-        color: isDark ? AppColors.accent : AppLightColors.accent,
+        color: scheme.primary,
         fontSize: 11.sp,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,
       ),
     );
   }
-
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required bool isDark,
-    TextInputType? keyboardType,
-    TextCapitalization textCapitalization = TextCapitalization.none,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textCapitalization: textCapitalization,
-      style: TextStyle(
-          color: isDark ? AppColors.textPrimary : AppLightColors.textPrimary,
-          fontSize: 14.sp),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon,
-            color: isDark
-                ? AppColors.textSecondary
-                : AppLightColors.textSecondary),
-      ),
-      validator: validator,
-    );
-  }
 }
 
 class _InfoBanner extends StatelessWidget {
-  final bool isDark;
-  const _InfoBanner({required this.isDark});
+  const _InfoBanner();
 
   @override
   Widget build(BuildContext context) {
-    final color = isDark ? AppColors.accent : AppLightColors.accent;
+    final color = Theme.of(context).colorScheme.primary;
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
+        color: color.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(10.r),
-        border:
-            Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
