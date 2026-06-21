@@ -22,6 +22,7 @@ class SosBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         color: scheme.surface,
@@ -34,7 +35,7 @@ class SosBottomNav extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         selectedItemColor: scheme.primary,
-        unselectedItemColor: AppDesignTokens.lightTextSecondary,
+        unselectedItemColor: isDark ? AppDesignTokens.darkTextSecondary : AppDesignTokens.lightTextSecondary,
         selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400),
         items: items
