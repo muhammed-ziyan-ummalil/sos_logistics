@@ -1,7 +1,7 @@
 // Structural reuse of sosagent_flutter AccountScreen.
 // Same: header, profile card, _menuGroup + _OwnerMenuTile pattern,
 //       appearance sheet, logout dialog.
-// Adapted: uses AppColors/AppLightColors + flutter_screenutil (no AppDesignTokens).
+// Phase G: migrated to AppTheme.x(context) / widget library.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,6 +15,7 @@ import '../../../core/app_theme.dart';
 import '../../../core/theme_controller.dart';
 import '../../../utility/shared_preference.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
+import '../../../widgets/widgets.dart';
 import 'owner_about_screen.dart';
 import 'owner_analytics_screen.dart';
 import 'owner_bank_details_screen.dart';
@@ -52,7 +53,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = AppTheme.bg(context);
 
     return BlocListener<AuthCubit, AuthState>(
       listener: (ctx, state) {
@@ -61,12 +62,11 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor:
-            isDark ? AppColors.background : AppLightColors.background,
+        backgroundColor: bg,
         body: Column(
           children: [
-            _buildHeader(isDark),
-            _buildProfileCard(isDark),
+            _buildHeader(context),
+            _buildProfileCard(context),
             Expanded(
               child: SingleChildScrollView(
                 child: Builder(builder: (context) {
@@ -75,32 +75,30 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                       (authState.person.hasCap(Capability.buyer) ||
                           authState.person.hasCap(Capability.seller));
                   return Column(
-                  children: [
-                    if (hasMarketplace) ...[
+                    children: [
+                      if (hasMarketplace) ...[
+                        SizedBox(height: 8.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w),
+                          child: const _MarketplaceBadge(),
+                        ),
+                      ],
                       SizedBox(height: 8.h),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        child: const _MarketplaceBadge(),
+                      _buildServicesSection(context),
+                      SizedBox(height: 8.h),
+                      _buildAppSection(context),
+                      SizedBox(height: 8.h),
+                      _buildSignOutSection(context),
+                      SizedBox(height: 24.h),
+                      Text(
+                        'Version 1.0.0',
+                        style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppTheme.textSecondary(context)),
                       ),
+                      SizedBox(height: 80.h),
                     ],
-                    SizedBox(height: 8.h),
-                    _buildServicesSection(isDark),
-                    SizedBox(height: 8.h),
-                    _buildAppSection(isDark),
-                    SizedBox(height: 8.h),
-                    _buildSignOutSection(isDark),
-                    SizedBox(height: 24.h),
-                    Text(
-                      'Version 1.0.0',
-                      style: TextStyle(
-                          fontSize: 11.sp,
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppLightColors.textSecondary),
-                    ),
-                    SizedBox(height: 80.h),
-                  ],
-                );
+                  );
                 }),
               ),
             ),
@@ -111,25 +109,17 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
-  Widget _buildHeader(bool isDark) {
-    final surfaceColor =
-        isDark ? AppColors.surface : AppLightColors.surface;
-    final dividerColor =
-        isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-
+  Widget _buildHeader(BuildContext context) {
     return Container(
-      color: surfaceColor,
+      color: AppTheme.surface(context),
       child: SafeArea(
         bottom: false,
         child: Container(
-          padding:
-              EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           decoration: BoxDecoration(
-            color: surfaceColor,
+            color: AppTheme.surface(context),
             border: Border(
-                bottom: BorderSide(color: dividerColor, width: 1)),
+                bottom: BorderSide(color: AppTheme.divider(context), width: 1)),
           ),
           child: Row(
             children: [
@@ -138,7 +128,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                 style: TextStyle(
                   fontSize: 17.sp,
                   fontWeight: FontWeight.w700,
-                  color: textPrimary,
+                  color: AppTheme.textPrimary(context),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -150,18 +140,11 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   }
 
   // ── Profile card ──────────────────────────────────────────────────────────
-  Widget _buildProfileCard(bool isDark) {
-    final surfaceColor =
-        isDark ? AppColors.surface : AppLightColors.surface;
-    final primaryColor =
-        isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+  Widget _buildProfileCard(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
-      color: surfaceColor,
+      color: AppTheme.surface(context),
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 20.h),
       child: Row(
         children: [
@@ -171,9 +154,9 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             height: 52.r,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: primaryColor.withOpacity(0.12),
+              color: primary.withOpacity(0.12),
               border: Border.all(
-                  color: primaryColor.withOpacity(0.25), width: 1.5),
+                  color: primary.withOpacity(0.25), width: 1.5),
             ),
             child: Center(
               child: Text(
@@ -181,7 +164,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                 style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w700,
-                    color: primaryColor),
+                    color: primary),
               ),
             ),
           ),
@@ -195,7 +178,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
-                    color: textPrimary,
+                    color: AppTheme.textPrimary(context),
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -203,28 +186,11 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                 Text(
                   _phone.isNotEmpty ? _phone : '—',
                   style: TextStyle(
-                      fontSize: 13.sp, color: textSecondary),
+                      fontSize: 13.sp,
+                      color: AppTheme.textSecondary(context)),
                 ),
                 SizedBox(height: 4.h),
-                Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(
-                        color: primaryColor.withOpacity(0.2)),
-                  ),
-                  child: Text(
-                    'VEHICLE OWNER',
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w700,
-                      color: primaryColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                const SosChip(label: 'VEHICLE OWNER', tone: SosTone.success),
               ],
             ),
           ),
@@ -234,12 +200,12 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             child: Container(
               padding: EdgeInsets.all(8.r),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.08),
+                color: primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: primaryColor.withOpacity(0.2)),
+                border: Border.all(color: primary.withOpacity(0.2)),
               ),
               child: Icon(Icons.edit_outlined,
-                  size: 18.r, color: primaryColor),
+                  size: 18.r, color: primary),
             ),
           ),
         ],
@@ -257,17 +223,16 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
         ),
       ),
     );
-    if (result == true) _loadOwnerInfo();
+    if (result == true && mounted) _loadOwnerInfo();
   }
 
   // ── Services section ──────────────────────────────────────────────────────
-  Widget _buildServicesSection(bool isDark) {
+  Widget _buildServicesSection(BuildContext context) {
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: 'Services',
       tiles: [
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.analytics_outlined,
           title: 'Reporting & Analytics',
           onTap: () => Navigator.push(
@@ -277,7 +242,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.account_balance_wallet_outlined,
           title: 'My Wallet',
           onTap: () => Navigator.push(
@@ -291,7 +255,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.account_balance_outlined,
           title: 'Bank Details',
           onTap: () => Navigator.push(
@@ -309,42 +272,36 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   }
 
   // ── App section ───────────────────────────────────────────────────────────
-  Widget _buildAppSection(bool isDark) {
+  Widget _buildAppSection(BuildContext context) {
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: 'App',
       tiles: [
         // Appearance — same pattern as agent app
         ValueListenableBuilder<ThemeMode>(
           valueListenable: themeController,
           builder: (_, mode, __) => _OwnerMenuTile(
-            isDark: isDark,
             icon: Icons.brightness_medium_outlined,
             title: 'Appearance',
-            trailing: Row(
+            trailing: Builder(builder: (ctx) => Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   ThemeController.label(mode),
                   style: TextStyle(
                       fontSize: 13.sp,
-                      color: isDark
-                          ? AppColors.textSecondary
-                          : AppLightColors.textSecondary),
+                      color: AppTheme.textSecondary(ctx)),
                 ),
                 SizedBox(width: 4.w),
                 Icon(Icons.chevron_right_rounded,
                     size: 18.r,
-                    color: isDark
-                        ? AppColors.divider
-                        : AppLightColors.divider),
+                    color: AppTheme.divider(ctx)),
               ],
-            ),
-            onTap: () => _showAppearanceSheet(isDark, mode),
+            )),
+            onTap: () => _showAppearanceSheet(context, mode),
           ),
         ),
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.description_outlined,
           title: 'Terms & Conditions',
           onTap: () => Navigator.push(
@@ -354,7 +311,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.privacy_tip_outlined,
           title: 'Privacy Policy',
           onTap: () => Navigator.push(
@@ -364,7 +320,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.info_outline_rounded,
           title: 'About Us',
           onTap: () => Navigator.push(
@@ -374,7 +329,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.support_agent_outlined,
           title: 'Support',
           onTap: () => Navigator.push(
@@ -388,13 +342,12 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   }
 
   // ── Sign out section ──────────────────────────────────────────────────────
-  Widget _buildSignOutSection(bool isDark) {
+  Widget _buildSignOutSection(BuildContext context) {
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: '',
       tiles: [
         _OwnerMenuTile(
-          isDark: isDark,
           icon: Icons.logout_rounded,
           title: 'Sign Out',
           onTap: () => _showLogoutDialog(),
@@ -404,21 +357,12 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   }
 
   // ── Appearance bottom sheet — identical UX to agent app ───────────────────
-  void _showAppearanceSheet(bool isDark, ThemeMode current) {
-    final surfaceColor =
-        isDark ? AppColors.surface : AppLightColors.surface;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primaryColor =
-        isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final dividerColor =
-        isDark ? AppColors.divider : AppLightColors.divider;
+  void _showAppearanceSheet(BuildContext context, ThemeMode current) {
+    final primary = Theme.of(context).colorScheme.primary;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: surfaceColor,
+      backgroundColor: AppTheme.surface(context),
       shape: RoundedRectangleBorder(
           borderRadius:
               BorderRadius.vertical(top: Radius.circular(20.r))),
@@ -433,7 +377,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                 width: 40.w,
                 height: 4.h,
                 decoration: BoxDecoration(
-                    color: dividerColor,
+                    color: AppTheme.divider(ctx),
                     borderRadius: BorderRadius.circular(2.r)),
               ),
             ),
@@ -442,11 +386,11 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                 style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
-                    color: textPrimary,
+                    color: AppTheme.textPrimary(ctx),
                     letterSpacing: -0.2)),
             Text('Choose how the app looks on your device.',
                 style:
-                    TextStyle(fontSize: 13.sp, color: textSecondary)),
+                    TextStyle(fontSize: 13.sp, color: AppTheme.textSecondary(ctx))),
             SizedBox(height: 20.h),
             ...[ThemeMode.light, ThemeMode.dark, ThemeMode.system]
                 .map((mode) {
@@ -462,13 +406,13 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                       horizontal: 16.w, vertical: 12.h),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? primaryColor.withOpacity(0.08)
+                        ? primary.withOpacity(0.08)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(
                       color: isSelected
-                          ? primaryColor.withOpacity(0.30)
-                          : dividerColor,
+                          ? primary.withOpacity(0.30)
+                          : AppTheme.divider(ctx),
                     ),
                   ),
                   child: Row(
@@ -481,8 +425,8 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                                 : Icons.brightness_auto_outlined,
                         size: 18.r,
                         color: isSelected
-                            ? primaryColor
-                            : textSecondary,
+                            ? primary
+                            : AppTheme.textSecondary(ctx),
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
@@ -494,14 +438,14 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                                 ? FontWeight.w600
                                 : FontWeight.w400,
                             color: isSelected
-                                ? primaryColor
-                                : textPrimary,
+                                ? primary
+                                : AppTheme.textPrimary(ctx),
                           ),
                         ),
                       ),
                       if (isSelected)
                         Icon(Icons.check_rounded,
-                            size: 18.r, color: primaryColor),
+                            size: 18.r, color: primary),
                     ],
                   ),
                 ),
@@ -515,40 +459,38 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
 
   // ── Logout dialog — same logic as agent app showLogoutPopup ───────────────
   Future<void> _showLogoutDialog() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surface : AppLightColors.surface,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface(ctx),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r)),
         title: Text('Sign Out',
             style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.textPrimary
-                    : AppLightColors.textPrimary)),
+                color: AppTheme.textPrimary(ctx))),
         content: Text(
           'Are you sure you want to sign out of your account?',
           textAlign: TextAlign.center,
           style: TextStyle(
               fontSize: 14.sp,
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppLightColors.textSecondary,
+              color: AppTheme.textSecondary(ctx),
               height: 1.5),
         ),
         actions: [
-          OutlinedButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error),
-              child: const Text('Sign Out')),
+          SosButton(
+            label: 'Cancel',
+            variant: SosButtonVariant.outline,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          SosButton(
+            label: 'Sign Out',
+            variant: SosButtonVariant.danger,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
         ],
       ),
     );
@@ -559,15 +501,10 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
 
   // ── Shared menu group builder ─────────────────────────────────────────────
   Widget _menuGroup({
-    required bool isDark,
+    required BuildContext context,
     required String title,
     required List<Widget> tiles,
   }) {
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final cardColor =
-        isDark ? AppColors.surface : AppLightColors.surface;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -580,12 +517,14 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
-                color: textSecondary,
+                color: AppTheme.textSecondary(context),
                 letterSpacing: 0.8,
               ),
             ),
           ),
-        Container(color: cardColor, child: Column(children: tiles)),
+        Container(
+            color: AppTheme.surface(context),
+            child: Column(children: tiles)),
       ],
     );
   }
@@ -599,13 +538,7 @@ class _MarketplaceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppColors.surface : AppLightColors.surface;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
       onTap: () => ScaffoldMessenger.of(context).showSnackBar(
@@ -618,7 +551,7 @@ class _MarketplaceBadge extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
         decoration: BoxDecoration(
-          color: surface,
+          color: AppTheme.surface(context),
           borderRadius: BorderRadius.circular(10.r),
           border: Border.all(color: primary.withOpacity(0.25)),
         ),
@@ -643,20 +576,21 @@ class _MarketplaceBadge extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
-                      color: textPrimary,
+                      color: AppTheme.textPrimary(context),
                     ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
                     'Open SOS Farmer app to buy & sell crops',
                     style: TextStyle(
-                        fontSize: 11.sp, color: textSecondary),
+                        fontSize: 11.sp,
+                        color: AppTheme.textSecondary(context)),
                   ),
                 ],
               ),
             ),
             Icon(Icons.open_in_new_rounded,
-                size: 14.r, color: textSecondary),
+                size: 14.r, color: AppTheme.textSecondary(context)),
           ],
         ),
       ),
@@ -667,17 +601,15 @@ class _MarketplaceBadge extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // _OwnerMenuTile
 // Logistics-adapted clone of sosagent_flutter MinimalOptionTile.
-// Same layout, same intent — uses AppColors instead of AppDesignTokens.
+// Phase G: theme-aware via AppTheme.x(context).
 // ─────────────────────────────────────────────────────────────────────────────
 class _OwnerMenuTile extends StatelessWidget {
-  final bool isDark;
   final IconData icon;
   final String title;
   final VoidCallback? onTap;
   final Widget? trailing;
 
   const _OwnerMenuTile({
-    required this.isDark,
     required this.icon,
     required this.title,
     this.onTap,
@@ -686,28 +618,20 @@ class _OwnerMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final textColor =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final dividerColor =
-        isDark ? AppColors.divider : AppLightColors.divider;
-    final cardColor =
-        isDark ? AppColors.surface : AppLightColors.surface;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding:
             EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
         decoration: BoxDecoration(
-          color: cardColor,
+          color: AppTheme.surface(context),
           border: Border(
-              bottom: BorderSide(color: dividerColor, width: 0.8)),
+              bottom: BorderSide(
+                  color: AppTheme.divider(context), width: 0.8)),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20.r, color: iconColor),
+            Icon(icon, size: 20.r, color: AppTheme.textSecondary(context)),
             SizedBox(width: 16.w),
             Expanded(
               child: Text(
@@ -715,12 +639,12 @@ class _OwnerMenuTile extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
-                    color: textColor),
+                    color: AppTheme.textPrimary(context)),
               ),
             ),
             trailing ??
                 Icon(Icons.chevron_right_rounded,
-                    size: 18.r, color: dividerColor),
+                    size: 18.r, color: AppTheme.divider(context)),
           ],
         ),
       ),
