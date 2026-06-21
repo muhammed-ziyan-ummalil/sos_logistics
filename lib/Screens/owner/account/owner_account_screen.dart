@@ -154,9 +154,9 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             height: 52.r,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: primary.withOpacity(0.12),
+              color: primary.withValues(alpha: 0.12),
               border: Border.all(
-                  color: primary.withOpacity(0.25), width: 1.5),
+                  color: primary.withValues(alpha: 0.25), width: 1.5),
             ),
             child: Center(
               child: Text(
@@ -200,9 +200,9 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             child: Container(
               padding: EdgeInsets.all(8.r),
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.08),
+                color: primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: primary.withOpacity(0.2)),
+                border: Border.all(color: primary.withValues(alpha: 0.2)),
               ),
               child: Icon(Icons.edit_outlined,
                   size: 18.r, color: primary),
@@ -406,12 +406,12 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                       horizontal: 16.w, vertical: 12.h),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? primary.withOpacity(0.08)
+                        ? primary.withValues(alpha: 0.08)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10.r),
                     border: Border.all(
                       color: isSelected
-                          ? primary.withOpacity(0.30)
+                          ? primary.withValues(alpha: 0.30)
                           : AppTheme.divider(ctx),
                     ),
                   ),
@@ -553,14 +553,14 @@ class _MarketplaceBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.surface(context),
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: primary.withOpacity(0.25)),
+          border: Border.all(color: primary.withValues(alpha: 0.25)),
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(7.r),
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.10),
+                color: primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Icon(Icons.storefront_rounded,

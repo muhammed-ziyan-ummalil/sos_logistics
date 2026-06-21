@@ -139,6 +139,7 @@ class _OwnerBankDetailsScreenState
                           label: 'IFSC Code',
                           controller: _ifscCtr,
                           prefixIcon: Icons.tag_rounded,
+                          textCapitalization: TextCapitalization.characters,
                           validator: (v) {
                             if (v?.trim().isEmpty ?? true) {
                               return 'IFSC code is required';

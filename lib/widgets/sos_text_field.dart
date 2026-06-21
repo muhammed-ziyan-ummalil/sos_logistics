@@ -14,6 +14,7 @@ class SosTextField extends StatelessWidget {
   final int maxLines;
   final List<TextInputFormatter>? inputFormatters;
   final bool enabled;
+  final TextCapitalization textCapitalization;
 
   const SosTextField({
     super.key,
@@ -29,6 +30,7 @@ class SosTextField extends StatelessWidget {
     this.maxLines = 1,
     this.inputFormatters,
     this.enabled = true,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -43,6 +45,7 @@ class SosTextField extends StatelessWidget {
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           validator: validator,
           onChanged: onChanged,
           maxLines: maxLines,
