@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sos_auth/sos_auth.dart';
 import '../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
-import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
+import '../../widgets/widgets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -122,42 +121,18 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 90.r,
-                height: 90.r,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(22.r),
-                ),
-                child: Icon(Icons.local_shipping_rounded, color: Colors.white, size: 44.r),
-              ),
-              SizedBox(height: 20.h),
-              Text(
-                AppConstants.appName,
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'Delivery. Simplified.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
-              ),
-              SizedBox(height: 48.h),
+              const SosLogoMark(size: 90, showTitle: true),
+              const SizedBox(height: 48),
               SizedBox(
-                width: 28.r,
-                height: 28.r,
+                width: 28,
+                height: 28,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: AppColors.accent,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
