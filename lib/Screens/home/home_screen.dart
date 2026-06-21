@@ -156,11 +156,11 @@ class _AvailabilityToggle extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
             decoration: BoxDecoration(
               color: isOnline
-                  ? AppTheme.success(context).withOpacity(0.12)
+                  ? AppTheme.success(context).withValues(alpha: 0.12)
                   : AppTheme.card(context),
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(
-                color: isOnline ? onColor.withOpacity(0.5) : AppTheme.divider(context),
+                color: isOnline ? onColor.withValues(alpha: 0.5) : AppTheme.divider(context),
               ),
             ),
             child: Row(
