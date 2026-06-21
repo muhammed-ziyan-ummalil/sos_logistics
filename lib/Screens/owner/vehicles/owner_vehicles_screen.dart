@@ -4,7 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_state.dart';
+import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 class OwnerVehiclesScreen extends StatefulWidget {
   const OwnerVehiclesScreen({super.key});
@@ -22,34 +24,24 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Map && args['openAdd'] == true && mounted) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        _showAddVehicleSheet(context, isDark);
+        _showAddVehicleSheet(context);
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surfaceColor,
-        leading: BackButton(
-            color: isDark ? AppColors.textSecondary : AppLightColors.textSecondary),
-        title: Text('Vehicles',
-            style: TextStyle(color: textPrimary, fontSize: 17.sp)),
+      appBar: SosAppBar(
+        title: 'Vehicles',
         centerTitle: true,
         actions: [
           BlocBuilder<OwnerVehiclesCubit, OwnerVehiclesState>(
             builder: (_, s) => IconButton(
               icon: Icon(Icons.refresh_rounded,
-                  color: isDark ? AppColors.textSecondary : AppLightColors.textSecondary,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                   size: 20.r),
               onPressed: s is OwnerVehiclesLoading
                   ? null
@@ -59,9 +51,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddVehicleSheet(context, isDark),
-        backgroundColor: accentColor,
-        foregroundColor: Colors.white,
+        onPressed: () => _showAddVehicleSheet(context),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         icon: Icon(Icons.add_rounded, size: 18.r),
         label: Text('Add Vehicle',
             style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
@@ -69,25 +61,34 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
       body: BlocBuilder<OwnerVehiclesCubit, OwnerVehiclesState>(
         builder: (ctx, state) {
           if (state is OwnerVehiclesInitial || state is OwnerVehiclesLoading) {
-            return Center(
-                child: CircularProgressIndicator(
-                    color: accentColor, strokeWidth: 2.5));
+            return ListView.builder(
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 100.h),
+              itemCount: 5,
+              itemBuilder: (_, __) => Padding(
+                padding: EdgeInsets.only(bottom: 10.h),
+                child: SkeletonBox(height: 90.h, radius: AppDesignTokens.radiusCard),
+              ),
+            );
           }
           if (state is OwnerVehiclesError) {
-            return _ErrorWidget(
+            return ErrorState(
               message: state.message,
-              isDark: isDark,
               onRetry: () => context.read<OwnerVehiclesCubit>().fetchVehicles(),
             );
           }
           if (state is OwnerVehiclesLoaded) {
             if (state.vehicles.isEmpty) {
-              return _EmptyState(isDark: isDark,
-                  onAdd: () => _showAddVehicleSheet(context, isDark));
+              return EmptyState(
+                icon: Icons.directions_car_outlined,
+                title: 'No vehicles yet',
+                subtitle: 'Add your first vehicle to start assigning to drivers.',
+                actionLabel: 'Add Vehicle',
+                onAction: () => _showAddVehicleSheet(context),
+              );
             }
             return RefreshIndicator(
-              color: accentColor,
-              backgroundColor: isDark ? AppColors.card : AppLightColors.card,
+              color: colorScheme.primary,
+              backgroundColor: colorScheme.surface,
               onRefresh: () => context.read<OwnerVehiclesCubit>().fetchVehicles(),
               child: ListView.builder(
                 padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 100.h),
@@ -96,10 +97,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                   padding: EdgeInsets.only(bottom: 10.h),
                   child: _VehicleTile(
                     vehicle: state.vehicles[i],
-                    isDark: isDark,
                     onEdit: () => _showAddVehicleSheet(
                       context,
-                      isDark,
                       vehicle: state.vehicles[i],
                     ),
                   ),
@@ -114,8 +113,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
   }
 
   void _showAddVehicleSheet(
-    BuildContext context,
-    bool isDark, {
+    BuildContext context, {
     Map<String, dynamic>? vehicle,
   }) {
     final isEdit = vehicle != null;
@@ -125,33 +123,30 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
       return v == null ? '' : v.toString();
     }
 
-    final regCtr          = TextEditingController(text: fieldText('reg_number'));
-    final capacityCtr     = TextEditingController(text: fieldText('capacity_kg'));
-    final minFeeCtr       = TextEditingController(text: fieldText('minimum_fee'));
-    final includedKmCtr   = TextEditingController(
+    final regCtr        = TextEditingController(text: fieldText('reg_number'));
+    final capacityCtr   = TextEditingController(text: fieldText('capacity_kg'));
+    final minFeeCtr     = TextEditingController(text: fieldText('minimum_fee'));
+    final includedKmCtr = TextEditingController(
         text: isEdit ? fieldText('included_distance_km') : '25');
-    final perKmFeeCtr     = TextEditingController(text: fieldText('per_km_fee'));
-    final maxDistCtr      = TextEditingController(
+    final perKmFeeCtr   = TextEditingController(text: fieldText('per_km_fee'));
+    final maxDistCtr    = TextEditingController(
         text: fieldText('max_delivery_distance_km'));
-    final gstPctCtr       = TextEditingController(
+    final gstPctCtr     = TextEditingController(
         text: isEdit ? fieldText('logistic_gst_percent') : '12');
-    const vehicleTypes = ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'];
-    final initialType = (vehicle?['type'] as String?)?.toLowerCase();
+    const vehicleTypes  = ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'];
+    final initialType   = (vehicle?['type'] as String?)?.toLowerCase();
     String selectedType =
         (initialType != null && vehicleTypes.contains(initialType))
             ? initialType
             : 'bike';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => StatefulBuilder(
         builder: (sheetCtx, setSheetState) {
-          final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-          final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-          final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-          final textSecondary =
-              isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+          final colorScheme = Theme.of(sheetCtx).colorScheme;
 
           return Padding(
             padding:
@@ -159,144 +154,132 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
             child: Container(
               padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
               decoration: BoxDecoration(
-                color: surfaceColor,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                          color: dividerColor,
-                          borderRadius: BorderRadius.circular(2.r)),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                            color: colorScheme.outline,
+                            borderRadius: BorderRadius.circular(2.r)),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(isEdit ? 'Edit Vehicle' : 'Add Vehicle',
-                      style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w700,
-                          color: textPrimary)),
-                  Text(
-                      isEdit
-                          ? 'Update this vehicle\'s details'
-                          : 'Register a new vehicle to your fleet',
-                      style: TextStyle(fontSize: 12.sp, color: textSecondary)),
-                  SizedBox(height: 16.h),
-                  TextFormField(
-                    controller: regCtr,
-                    enabled: !isEdit,
-                    textCapitalization: TextCapitalization.characters,
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Registration Number',
-                      prefixIcon: Icon(Icons.pin_rounded),
+                    SizedBox(height: 16.h),
+                    Text(isEdit ? 'Edit Vehicle' : 'Add Vehicle',
+                        style: Theme.of(sheetCtx).textTheme.titleLarge),
+                    Text(
+                        isEdit
+                            ? 'Update this vehicle\'s details'
+                            : 'Register a new vehicle to your fleet',
+                        style: Theme.of(sheetCtx).textTheme.bodySmall),
+                    SizedBox(height: 16.h),
+                    SosTextField(
+                      label: 'Registration Number',
+                      controller: regCtr,
+                      enabled: !isEdit,
+                      prefixIcon: Icons.pin_rounded,
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  TextFormField(
-                    controller: capacityCtr,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Capacity (kg)',
-                      prefixIcon: Icon(Icons.scale_outlined),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label: 'Capacity (kg)',
+                      controller: capacityCtr,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: Icons.scale_outlined,
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  TextFormField(
-                    controller: minFeeCtr,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Minimum charge (covers included distance) (₹)',
-                      prefixIcon: Icon(Icons.currency_rupee_rounded),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label:
+                          'Minimum charge (covers included distance) (${AppConstants.currencySymbol})',
+                      controller: minFeeCtr,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: Icons.currency_rupee_rounded,
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  TextFormField(
-                    controller: includedKmCtr,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Included distance (km) - covered by min charge',
-                      prefixIcon: Icon(Icons.straighten_rounded),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label: 'Included distance (km) - covered by min charge',
+                      controller: includedKmCtr,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: Icons.straighten_rounded,
                     ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    'Minimum charge covers the included distance; per-km applies beyond it, up to max distance.',
-                    style: TextStyle(fontSize: 11.sp, color: textSecondary),
-                  ),
-                  SizedBox(height: 8.h),
-                  TextFormField(
-                    controller: perKmFeeCtr,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Per-km charge (beyond included distance) (₹)',
-                      prefixIcon: Icon(Icons.currency_rupee_rounded),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Minimum charge covers the included distance; per-km applies beyond it, up to max distance.',
+                      style: Theme.of(sheetCtx).textTheme.labelSmall,
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  TextFormField(
-                    controller: gstPctCtr,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Logistic GST %',
-                      prefixIcon: Icon(Icons.percent_rounded),
+                    SizedBox(height: 8.h),
+                    SosTextField(
+                      label:
+                          'Per-km charge (beyond included distance) (${AppConstants.currencySymbol})',
+                      controller: perKmFeeCtr,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: Icons.currency_rupee_rounded,
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  TextFormField(
-                    controller: maxDistCtr,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: TextStyle(color: textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'Max delivery distance (km)',
-                      prefixIcon: Icon(Icons.route_rounded),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label: 'Logistic GST %',
+                      controller: gstPctCtr,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: Icons.percent_rounded,
                     ),
-                  ),
-                  SizedBox(height: 12.h),
-                  Text('Vehicle Type',
-                      style: TextStyle(fontSize: 12.sp, color: textSecondary)),
-                  SizedBox(height: 8.h),
-                  Wrap(
-                    spacing: 8.w,
-                    children: vehicleTypes.map((t) {
-                      final sel = selectedType == t;
-                      final primary =
-                          isDark ? AppColors.primaryLight : AppLightColors.primary;
-                      return GestureDetector(
-                        onTap: () => setSheetState(() => selectedType = t),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 14.w, vertical: 8.h),
-                          decoration: BoxDecoration(
-                            color: sel ? primary.withOpacity(0.12) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8.r),
-                            border: Border.all(
-                                color: sel ? primary : dividerColor),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label: 'Max delivery distance (km)',
+                      controller: maxDistCtr,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: Icons.route_rounded,
+                    ),
+                    SizedBox(height: 12.h),
+                    Text('Vehicle Type',
+                        style: Theme.of(sheetCtx).textTheme.labelMedium),
+                    SizedBox(height: 8.h),
+                    Wrap(
+                      spacing: 8.w,
+                      children: vehicleTypes.map((t) {
+                        final sel = selectedType == t;
+                        final primary = colorScheme.primary;
+                        return GestureDetector(
+                          onTap: () => setSheetState(() => selectedType = t),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 14.w, vertical: 8.h),
+                            decoration: BoxDecoration(
+                              color: sel
+                                  ? primary.withValues(alpha: 0.12)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                  color: sel ? primary : colorScheme.outline),
+                            ),
+                            child: Text(t.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: sel
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  color: sel
+                                      ? primary
+                                      : AppTheme.textSecondary(sheetCtx),
+                                )),
                           ),
-                          child: Text(t.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
-                                color: sel ? primary : textSecondary,
-                              )),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20.h),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(height: 20.h),
+                    SosButton(
+                      label: isEdit ? 'Save Changes' : 'Add Vehicle',
                       onPressed: () {
                         final reg = regCtr.text.trim();
                         if (!isEdit && reg.isEmpty) return;
@@ -309,7 +292,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             includedKm == null || includedKm < 0 ||
                             perKm == null || perKm < 0 ||
                             gstPct == null || gstPct < 0 || gstPct > 100 ||
-                            maxDist == null || maxDist < 0 || maxDist < includedKm) {
+                            maxDist == null || maxDist < 0 ||
+                            maxDist < includedKm) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -345,10 +329,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           );
                         }
                       },
-                      child: Text(isEdit ? 'Save Changes' : 'Add Vehicle'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -362,48 +345,37 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
 
 class _VehicleTile extends StatelessWidget {
   final Map<String, dynamic> vehicle;
-  final bool isDark;
   final VoidCallback onEdit;
-  const _VehicleTile(
-      {required this.vehicle, required this.isDark, required this.onEdit});
+  const _VehicleTile({required this.vehicle, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final regNum = vehicle['reg_number'] as String? ?? '—';
-    final type = (vehicle['type'] as String? ?? 'vehicle').toUpperCase();
+    final regNum        = vehicle['reg_number'] as String? ?? '—';
+    final type          = (vehicle['type'] as String? ?? 'vehicle').toUpperCase();
     final assignedDriver = vehicle['assigned_driver'] as Map<String, dynamic>?;
-    final driverName = assignedDriver?['name'] as String? ?? 'Unassigned';
-    final isAssigned = assignedDriver != null;
-    final capacityKg = vehicle['capacity_kg'];
+    final driverName    = assignedDriver?['name'] as String? ?? 'Unassigned';
+    final isAssigned    = assignedDriver != null;
+    final capacityKg    = vehicle['capacity_kg'];
     final insuranceExpiry = vehicle['insurance_expiry'] as String?;
-    final minimumFee = vehicle['minimum_fee'];
-    final perKmFee = vehicle['per_km_fee'];
-    final maxDist = vehicle['max_delivery_distance_km'];
+    final minimumFee    = vehicle['minimum_fee'];
+    final perKmFee      = vehicle['per_km_fee'];
+    final maxDist       = vehicle['max_delivery_distance_km'];
 
-    return Container(
+    return SosCard(
       padding: EdgeInsets.all(14.r),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: dividerColor, width: 0.8),
-      ),
       child: Row(
         children: [
           Container(
             width: 44.r,
             height: 44.r,
             decoration: BoxDecoration(
-              color: warningColor.withOpacity(0.1),
+              color: AppDesignTokens.warning.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(Icons.directions_car_rounded,
-                color: warningColor, size: 22.r),
+                color: AppDesignTokens.warning, size: 22.r),
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -411,27 +383,29 @@ class _VehicleTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(regNum,
-                    style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary)),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700)),
                 SizedBox(height: 2.h),
                 Text(type,
-                    style: TextStyle(fontSize: 11.sp, color: textSecondary)),
+                    style: Theme.of(context).textTheme.labelSmall),
                 if (capacityKg != null) ...[
                   SizedBox(height: 2.h),
                   Text('Capacity: ${capacityKg}kg',
-                      style: TextStyle(fontSize: 11.sp, color: textSecondary)),
+                      style: Theme.of(context).textTheme.labelSmall),
                 ],
                 if (minimumFee != null || perKmFee != null) ...[
                   SizedBox(height: 2.h),
                   Text(
                     [
-                      if (minimumFee != null) 'Min ₹$minimumFee',
-                      if (perKmFee != null) '₹$perKmFee/km',
+                      if (minimumFee != null)
+                        'Min ${AppConstants.currencySymbol}$minimumFee',
+                      if (perKmFee != null)
+                        '${AppConstants.currencySymbol}$perKmFee/km',
                       if (maxDist != null) '≤${maxDist}km',
                     ].join(' · '),
-                    style: TextStyle(fontSize: 10.sp, color: textSecondary),
+                    style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppTheme.textSecondary(context)),
                   ),
                 ],
               ],
@@ -440,16 +414,29 @@ class _VehicleTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _AssignedBadge(isAssigned: isAssigned, name: driverName, isDark: isDark),
+              SosChip(
+                label: isAssigned ? 'ASSIGNED' : 'AVAILABLE',
+                tone: isAssigned ? SosTone.success : SosTone.neutral,
+              ),
+              if (isAssigned) ...[
+                SizedBox(height: 3.h),
+                Text(driverName,
+                    style: TextStyle(
+                        fontSize: 10.sp,
+                        color: AppTheme.textSecondary(context))),
+              ],
               if (insuranceExpiry != null) ...[
                 SizedBox(height: 4.h),
                 Row(
                   children: [
                     Icon(Icons.shield_outlined,
-                        size: 10.r, color: textSecondary),
+                        size: 10.r,
+                        color: colorScheme.onSurface.withValues(alpha: 0.5)),
                     SizedBox(width: 3.w),
                     Text(insuranceExpiry,
-                        style: TextStyle(fontSize: 9.sp, color: textSecondary)),
+                        style: TextStyle(
+                            fontSize: 9.sp,
+                            color: AppTheme.textSecondary(context))),
                   ],
                 ),
               ],
@@ -462,127 +449,11 @@ class _VehicleTile extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: BoxConstraints(minWidth: 32.r, minHeight: 32.r),
             tooltip: 'Edit vehicle',
-            icon: Icon(Icons.edit_outlined, size: 18.r, color: textSecondary),
+            icon: Icon(Icons.edit_outlined,
+                size: 18.r,
+                color: colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AssignedBadge extends StatelessWidget {
-  final bool isAssigned;
-  final String name;
-  final bool isDark;
-  const _AssignedBadge(
-      {required this.isAssigned, required this.name, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isAssigned
-        ? AppColors.success
-        : (isDark ? AppColors.textSecondary : AppLightColors.textSecondary);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            isAssigned ? 'ASSIGNED' : 'AVAILABLE',
-            style: TextStyle(
-                fontSize: 9.sp, fontWeight: FontWeight.w700, color: color),
-          ),
-        ),
-        SizedBox(height: 3.h),
-        Text(name,
-            style: TextStyle(
-                fontSize: 10.sp,
-                color: isDark ? AppColors.textSecondary : AppLightColors.textSecondary)),
-      ],
-    );
-  }
-}
-
-// ─── Empty + Error states ─────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  final bool isDark;
-  final VoidCallback onAdd;
-  const _EmptyState({required this.isDark, required this.onAdd});
-
-  @override
-  Widget build(BuildContext context) {
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final divider = isDark ? AppColors.divider : AppLightColors.divider;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(32.r),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.directions_car_outlined, size: 48.r, color: divider),
-            SizedBox(height: 16.h),
-            Text('No vehicles yet',
-                style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: textSecondary)),
-            SizedBox(height: 6.h),
-            Text('Add your first vehicle to start assigning to drivers.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13.sp, color: textSecondary)),
-            SizedBox(height: 24.h),
-            ElevatedButton.icon(
-              onPressed: onAdd,
-              icon: Icon(Icons.add_rounded, size: 16.r),
-              label: const Text('Add Vehicle'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorWidget extends StatelessWidget {
-  final String message;
-  final bool isDark;
-  final VoidCallback onRetry;
-  const _ErrorWidget(
-      {required this.message, required this.isDark, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.r),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.wifi_off_rounded,
-                color: isDark ? AppColors.error : AppLightColors.error, size: 36.r),
-            SizedBox(height: 12.h),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppLightColors.textSecondary,
-                    fontSize: 13.sp)),
-            SizedBox(height: 16.h),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: Icon(Icons.refresh_rounded, size: 16.r),
-              label: const Text('Retry'),
-            ),
-          ],
-        ),
       ),
     );
   }
