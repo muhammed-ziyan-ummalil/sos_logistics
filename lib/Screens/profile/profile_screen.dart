@@ -8,6 +8,7 @@ import '../../core/app_theme.dart';
 import '../../core/theme_controller.dart';
 import '../../utility/api_service.dart';
 import '../../utility/shared_preference.dart';
+import '../../widgets/widgets.dart';
 import '../owner/account/owner_about_screen.dart';
 import '../owner/account/owner_privacy_screen.dart';
 import '../owner/account/owner_support_screen.dart';
@@ -59,20 +60,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String get _accountStatus => (_driver?['status'] as String? ?? 'active').toLowerCase();
 
-  Color _statusColor(String s) {
-    return s == 'active' ? AppColors.success : AppColors.error;
-  }
-
-  String _statusLabel(String s) {
-    return s == 'active' ? 'ACTIVE' : 'SUSPENDED';
-  }
-
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return BlocListener<AuthCubit, AuthState>(
       listener: (ctx, state) {
         if (state is AuthUnauthenticated) {
@@ -80,17 +71,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor:
-            isDark ? AppColors.background : AppLightColors.background,
+        backgroundColor: AppTheme.bg(context),
         body: Column(
           children: [
-            _buildHeader(isDark),
-            _buildProfileCard(isDark),
+            _buildHeader(context),
+            _buildProfileCard(context),
             Expanded(
               child: _loading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                          color: AppColors.accent, strokeWidth: 2.5))
+                  ? _buildLoadingSkeleton()
                   : SingleChildScrollView(
                       child: Builder(builder: (context) {
                         final authState = context.watch<AuthCubit>().state;
@@ -106,21 +94,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                           SizedBox(height: 8.h),
-                          _buildFleetSection(isDark),
+                          _buildFleetSection(context),
                           SizedBox(height: 8.h),
-                          _buildServicesSection(isDark),
+                          _buildServicesSection(context),
                           SizedBox(height: 8.h),
-                          _buildAppSection(isDark),
+                          _buildAppSection(context),
                           SizedBox(height: 8.h),
-                          _buildSignOutSection(isDark),
+                          _buildSignOutSection(context),
                           SizedBox(height: 24.h),
                           Text(
                             'Version 1.0.0',
                             style: TextStyle(
                                 fontSize: 11.sp,
-                                color: isDark
-                                    ? AppColors.textSecondary
-                                    : AppLightColors.textSecondary),
+                                color: AppTheme.textSecondary(context)),
                           ),
                           SizedBox(height: 80.h),
                         ],
@@ -134,21 +120,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
-  Widget _buildHeader(bool isDark) {
-    final surface  = isDark ? AppColors.surface : AppLightColors.surface;
-    final divider  = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
+  Widget _buildLoadingSkeleton() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      child: Column(
+        children: [
+          SkeletonBox(width: double.infinity, height: 56.h),
+          SizedBox(height: 12.h),
+          SkeletonBox(width: double.infinity, height: 56.h),
+          SizedBox(height: 12.h),
+          SkeletonBox(width: double.infinity, height: 56.h),
+          SizedBox(height: 12.h),
+          SkeletonBox(width: double.infinity, height: 56.h),
+        ],
+      ),
+    );
+  }
 
+  // ── Header ────────────────────────────────────────────────────────────────
+  Widget _buildHeader(BuildContext context) {
     return Container(
-      color: surface,
+      color: AppTheme.surface(context),
       child: SafeArea(
         bottom: false,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           decoration: BoxDecoration(
-            color: surface,
-            border: Border(bottom: BorderSide(color: divider, width: 1)),
+            color: AppTheme.surface(context),
+            border: Border(bottom: BorderSide(color: AppTheme.divider(context), width: 1)),
           ),
           child: Row(
             children: [
@@ -157,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 17.sp,
                   fontWeight: FontWeight.w700,
-                  color: textPrimary,
+                  color: AppTheme.textPrimary(context),
                   letterSpacing: -0.3,
                 ),
               ),
@@ -169,17 +168,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── Profile card ──────────────────────────────────────────────────────────
-  Widget _buildProfileCard(bool isDark) {
-    final surface       = isDark ? AppColors.surface : AppLightColors.surface;
-    final primary       = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary   = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final statusColor   = _statusColor(_accountStatus);
-
+  Widget _buildProfileCard(BuildContext context) {
+    final primary = AppTheme.primary(context);
     final displayName = _driver?['name'] as String? ?? _name;
+    final accountStatus = _accountStatus;
 
     return Container(
-      color: surface,
+      color: AppTheme.surface(context),
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 20.h),
       child: Row(
         children: [
@@ -189,8 +184,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 52.r,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: primary.withOpacity(0.12),
-              border: Border.all(color: primary.withOpacity(0.25), width: 1.5),
+              color: primary.withValues(alpha: 0.12),
+              border: Border.all(color: primary.withValues(alpha: 0.25), width: 1.5),
             ),
             child: Center(
               child: Text(
@@ -213,52 +208,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
-                    color: textPrimary,
+                    color: AppTheme.textPrimary(context),
                     letterSpacing: -0.3,
                   ),
                 ),
                 SizedBox(height: 2.h),
                 Text(
                   _driver?['phone'] as String? ?? _phone,
-                  style: TextStyle(fontSize: 13.sp, color: textSecondary),
+                  style: TextStyle(fontSize: 13.sp, color: AppTheme.textSecondary(context)),
                 ),
                 SizedBox(height: 4.h),
                 Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: primary.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: primary.withOpacity(0.2)),
-                      ),
-                      child: Text(
-                        'DRIVER',
-                        style: TextStyle(
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.w700,
-                          color: primary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
+                    SosChip(label: 'DRIVER', tone: SosTone.info),
                     SizedBox(width: 6.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.10),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: statusColor.withOpacity(0.25)),
-                      ),
-                      child: Text(
-                        _statusLabel(_accountStatus),
-                        style: TextStyle(
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.w700,
-                          color: statusColor,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                    SosChip(
+                      label: accountStatus == 'active' ? 'ACTIVE' : 'SUSPENDED',
+                      tone: accountStatus == 'active' ? SosTone.success : SosTone.error,
                     ),
                   ],
                 ),
@@ -271,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── Fleet section ─────────────────────────────────────────────────────────
-  Widget _buildFleetSection(bool isDark) {
+  Widget _buildFleetSection(BuildContext context) {
     final ownerName = _owner?['name'] as String? ?? '—';
     final bizName   = _owner?['business_name'] as String?;
     final ownerLabel = bizName != null && bizName.isNotEmpty
@@ -283,71 +249,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final vehicleLabel = _vehicle != null ? '$vehicleReg · $vehicleType' : 'Not assigned';
 
     final availStatus = (_availability?['status'] as String? ?? 'offline').toUpperCase();
+    final isOnline = availStatus == 'ONLINE';
 
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: 'Fleet',
       tiles: [
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.business_rounded,
           title: 'Works Under',
-          trailing: _infoValue(isDark, ownerLabel),
+          trailing: Text(
+            ownerLabel,
+            style: TextStyle(fontSize: 13.sp, color: AppTheme.textSecondary(context)),
+          ),
         ),
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.directions_car_rounded,
           title: 'Assigned Vehicle',
-          trailing: _infoValue(isDark, vehicleLabel),
+          trailing: Text(
+            vehicleLabel,
+            style: TextStyle(fontSize: 13.sp, color: AppTheme.textSecondary(context)),
+          ),
         ),
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.sensors_rounded,
           title: 'Availability',
-          trailing: _statusBadge(availStatus),
+          trailing: SosChip(
+            label: availStatus,
+            tone: isOnline ? SosTone.success : SosTone.neutral,
+          ),
         ),
       ],
     );
   }
 
-  Widget _infoValue(bool isDark, String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 13.sp,
-        color: isDark ? AppColors.textSecondary : AppLightColors.textSecondary,
-      ),
-    );
-  }
-
-  Widget _statusBadge(String status) {
-    final isOnline = status == 'ONLINE';
-    final color = isOnline ? AppColors.success : AppColors.textSecondary;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          fontSize: 10.sp,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-    );
-  }
-
   // ── Services section ──────────────────────────────────────────────────────
-  Widget _buildServicesSection(bool isDark) {
+  Widget _buildServicesSection(BuildContext context) {
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: 'Services',
       tiles: [
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.history_rounded,
           title: 'Delivery History',
           onTap: () {},
@@ -357,15 +299,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── App section ───────────────────────────────────────────────────────────
-  Widget _buildAppSection(bool isDark) {
+  Widget _buildAppSection(BuildContext context) {
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: 'App',
       tiles: [
         ValueListenableBuilder<ThemeMode>(
           valueListenable: themeController,
           builder: (_, mode, __) => _DriverMenuTile(
-            isDark: isDark,
             icon: Icons.brightness_medium_outlined,
             title: 'Appearance',
             trailing: Row(
@@ -375,45 +316,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ThemeController.label(mode),
                   style: TextStyle(
                     fontSize: 13.sp,
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppLightColors.textSecondary,
+                    color: AppTheme.textSecondary(context),
                   ),
                 ),
                 SizedBox(width: 4.w),
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 18.r,
-                  color: isDark ? AppColors.divider : AppLightColors.divider,
+                  color: AppTheme.divider(context),
                 ),
               ],
             ),
-            onTap: () => _showAppearanceSheet(isDark, mode),
+            onTap: () => _showAppearanceSheet(mode),
           ),
         ),
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.description_outlined,
           title: 'Terms & Conditions',
           onTap: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const OwnerPrivacyScreen())),
         ),
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.privacy_tip_outlined,
           title: 'Privacy Policy',
           onTap: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const OwnerPrivacyScreen())),
         ),
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.info_outline_rounded,
           title: 'About Us',
           onTap: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const OwnerAboutScreen())),
         ),
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.support_agent_outlined,
           title: 'Support',
           onTap: () => Navigator.push(context,
@@ -424,13 +359,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── Sign out section ──────────────────────────────────────────────────────
-  Widget _buildSignOutSection(bool isDark) {
+  Widget _buildSignOutSection(BuildContext context) {
     return _menuGroup(
-      isDark: isDark,
+      context: context,
       title: '',
       tiles: [
         _DriverMenuTile(
-          isDark: isDark,
           icon: Icons.logout_rounded,
           title: 'Sign Out',
           onTap: _showLogoutDialog,
@@ -440,111 +374,109 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ── Appearance sheet ──────────────────────────────────────────────────────
-  void _showAppearanceSheet(bool isDark, ThemeMode current) {
-    final surface   = isDark ? AppColors.surface : AppLightColors.surface;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primary   = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final divider   = isDark ? AppColors.divider : AppLightColors.divider;
-
+  void _showAppearanceSheet(ThemeMode current) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: surface,
+      backgroundColor: AppTheme.surface(context),
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 32.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                    color: divider,
-                    borderRadius: BorderRadius.circular(2.r)),
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Text('Appearance',
-                style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
-                    letterSpacing: -0.2)),
-            Text('Choose how the app looks on your device.',
-                style: TextStyle(fontSize: 13.sp, color: textSecondary)),
-            SizedBox(height: 20.h),
-            ...[ThemeMode.light, ThemeMode.dark, ThemeMode.system].map((mode) {
-              final selected = current == mode;
-              return GestureDetector(
-                onTap: () {
-                  themeController.setThemeMode(mode);
-                  Navigator.pop(ctx);
-                },
+      builder: (ctx) {
+        final primary = AppTheme.primary(context);
+        final divider = AppTheme.divider(context);
+        final textPrimary = AppTheme.textPrimary(context);
+        final textSecondary = AppTheme.textSecondary(context);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 32.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
                 child: Container(
-                  margin: EdgeInsets.only(bottom: 8.h),
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  width: 40.w,
+                  height: 4.h,
                   decoration: BoxDecoration(
-                    color: selected
-                        ? primary.withOpacity(0.08)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(
+                      color: divider,
+                      borderRadius: BorderRadius.circular(2.r)),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text('Appearance',
+                  style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimary,
+                      letterSpacing: -0.2)),
+              Text('Choose how the app looks on your device.',
+                  style: TextStyle(fontSize: 13.sp, color: textSecondary)),
+              SizedBox(height: 20.h),
+              ...[ThemeMode.light, ThemeMode.dark, ThemeMode.system].map((mode) {
+                final selected = current == mode;
+                return GestureDetector(
+                  onTap: () {
+                    themeController.setThemeMode(mode);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: 8.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    decoration: BoxDecoration(
                       color: selected
-                          ? primary.withOpacity(0.30)
-                          : divider,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        mode == ThemeMode.light
-                            ? Icons.light_mode_outlined
-                            : mode == ThemeMode.dark
-                                ? Icons.dark_mode_outlined
-                                : Icons.brightness_auto_outlined,
-                        size: 18.r,
-                        color: selected ? primary : textSecondary,
+                          ? primary.withValues(alpha: 0.08)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(
+                        color: selected
+                            ? primary.withValues(alpha: 0.30)
+                            : divider,
                       ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Text(
-                          ThemeController.label(mode),
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: selected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: selected ? primary : textPrimary,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          mode == ThemeMode.light
+                              ? Icons.light_mode_outlined
+                              : mode == ThemeMode.dark
+                                  ? Icons.dark_mode_outlined
+                                  : Icons.brightness_auto_outlined,
+                          size: 18.r,
+                          color: selected ? primary : textSecondary,
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Text(
+                            ThemeController.label(mode),
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: selected ? primary : textPrimary,
+                            ),
                           ),
                         ),
-                      ),
-                      if (selected)
-                        Icon(Icons.check_rounded,
-                            size: 18.r, color: primary),
-                    ],
+                        if (selected)
+                          Icon(Icons.check_rounded,
+                              size: 18.r, color: primary),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 
   // ── Logout dialog ─────────────────────────────────────────────────────────
   Future<void> _showLogoutDialog() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surface : AppLightColors.surface,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppTheme.surface(context),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         title: Text(
@@ -552,29 +484,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.textPrimary
-                  : AppLightColors.textPrimary),
+              color: AppTheme.textPrimary(context)),
         ),
         content: Text(
           'Are you sure you want to sign out of your account?',
           textAlign: TextAlign.center,
           style: TextStyle(
               fontSize: 14.sp,
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppLightColors.textSecondary,
+              color: AppTheme.textSecondary(context),
               height: 1.5),
         ),
         actions: [
-          OutlinedButton(
-              onPressed: () => Navigator.pop(_, false),
-              child: const Text('Cancel')),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(_, true),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error),
-              child: const Text('Sign Out')),
+          SosButton(
+            label: 'Cancel',
+            variant: SosButtonVariant.outline,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dialogCtx, false),
+          ),
+          SosButton(
+            label: 'Sign Out',
+            variant: SosButtonVariant.danger,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dialogCtx, true),
+          ),
         ],
       ),
     );
@@ -585,14 +517,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Menu group builder ────────────────────────────────────────────────────
   Widget _menuGroup({
-    required bool isDark,
+    required BuildContext context,
     required String title,
     required List<Widget> tiles,
   }) {
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final cardColor = isDark ? AppColors.surface : AppLightColors.surface;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -604,12 +532,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
-                color: textSecondary,
+                color: AppTheme.textSecondary(context),
                 letterSpacing: 0.8,
               ),
             ),
           ),
-        Container(color: cardColor, child: Column(children: tiles)),
+        SosCard(
+          padding: EdgeInsets.zero,
+          child: Column(children: tiles),
+        ),
       ],
     );
   }
@@ -623,13 +554,9 @@ class _MarketplaceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppColors.surface : AppLightColors.surface;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final primary = AppTheme.primary(context);
+    final textPrimary = AppTheme.textPrimary(context);
+    final textSecondary = AppTheme.textSecondary(context);
 
     return GestureDetector(
       onTap: () => ScaffoldMessenger.of(context).showSnackBar(
@@ -638,19 +565,14 @@ class _MarketplaceBadge extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
         ),
       ),
-      child: Container(
+      child: SosCard(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-        decoration: BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: primary.withOpacity(0.25)),
-        ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(7.r),
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.10),
+                color: primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Icon(Icons.storefront_rounded,
@@ -691,14 +613,12 @@ class _MarketplaceBadge extends StatelessWidget {
 // _DriverMenuTile  — identical layout to _OwnerMenuTile
 // ─────────────────────────────────────────────────────────────────────────────
 class _DriverMenuTile extends StatelessWidget {
-  final bool      isDark;
   final IconData  icon;
   final String    title;
   final VoidCallback? onTap;
   final Widget?   trailing;
 
   const _DriverMenuTile({
-    required this.isDark,
     required this.icon,
     required this.title,
     this.onTap,
@@ -707,17 +627,16 @@ class _DriverMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor   = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final textColor   = isDark ? AppColors.textPrimary   : AppLightColors.textPrimary;
-    final divider     = isDark ? AppColors.divider       : AppLightColors.divider;
-    final card        = isDark ? AppColors.surface       : AppLightColors.surface;
+    final iconColor = AppTheme.textSecondary(context);
+    final textColor = AppTheme.textPrimary(context);
+    final divider   = AppTheme.divider(context);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
         decoration: BoxDecoration(
-          color: card,
+          color: Colors.transparent,
           border: Border(bottom: BorderSide(color: divider, width: 0.8)),
         ),
         child: Row(
