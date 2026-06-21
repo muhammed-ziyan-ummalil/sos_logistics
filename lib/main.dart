@@ -1,43 +1,63 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sos_auth/sos_auth.dart';
 
+import 'Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import 'Bloc/Auth/password_reset_cubit.dart';
 import 'Bloc/Availability/availability_cubit.dart';
-import 'Bloc/ActiveDelivery/active_delivery_cubit.dart';
-import 'Bloc/History/history_cubit.dart';
-import 'Bloc/OwnerOnboarding/owner_register_cubit.dart';
-import 'Bloc/OwnerDrivers/add_driver_cubit.dart';
-import 'Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
-import 'Bloc/Fleet/fleet_dashboard_cubit.dart';
-import 'Bloc/Fleet/driver_detail_cubit.dart';
-import 'Bloc/OwnerWallet/owner_wallet_cubit.dart';
-import 'Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
 import 'Bloc/DeliveryFeed/delivery_feed_cubit.dart';
-import 'Bloc/QuoteSubmit/quote_submit_cubit.dart';
+import 'Bloc/Fleet/driver_detail_cubit.dart';
+import 'Bloc/Fleet/fleet_dashboard_cubit.dart';
+import 'Bloc/History/history_cubit.dart';
 import 'Bloc/MyQuotes/my_quotes_cubit.dart';
-import 'Screens/owner/owner_main_screen.dart';
-import 'Screens/auth/splash_screen.dart';
-import 'Screens/auth/role_selection_screen.dart';
+import 'Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
+import 'Bloc/OwnerDrivers/add_driver_cubit.dart';
+import 'Bloc/OwnerOnboarding/owner_register_cubit.dart';
+import 'Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
+import 'Bloc/OwnerWallet/owner_wallet_cubit.dart';
+import 'Bloc/QuoteSubmit/quote_submit_cubit.dart';
 import 'Screens/auth/login_screen.dart';
-import 'Screens/auth/password_reset_screen.dart';
-import 'Screens/auth/not_an_owner_screen.dart';
 import 'Screens/auth/not_a_driver_screen.dart';
+import 'Screens/auth/not_an_owner_screen.dart';
+import 'Screens/auth/password_reset_screen.dart';
+import 'Screens/auth/role_selection_screen.dart';
+import 'Screens/auth/splash_screen.dart';
+import 'Screens/dev/widget_gallery_screen.dart';
+import 'Screens/driver/driver_disabled_screen.dart';
 import 'Screens/home/home_screen.dart';
-import 'Screens/owner/owner_pending_screen.dart';
-import 'Screens/owner/register/owner_register_screen.dart';
-import 'Screens/owner/drivers/drivers_list_screen.dart';
 import 'Screens/owner/drivers/add_driver_screen.dart';
 import 'Screens/owner/drivers/driver_detail_screen.dart';
+import 'Screens/owner/drivers/drivers_list_screen.dart';
+import 'Screens/owner/owner_main_screen.dart';
+import 'Screens/owner/owner_pending_screen.dart';
+import 'Screens/owner/register/owner_register_screen.dart';
 import 'Screens/owner/vehicles/owner_vehicles_screen.dart';
-import 'Screens/driver/driver_disabled_screen.dart';
-import 'Screens/dev/widget_gallery_screen.dart';
 import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'core/theme_controller.dart';
+import 'firebase_options.dart';
+import 'services/firebase_notification_service.dart';
 import 'utility/v2_token_storage.dart';
+
+// ─── FCM background handler ───────────────────────────────────────────────────
+// Must be a top-level function annotated with @pragma so the Dart VM keeps it
+// alive when the app is terminated. Registered in main() before runApp.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Re-initialize Firebase in the background isolate.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  // Show a local notification only for data-only messages (no notification
+  // block); the system tray handles notification-type messages automatically.
+  if (message.notification == null) {
+    await FirebaseNotificationService.showFromBackground(message);
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +68,22 @@ void main() async {
   ));
 
   await themeController.loadSavedTheme();
+
+  // ── Firebase init ───────────────────────────────────────────────────────────
+  // Guarded so the app still runs before google-services.json is added (i.e.
+  // before `flutterfire configure` is run). When the stub REPLACE_ME values are
+  // present, Firebase.initializeApp() will throw; we catch it, log, and skip
+  // FCM init so the rest of the app is unaffected.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await FirebaseNotificationService.init();
+  } catch (e) {
+    // ignore: avoid_print
+    print('[FCM] Firebase init skipped — run flutterfire configure first: $e');
+  }
 
   runApp(const SOSLogisticsApp());
 }

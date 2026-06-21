@@ -1,8 +1,10 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sos_auth/sos_auth.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
+import '../../services/firebase_notification_service.dart';
 import '../../widgets/widgets.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,10 +36,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    context.read<AuthCubit>().login(
-      _emailCtr.text.trim(),
-      _passCtr.text.trim(),
-    );
+    // Pass FCM token at login so the backend receives it atomically with the
+    // login call. A post-login syncTokenAfterLogin() call also fires as a
+    // belt-and-suspenders guard (handles token refresh after login).
+    final email = _emailCtr.text.trim();
+    final password = _passCtr.text.trim();
+    FirebaseMessaging.instance.getToken().then((fcmToken) {
+      if (!mounted) return;
+      context.read<AuthCubit>().login(
+        email,
+        password,
+        firebaseToken: fcmToken,
+      );
+    });
   }
 
   @override
@@ -54,6 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
               return;
             }
             if (state is AuthAuthenticated) {
+              // Sync FCM token now that we have a valid JWT.
+              FirebaseNotificationService.syncTokenAfterLogin();
               final caps = state.person.capabilities;
 
               // Capability-driven routing — ignore the UI _role selection for
