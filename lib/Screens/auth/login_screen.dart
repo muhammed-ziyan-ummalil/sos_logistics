@@ -48,6 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
         password,
         firebaseToken: fcmToken,
       );
+    }).catchError((_) {
+      if (!mounted) return;
+      context.read<AuthCubit>().login(email, password);
     });
   }
 
