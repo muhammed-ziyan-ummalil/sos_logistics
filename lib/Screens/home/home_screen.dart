@@ -9,6 +9,7 @@ import '../../Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
+import '../../widgets/widgets.dart';
 import '../delivery/active_delivery_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
@@ -55,13 +56,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       body: IndexedStack(index: _tab, children: _pages),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: SosBottomNav(
         currentIndex: _tab,
         onTap: (i) => setState(() => _tab = i),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history_rounded), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+          SosNavItem(icon: Icons.home_rounded, label: 'Home'),
+          SosNavItem(icon: Icons.history_rounded, label: 'History'),
+          SosNavItem(icon: Icons.person_rounded, label: 'Profile'),
         ],
       ),
     );
@@ -203,15 +204,9 @@ class _ActiveDeliveryBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = AppTheme.accent(context);
-    final primary = AppTheme.primary(context);
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
+    return SosCard(
+      onTap: null, // tap handled by GestureDetector parent
       padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: primary.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: primary.withOpacity(0.4)),
-      ),
       child: Row(
         children: [
           Icon(Icons.local_shipping_rounded, color: accent, size: 24.r),
@@ -242,13 +237,8 @@ class _ActiveDeliveryBanner extends StatelessWidget {
 class _WaitingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SosCard(
       padding: EdgeInsets.all(32.r),
-      decoration: BoxDecoration(
-        color: AppTheme.card(context),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppTheme.divider(context)),
-      ),
       child: Column(
         children: [
           Icon(Icons.wifi_tethering_rounded, color: AppTheme.textSecondary(context), size: 48.r),
