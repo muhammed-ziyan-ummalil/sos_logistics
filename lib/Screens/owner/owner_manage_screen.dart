@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../Bloc/Fleet/fleet_dashboard_cubit.dart';
 import '../../Bloc/Fleet/fleet_dashboard_state.dart';
@@ -8,6 +7,7 @@ import '../../Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
 import '../../Bloc/OwnerVehicles/owner_vehicles_state.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
+import '../../widgets/widgets.dart';
 
 class OwnerManageScreen extends StatefulWidget {
   const OwnerManageScreen({super.key});
@@ -26,61 +26,18 @@ class _OwnerManageScreenState extends State<OwnerManageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-
     return Scaffold(
-      backgroundColor: bg,
-      body: Column(
-        children: [
-          // Header
-          Container(
-            color: surfaceColor,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  border: Border(bottom: BorderSide(color: dividerColor)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.grid_view_rounded, color: accentColor, size: 20.r),
-                    SizedBox(width: 8.w),
-                    Text(
-                      'Manage',
-                      style: TextStyle(
-                        fontSize: 17.sp,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Body
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              child: Column(
-                children: [
-                  _DriversManageCard(isDark: isDark),
-                  SizedBox(height: 16.h),
-                  _VehiclesManageCard(isDark: isDark),
-                  SizedBox(height: 80.h),
-                ],
-              ),
-            ),
-          ),
-        ],
+      appBar: const SosAppBar(title: 'Manage'),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          children: [
+            const _DriversManageCard(),
+            const SizedBox(height: 16),
+            const _VehiclesManageCard(),
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
     );
   }
@@ -89,53 +46,40 @@ class _OwnerManageScreenState extends State<OwnerManageScreen> {
 // ─── Drivers Manage Card ──────────────────────────────────────────────────────
 
 class _DriversManageCard extends StatelessWidget {
-  final bool isDark;
-  const _DriversManageCard({required this.isDark});
+  const _DriversManageCard();
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final primary = scheme.primary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: dividerColor, width: 0.8),
-      ),
+    return SosCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Card header
           Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Row(
               children: [
                 Container(
-                  width: 36.r,
-                  height: 36.r,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10.r),
+                    color: primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppDesignTokens.radiusXS),
                   ),
-                  child: Icon(Icons.people_rounded, color: primary, size: 18.r),
+                  child: Icon(Icons.people_rounded, color: primary, size: AppDesignTokens.iconSizeS),
                 ),
-                SizedBox(width: 12.w),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Drivers',
-                          style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700,
-                              color: textPrimary)),
+                      Text('Drivers', style: Theme.of(context).textTheme.labelLarge),
                       Text('Manage your driver fleet',
-                          style: TextStyle(
-                              fontSize: 12.sp, color: textSecondary)),
+                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -156,55 +100,63 @@ class _DriversManageCard extends StatelessWidget {
                 }).length;
               }
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    _MiniStat(
-                        label: 'Total', value: total.toString(), isDark: isDark),
-                    _Divider(isDark: isDark),
-                    _MiniStat(
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.people_outline_rounded,
+                        label: 'Total',
+                        value: total.toString(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.check_circle_outline_rounded,
                         label: 'Active',
                         value: active.toString(),
-                        isDark: isDark,
-                        color: AppColors.success),
-                    _Divider(isDark: isDark),
-                    _MiniStat(
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.wifi_rounded,
                         label: 'Online',
                         value: online.toString(),
-                        isDark: isDark,
-                        color: isDark ? AppColors.accent : AppLightColors.accent),
+                      ),
+                    ),
                   ],
                 ),
               );
             },
           ),
-          SizedBox(height: 14.h),
+          const SizedBox(height: 14),
 
-          Divider(color: dividerColor, height: 1),
-          SizedBox(height: 12.h),
+          const Divider(),
+          const SizedBox(height: 12),
 
           // Action buttons
           Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
                 Expanded(
-                  child: _ActionButton(
-                    icon: Icons.list_rounded,
+                  child: SosButton(
                     label: 'All Drivers',
-                    isPrimary: true,
-                    isDark: isDark,
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.v2DriverList),
+                    icon: Icons.list_rounded,
+                    fullWidth: true,
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.v2DriverList),
                   ),
                 ),
-                SizedBox(width: 10.w),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: _ActionButton(
-                    icon: Icons.person_add_rounded,
+                  child: SosButton(
                     label: 'Add Driver',
-                    isPrimary: false,
-                    isDark: isDark,
-                    onTap: () async {
+                    icon: Icons.person_add_rounded,
+                    variant: SosButtonVariant.outline,
+                    fullWidth: true,
+                    onPressed: () async {
                       final added = await Navigator.pushNamed(
                           context, AppRoutes.v2AddDriver);
                       if (added == true && context.mounted) {
@@ -225,54 +177,40 @@ class _DriversManageCard extends StatelessWidget {
 // ─── Vehicles Manage Card ─────────────────────────────────────────────────────
 
 class _VehiclesManageCard extends StatelessWidget {
-  final bool isDark;
-  const _VehiclesManageCard({required this.isDark});
+  const _VehiclesManageCard();
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
+    final warningColor = AppTheme.warning(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: dividerColor, width: 0.8),
-      ),
+    return SosCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Card header
           Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Row(
               children: [
                 Container(
-                  width: 36.r,
-                  height: 36.r,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: warningColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10.r),
+                    color: warningColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppDesignTokens.radiusXS),
                   ),
                   child: Icon(Icons.directions_car_rounded,
-                      color: warningColor, size: 18.r),
+                      color: warningColor, size: AppDesignTokens.iconSizeS),
                 ),
-                SizedBox(width: 12.w),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Vehicles',
-                          style: TextStyle(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700,
-                              color: textPrimary)),
+                      Text('Vehicles', style: Theme.of(context).textTheme.labelLarge),
                       Text('Track and assign your vehicles',
-                          style: TextStyle(
-                              fontSize: 12.sp, color: textSecondary)),
+                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -294,55 +232,63 @@ class _VehiclesManageCard extends StatelessWidget {
                 available = total - assigned;
               }
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    _MiniStat(
-                        label: 'Total', value: total.toString(), isDark: isDark),
-                    _Divider(isDark: isDark),
-                    _MiniStat(
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.directions_car_outlined,
+                        label: 'Total',
+                        value: total.toString(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.link_rounded,
                         label: 'Assigned',
                         value: assigned.toString(),
-                        isDark: isDark,
-                        color: isDark ? AppColors.accent : AppLightColors.accent),
-                    _Divider(isDark: isDark),
-                    _MiniStat(
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: StatTile(
+                        icon: Icons.check_rounded,
                         label: 'Available',
                         value: available.toString(),
-                        isDark: isDark,
-                        color: AppColors.success),
+                      ),
+                    ),
                   ],
                 ),
               );
             },
           ),
-          SizedBox(height: 14.h),
+          const SizedBox(height: 14),
 
-          Divider(color: dividerColor, height: 1),
-          SizedBox(height: 12.h),
+          const Divider(),
+          const SizedBox(height: 12),
 
           // Action buttons
           Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
                 Expanded(
-                  child: _ActionButton(
-                    icon: Icons.list_rounded,
+                  child: SosButton(
                     label: 'All Vehicles',
-                    isPrimary: true,
-                    isDark: isDark,
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.v2VehicleList),
+                    icon: Icons.list_rounded,
+                    fullWidth: true,
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.v2VehicleList),
                   ),
                 ),
-                SizedBox(width: 10.w),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: _ActionButton(
-                    icon: Icons.add_rounded,
+                  child: SosButton(
                     label: 'Add Vehicle',
-                    isPrimary: false,
-                    isDark: isDark,
-                    onTap: () => Navigator.pushNamed(
+                    icon: Icons.add_rounded,
+                    variant: SosButtonVariant.outline,
+                    fullWidth: true,
+                    onPressed: () => Navigator.pushNamed(
                       context,
                       AppRoutes.v2VehicleList,
                       arguments: {'openAdd': true},
@@ -353,112 +299,6 @@ class _VehiclesManageCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Shared helpers ───────────────────────────────────────────────────────────
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isDark;
-  final Color? color;
-
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    required this.isDark,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w800,
-              color: color ?? textPrimary,
-              letterSpacing: -0.5,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          Text(label,
-              style: TextStyle(fontSize: 11.sp, color: textSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  final bool isDark;
-  const _Divider({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 32.h,
-      color: isDark ? AppColors.divider : AppLightColors.divider,
-      margin: EdgeInsets.symmetric(horizontal: 8.w),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isPrimary;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.isPrimary,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-    final primaryColor = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final color = isPrimary ? primaryColor : accentColor;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 11.h),
-        decoration: BoxDecoration(
-          color: isPrimary ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: color.withOpacity(isPrimary ? 0 : 0.5)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 14.r,
-                color: isPrimary ? Colors.white : color),
-            SizedBox(width: 6.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: isPrimary ? Colors.white : color,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
