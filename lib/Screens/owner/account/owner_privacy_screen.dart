@@ -2,27 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 class OwnerPrivacyScreen extends StatelessWidget {
   const OwnerPrivacyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surfaceColor,
-        leading: BackButton(
-            color: isDark ? AppColors.textSecondary : AppLightColors.textSecondary),
-        title: Text('Privacy Policy',
-            style: TextStyle(color: textPrimary, fontSize: 17.sp)),
-        centerTitle: true,
-      ),
+      backgroundColor: AppTheme.bg(context),
+      appBar: const SosAppBar(title: 'Privacy Policy'),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 40.h),
         child: Column(
@@ -31,12 +20,10 @@ class OwnerPrivacyScreen extends StatelessWidget {
             _Header(
               title: 'Privacy Policy',
               subtitle: 'Last updated: January 1, 2025',
-              isDark: isDark,
             ),
             SizedBox(height: 20.h),
             _Section(
               title: '1. Information We Collect',
-              isDark: isDark,
               content:
                   'When you use the SOSSSS Logistics platform as a vehicle owner, we collect the following types of information:\n\n'
                   '• Account Information: Your name, phone number, and email address provided during registration.\n\n'
@@ -49,7 +36,6 @@ class OwnerPrivacyScreen extends StatelessWidget {
             SizedBox(height: 16.h),
             _Section(
               title: '2. How We Use Your Information',
-              isDark: isDark,
               content:
                   '• To operate and maintain the SOSSSS Logistics platform and facilitate delivery operations.\n\n'
                   '• To process payments, manage wallet transactions, and execute withdrawal requests to your registered bank account.\n\n'
@@ -61,7 +47,6 @@ class OwnerPrivacyScreen extends StatelessWidget {
             SizedBox(height: 16.h),
             _Section(
               title: '3. Data Sharing',
-              isDark: isDark,
               content:
                   'We do not sell your personal data to third parties. We may share information in the following limited circumstances:\n\n'
                   '• Service Providers: Trusted third-party partners who assist in operating the platform (payment processors, cloud infrastructure, KYC verification services) under strict confidentiality agreements.\n\n'
@@ -72,14 +57,12 @@ class OwnerPrivacyScreen extends StatelessWidget {
             SizedBox(height: 16.h),
             _Section(
               title: '4. Data Retention',
-              isDark: isDark,
               content:
                   'We retain your account data for as long as your account is active or as needed to provide services. Financial transaction records are retained for a minimum of 7 years to comply with financial regulations. KYC documents are retained for the duration required by applicable law. You may request deletion of non-mandatory data by contacting our support team.',
             ),
             SizedBox(height: 16.h),
             _Section(
               title: '5. Security',
-              isDark: isDark,
               content:
                   'We implement industry-standard security measures including:\n\n'
                   '• Encrypted data transmission using TLS/HTTPS protocols.\n\n'
@@ -91,7 +74,6 @@ class OwnerPrivacyScreen extends StatelessWidget {
             SizedBox(height: 16.h),
             _Section(
               title: '6. Your Rights',
-              isDark: isDark,
               content:
                   'You have the following rights regarding your personal data:\n\n'
                   '• Access: Request a copy of the personal data we hold about you.\n\n'
@@ -103,26 +85,23 @@ class OwnerPrivacyScreen extends StatelessWidget {
             SizedBox(height: 16.h),
             _Section(
               title: '7. Cookies and Tracking',
-              isDark: isDark,
               content:
                   'Our mobile application uses device identifiers and local storage to maintain your session and preferences. We do not use advertising cookies or cross-app tracking. Analytics tools are used solely to improve app performance and user experience.',
             ),
             SizedBox(height: 16.h),
             _Section(
               title: '8. Changes to This Policy',
-              isDark: isDark,
               content:
                   'We may update this Privacy Policy from time to time. We will notify you of significant changes via in-app notification or email. Your continued use of the platform after changes take effect constitutes your acceptance of the revised policy.',
             ),
             SizedBox(height: 16.h),
             _Section(
               title: '9. Contact Us',
-              isDark: isDark,
               content:
                   'For privacy-related inquiries or to exercise your data rights, contact:\n\n'
                   'Email: privacy@sossss.net\n'
                   'Address: SOSSSS Technologies, Nigeria\n'
-                  'Support Hours: Monday – Friday, 9:00 AM – 6:00 PM WAT',
+                  'Support Hours: Monday - Friday, 9:00 AM - 6:00 PM WAT',
             ),
           ],
         ),
@@ -134,30 +113,21 @@ class OwnerPrivacyScreen extends StatelessWidget {
 class _Header extends StatelessWidget {
   final String title;
   final String subtitle;
-  final bool isDark;
-  const _Header(
-      {required this.title, required this.subtitle, required this.isDark});
+  const _Header({required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final primary = Theme.of(context).colorScheme.primary;
 
-    return Container(
+    return SosCard(
       padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: primary.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: primary.withOpacity(0.15)),
-      ),
       child: Row(
         children: [
           Container(
             width: 40.r,
             height: 40.r,
             decoration: BoxDecoration(
-              color: primary.withOpacity(0.12),
+              color: primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(Icons.privacy_tip_rounded, color: primary, size: 20.r),
@@ -171,9 +141,11 @@ class _Header extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
-                        color: textPrimary)),
+                        color: AppTheme.textPrimary(context))),
                 Text(subtitle,
-                    style: TextStyle(fontSize: 11.sp, color: textSecondary)),
+                    style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppTheme.textSecondary(context))),
               ],
             ),
           ),
@@ -186,52 +158,48 @@ class _Header extends StatelessWidget {
 class _Section extends StatelessWidget {
   final String title;
   final String content;
-  final bool isDark;
-  const _Section(
-      {required this.title, required this.content, required this.isDark});
+  const _Section({required this.title, required this.content});
 
   @override
   Widget build(BuildContext context) {
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final accentColor = AppTheme.accent(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 3.w,
-              height: 16.h,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: BorderRadius.circular(2.r),
+    return SosCard(
+      padding: EdgeInsets.all(16.r),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 3.w,
+                height: 16.h,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
               ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: Text(title,
-                  style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: textPrimary)),
-            ),
-          ],
-        ),
-        SizedBox(height: 8.h),
-        Padding(
-          padding: EdgeInsets.only(left: 13.w),
-          child: Text(content,
-              style: TextStyle(
-                  fontSize: 13.sp,
-                  color: textSecondary,
-                  height: 1.6)),
-        ),
-        SizedBox(height: 8.h),
-        Divider(color: dividerColor),
-      ],
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(title,
+                    style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary(context))),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.only(left: 13.w),
+            child: Text(content,
+                style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppTheme.textSecondary(context),
+                    height: 1.6)),
+          ),
+        ],
+      ),
     );
   }
 }
