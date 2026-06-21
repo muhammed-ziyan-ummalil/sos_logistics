@@ -7,6 +7,7 @@ import '../../Bloc/Fleet/fleet_dashboard_state.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
 import '../../utility/shared_preference.dart';
+import '../../widgets/widgets.dart';
 import 'delivery/delivery_feed_screen.dart';
 import 'delivery/my_quotes_screen.dart';
 
@@ -41,124 +42,95 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-
     return Scaffold(
-      backgroundColor: bg,
-      body: Column(
+      backgroundColor: AppTheme.bg(context),
+      appBar: SosAppBar(
+        title: _ownerName.isNotEmpty
+            ? '${_greeting()}, $_ownerName'
+            : _greeting(),
+        actions: [
+          const SosChip(label: 'LIVE', tone: SosTone.success),
+          SizedBox(width: 4.w),
+          BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
+            builder: (_, s) => IconButton(
+              icon: Icon(Icons.refresh_rounded,
+                  color: AppTheme.textSecondary(context), size: 20.r),
+              onPressed: s is FleetDashboardLoading
+                  ? null
+                  : () =>
+                      context.read<FleetDashboardCubit>().fetchDashboard(),
+            ),
+          ),
+        ],
+      ),
+
+      // ── Body ───────────────────────────────────────────────────────────
+      body: BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
+        builder: (ctx, state) {
+          if (state is FleetDashboardInitial || state is FleetDashboardLoading) {
+            return _LoadingPlaceholder();
+          }
+          if (state is FleetDashboardError) {
+            return ErrorState(
+              message: state.message,
+              onRetry: () =>
+                  context.read<FleetDashboardCubit>().fetchDashboard(),
+            );
+          }
+          if (state is FleetDashboardLoaded) {
+            return _HomeBody(state: state);
+          }
+          return const SizedBox();
+        },
+      ),
+    );
+  }
+}
+
+// ─── Loading placeholder ──────────────────────────────────────────────────────
+
+class _LoadingPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(16.r),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ─────────────────────────────────────────────────────────
-          Container(
-            color: surfaceColor,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                padding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 12.h),
-                decoration: BoxDecoration(
-                  color: surfaceColor,
-                  border: Border(bottom: BorderSide(color: dividerColor)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _greeting(),
-                            style: TextStyle(
-                                fontSize: 12.sp,
-                                color: textSecondary,
-                                letterSpacing: 0.1),
-                          ),
-                          Text(
-                            _ownerName.isNotEmpty ? _ownerName : 'Owner',
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w700,
-                              color: textPrimary,
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 10.w, vertical: 5.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(
-                            color: AppColors.success.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 6.r,
-                            height: 6.r,
-                            decoration: const BoxDecoration(
-                                color: AppColors.success,
-                                shape: BoxShape.circle),
-                          ),
-                          SizedBox(width: 5.w),
-                          Text('LIVE',
-                              style: TextStyle(
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.success)),
-                        ],
-                      ),
-                    ),
-                    BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
-                      builder: (_, s) => IconButton(
-                        icon: Icon(Icons.refresh_rounded,
-                            color: textSecondary, size: 20.r),
-                        onPressed: s is FleetDashboardLoading
-                            ? null
-                            : () => context
-                                .read<FleetDashboardCubit>()
-                                .fetchDashboard(),
-                      ),
-                    ),
-                  ],
-                ),
+          SizedBox(height: 16.h),
+          // Stats row skeleton
+          SizedBox(
+            height: 110.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              itemBuilder: (_, __) => Padding(
+                padding: EdgeInsets.only(right: 10.w),
+                child: SkeletonBox(width: 112.w, height: 110.h, radius: 14),
               ),
             ),
           ),
-
-          // ── Body ───────────────────────────────────────────────────────────
-          Expanded(
-            child: BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
-              builder: (ctx, state) {
-                if (state is FleetDashboardInitial ||
-                    state is FleetDashboardLoading) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                        color: accentColor, strokeWidth: 2.5),
-                  );
-                }
-                if (state is FleetDashboardError) {
-                  return _ErrorView(
-                    message: state.message,
-                    isDark: isDark,
-                    onRetry: () => context
-                        .read<FleetDashboardCubit>()
-                        .fetchDashboard(),
-                  );
-                }
-                if (state is FleetDashboardLoaded) {
-                  return _HomeBody(state: state, isDark: isDark);
-                }
-                return const SizedBox();
-              },
-            ),
+          SizedBox(height: 24.h),
+          SkeletonBox(width: 120.w, height: 14.h),
+          SizedBox(height: 12.h),
+          SkeletonBox(height: 70.h),
+          SizedBox(height: 8.h),
+          SkeletonBox(height: 70.h),
+          SizedBox(height: 24.h),
+          SkeletonBox(width: 120.w, height: 14.h),
+          SizedBox(height: 12.h),
+          SkeletonBox(height: 90.h),
+          SizedBox(height: 24.h),
+          SkeletonBox(width: 140.w, height: 14.h),
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Expanded(child: SkeletonBox(height: 80.h)),
+              SizedBox(width: 10.w),
+              Expanded(child: SkeletonBox(height: 80.h)),
+              SizedBox(width: 10.w),
+              Expanded(child: SkeletonBox(height: 80.h)),
+            ],
           ),
         ],
       ),
@@ -170,17 +142,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
 class _HomeBody extends StatelessWidget {
   final FleetDashboardLoaded state;
-  final bool isDark;
-  const _HomeBody({required this.state, required this.isDark});
+  const _HomeBody({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-
     return RefreshIndicator(
-      color: accentColor,
-      backgroundColor: cardColor,
+      color: AppTheme.accent(context),
+      backgroundColor: AppTheme.card(context),
       onRefresh: () => context.read<FleetDashboardCubit>().fetchDashboard(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -191,15 +159,14 @@ class _HomeBody extends StatelessWidget {
             SizedBox(height: 16.h),
 
             // Stats cards
-            _StatsRow(summary: state.summary, isDark: isDark),
+            _StatsRow(summary: state.summary),
             SizedBox(height: 20.h),
 
             // Driver snapshot
             if (state.drivers.isNotEmpty)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: _DriverSnapshotSection(
-                    drivers: state.drivers, isDark: isDark),
+                child: _DriverSnapshotSection(drivers: state.drivers),
               ),
             if (state.drivers.isNotEmpty) SizedBox(height: 20.h),
 
@@ -207,7 +174,7 @@ class _HomeBody extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: _ActiveDeliveriesSection(
-                  deliveries: state.activeDeliveries, isDark: isDark),
+                  deliveries: state.activeDeliveries),
             ),
             SizedBox(height: 20.h),
 
@@ -219,7 +186,6 @@ class _HomeBody extends StatelessWidget {
                 child: _AlertsSection(
                   inactive: state.inactiveAlerts,
                   unassigned: state.unassignedAlerts,
-                  isDark: isDark,
                 ),
               ),
               SizedBox(height: 20.h),
@@ -228,15 +194,14 @@ class _HomeBody extends StatelessWidget {
             // Performance
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: _PerformanceSection(
-                  performance: state.performance, isDark: isDark),
+              child: _PerformanceSection(performance: state.performance),
             ),
             SizedBox(height: 20.h),
 
             // Quick links to Manage
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: _ManageShortcuts(isDark: isDark),
+              child: const _ManageShortcuts(),
             ),
           ],
         ),
@@ -249,8 +214,13 @@ class _HomeBody extends StatelessWidget {
 
 class _StatsRow extends StatelessWidget {
   final Map<String, dynamic> summary;
-  final bool isDark;
-  const _StatsRow({required this.summary, required this.isDark});
+  const _StatsRow({required this.summary});
+
+  String _fmtNum(double v) {
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
+    return v.toStringAsFixed(0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -260,38 +230,35 @@ class _StatsRow extends StatelessWidget {
     final activeDeliveries = summary['active_deliveries']?.toString() ?? '0';
     final earnings = summary['today_earnings'];
     final earningsStr = earnings != null
-        ? '₹${_fmtNum(double.tryParse(earnings.toString()) ?? 0)}'
-        : '₹0';
-    final primaryColor =
-        isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
+        ? '${AppConstants.currencySymbol}${_fmtNum(double.tryParse(earnings.toString()) ?? 0)}'
+        : '${AppConstants.currencySymbol}0';
 
     final cards = [
       _StatData(
           icon: Icons.people_rounded,
           label: 'Total\nDrivers',
           value: totalDrivers,
-          color: primaryColor),
+          color: Theme.of(context).colorScheme.primary),
       _StatData(
           icon: Icons.check_circle_rounded,
           label: 'Active\nDrivers',
           value: activeDrivers,
-          color: AppColors.success),
+          color: AppDesignTokens.success),
       _StatData(
           icon: Icons.wifi_rounded,
           label: 'Online\nNow',
           value: onlineDrivers,
-          color: isDark ? AppColors.accent : AppLightColors.accent),
+          color: AppTheme.accent(context)),
       _StatData(
           icon: Icons.local_shipping_rounded,
           label: 'Live\nDeliveries',
           value: activeDeliveries,
-          color: warningColor),
+          color: AppDesignTokens.warning),
       _StatData(
           icon: Icons.account_balance_wallet_rounded,
           label: 'Today\'s\nEarnings',
           value: earningsStr,
-          color: AppColors.success),
+          color: AppDesignTokens.success),
     ];
 
     return SizedBox(
@@ -302,16 +269,10 @@ class _StatsRow extends StatelessWidget {
         itemCount: cards.length,
         itemBuilder: (_, i) => Padding(
           padding: EdgeInsets.only(right: 10.w),
-          child: _StatCard(data: cards[i], isDark: isDark),
+          child: _StatCard(data: cards[i]),
         ),
       ),
     );
-  }
-
-  String _fmtNum(double v) {
-    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
-    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-    return v.toStringAsFixed(0);
   }
 }
 
@@ -329,15 +290,11 @@ class _StatData {
 
 class _StatCard extends StatelessWidget {
   final _StatData data;
-  final bool isDark;
-  const _StatCard({required this.data, required this.isDark});
+  const _StatCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final scheme = Theme.of(context).colorScheme;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(14.r),
@@ -347,9 +304,9 @@ class _StatCard extends StatelessWidget {
             width: 112.w,
             padding: EdgeInsets.fromLTRB(12.r, 16.r, 12.r, 12.r),
             decoration: BoxDecoration(
-              color: cardColor,
+              color: scheme.surface,
               borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(color: dividerColor, width: 0.8),
+              border: Border.all(color: scheme.outline, width: 0.8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +316,7 @@ class _StatCard extends StatelessWidget {
                   width: 28.r,
                   height: 28.r,
                   decoration: BoxDecoration(
-                    color: data.color.withOpacity(0.12),
+                    color: data.color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(7.r),
                   ),
                   child: Icon(data.icon, color: data.color, size: 14.r),
@@ -369,14 +326,14 @@ class _StatCard extends StatelessWidget {
                   children: [
                     Text(data.value,
                         style: TextStyle(
-                            color: textPrimary,
+                            color: scheme.onSurface,
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w800,
                             height: 1.1)),
                     SizedBox(height: 2.h),
                     Text(data.label,
                         style: TextStyle(
-                            color: textSecondary,
+                            color: AppTheme.textSecondary(context),
                             fontSize: 9.sp,
                             height: 1.3)),
                   ],
@@ -400,16 +357,12 @@ class _StatCard extends StatelessWidget {
 
 class _ActiveDeliveriesSection extends StatelessWidget {
   final List<Map<String, dynamic>> deliveries;
-  final bool isDark;
-  const _ActiveDeliveriesSection(
-      {required this.deliveries, required this.isDark});
+  const _ActiveDeliveriesSection({required this.deliveries});
 
   @override
   Widget build(BuildContext context) {
-    final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final warningColor = AppDesignTokens.warning;
+    final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,29 +373,25 @@ class _ActiveDeliveriesSection extends StatelessWidget {
             color: warningColor),
         SizedBox(height: 10.h),
         if (deliveries.isEmpty)
-          Container(
-            width: double.infinity,
+          SosCard(
             padding: EdgeInsets.all(20.r),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(color: dividerColor, width: 0.8),
-            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.inbox_rounded, color: dividerColor, size: 20.r),
+                Icon(Icons.inbox_rounded,
+                    color: scheme.outline, size: 20.r),
                 SizedBox(width: 10.w),
                 Text('No active deliveries right now',
                     style: TextStyle(
-                        color: textSecondary, fontSize: 13.sp)),
+                        color: AppTheme.textSecondary(context),
+                        fontSize: 13.sp)),
               ],
             ),
           )
         else
           ...deliveries.map((d) => Padding(
                 padding: EdgeInsets.only(bottom: 8.h),
-                child: _DeliveryTile(delivery: d, isDark: isDark),
+                child: _DeliveryTile(delivery: d),
               )),
       ],
     );
@@ -451,16 +400,11 @@ class _ActiveDeliveriesSection extends StatelessWidget {
 
 class _DeliveryTile extends StatelessWidget {
   final Map<String, dynamic> delivery;
-  final bool isDark;
-  const _DeliveryTile({required this.delivery, required this.isDark});
+  const _DeliveryTile({required this.delivery});
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
+    final warningColor = AppDesignTokens.warning;
 
     final id = delivery['delivery_id']?.toString() ??
         delivery['id']?.toString() ??
@@ -473,20 +417,15 @@ class _DeliveryTile extends StatelessWidget {
     final eta = delivery['eta'] as String? ??
         delivery['estimated_arrival'] as String?;
 
-    return Container(
+    return SosCard(
       padding: EdgeInsets.all(14.r),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: dividerColor, width: 0.8),
-      ),
       child: Row(
         children: [
           Container(
             width: 36.r,
             height: 36.r,
             decoration: BoxDecoration(
-              color: warningColor.withOpacity(0.12),
+              color: warningColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(Icons.local_shipping_rounded,
@@ -499,13 +438,14 @@ class _DeliveryTile extends StatelessWidget {
               children: [
                 Text('#$id',
                     style: TextStyle(
-                        color: textPrimary,
+                        color: AppTheme.textPrimary(context),
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600)),
                 SizedBox(height: 2.h),
                 Text(driverName,
                     style: TextStyle(
-                        color: textSecondary, fontSize: 11.sp)),
+                        color: AppTheme.textSecondary(context),
+                        fontSize: 11.sp)),
               ],
             ),
           ),
@@ -513,18 +453,20 @@ class _DeliveryTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _StatusBadge(status: status, isDark: isDark),
+                _StatusBadge(status: status),
                 if (eta != null) ...[
                   SizedBox(height: 4.h),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.schedule_rounded,
-                          size: 10.r, color: textSecondary),
+                          size: 10.r,
+                          color: AppTheme.textSecondary(context)),
                       SizedBox(width: 3.w),
                       Text(eta,
                           style: TextStyle(
-                              color: textSecondary, fontSize: 10.sp)),
+                              color: AppTheme.textSecondary(context),
+                              fontSize: 10.sp)),
                     ],
                   ),
                 ],
@@ -542,16 +484,13 @@ class _DeliveryTile extends StatelessWidget {
 class _AlertsSection extends StatelessWidget {
   final List<Map<String, dynamic>> inactive;
   final List<Map<String, dynamic>> unassigned;
-  final bool isDark;
   const _AlertsSection(
-      {required this.inactive,
-      required this.unassigned,
-      required this.isDark});
+      {required this.inactive, required this.unassigned});
 
   @override
   Widget build(BuildContext context) {
-    final warningColor = isDark ? AppColors.warning : AppLightColors.warning;
-    final errorColor = isDark ? AppColors.error : AppLightColors.error;
+    final warningColor = AppDesignTokens.warning;
+    final errorColor = AppTheme.error(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -596,9 +535,9 @@ class _AlertTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -621,22 +560,21 @@ class _AlertTile extends StatelessWidget {
 
 class _PerformanceSection extends StatelessWidget {
   final Map<String, dynamic> performance;
-  final bool isDark;
-  const _PerformanceSection(
-      {required this.performance, required this.isDark});
+  const _PerformanceSection({required this.performance});
 
   @override
   Widget build(BuildContext context) {
     final acceptanceRate =
         (performance['acceptance_rate'] as num?)?.toDouble() ?? 0.0;
     final missedJobs = (performance['missed_jobs'] as num?)?.toInt() ?? 0;
-    final completedJobs = (performance['completed_jobs'] as num?)?.toInt() ?? 0;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-    final errorColor = isDark ? AppColors.error : AppLightColors.error;
+    final completedJobs =
+        (performance['completed_jobs'] as num?)?.toInt() ?? 0;
+    final accentColor = AppTheme.accent(context);
+    final errorColor = AppTheme.error(context);
     final rateColor = acceptanceRate >= 80
-        ? AppColors.success
+        ? AppDesignTokens.success
         : acceptanceRate >= 50
-            ? (isDark ? AppColors.warning : AppLightColors.warning)
+            ? AppDesignTokens.warning
             : errorColor;
 
     return Column(
@@ -656,7 +594,6 @@ class _PerformanceSection extends StatelessWidget {
                 icon: Icons.thumb_up_rounded,
                 color: rateColor,
                 subLabel: 'fleet average',
-                isDark: isDark,
               ),
             ),
             SizedBox(width: 10.w),
@@ -665,9 +602,8 @@ class _PerformanceSection extends StatelessWidget {
                 label: 'Missed Jobs',
                 value: missedJobs.toString(),
                 icon: Icons.cancel_rounded,
-                color: missedJobs == 0 ? AppColors.success : errorColor,
+                color: missedJobs == 0 ? AppDesignTokens.success : errorColor,
                 subLabel: 'this month',
-                isDark: isDark,
               ),
             ),
             SizedBox(width: 10.w),
@@ -676,9 +612,8 @@ class _PerformanceSection extends StatelessWidget {
                 label: 'Completed',
                 value: completedJobs.toString(),
                 icon: Icons.check_circle_rounded,
-                color: AppColors.success,
+                color: AppDesignTokens.success,
                 subLabel: 'this month',
-                isDark: isDark,
               ),
             ),
           ],
@@ -694,30 +629,20 @@ class _PerfCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String subLabel;
-  final bool isDark;
   const _PerfCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
     required this.subLabel,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final scheme = Theme.of(context).colorScheme;
 
-    return Container(
+    return SosCard(
       padding: EdgeInsets.all(13.r),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: dividerColor, width: 0.8),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -731,12 +656,12 @@ class _PerfCard extends StatelessWidget {
           SizedBox(height: 2.h),
           Text(label,
               style: TextStyle(
-                  color: textPrimary,
+                  color: scheme.onSurface,
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w500)),
           Text(subLabel,
               style: TextStyle(
-                  color: textSecondary, fontSize: 9.sp)),
+                  color: AppTheme.textSecondary(context), fontSize: 9.sp)),
         ],
       ),
     );
@@ -746,16 +671,12 @@ class _PerfCard extends StatelessWidget {
 // ─── Manage shortcuts ─────────────────────────────────────────────────────────
 
 class _ManageShortcuts extends StatelessWidget {
-  final bool isDark;
-  const _ManageShortcuts({required this.isDark});
+  const _ManageShortcuts();
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final accentColor = AppTheme.accent(context);
+    final successColor = AppDesignTokens.success;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,26 +692,10 @@ class _ManageShortcuts extends StatelessWidget {
               child: GestureDetector(
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.v2AddDriver),
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                        color: accentColor.withOpacity(0.25)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.person_add_rounded,
-                          color: accentColor, size: 22.r),
-                      SizedBox(height: 6.h),
-                      Text('Add Driver',
-                          style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: accentColor)),
-                    ],
-                  ),
+                child: _QuickActionCard(
+                  icon: Icons.person_add_rounded,
+                  label: 'Add Driver',
+                  color: accentColor,
                 ),
               ),
             ),
@@ -799,26 +704,10 @@ class _ManageShortcuts extends StatelessWidget {
               child: GestureDetector(
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.v2VehicleList),
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                        color: accentColor.withOpacity(0.25)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.directions_car_rounded,
-                          color: accentColor, size: 22.r),
-                      SizedBox(height: 6.h),
-                      Text('Add Vehicle',
-                          style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: accentColor)),
-                    ],
-                  ),
+                child: _QuickActionCard(
+                  icon: Icons.directions_car_rounded,
+                  label: 'Add Vehicle',
+                  color: accentColor,
                 ),
               ),
             ),
@@ -827,26 +716,10 @@ class _ManageShortcuts extends StatelessWidget {
               child: GestureDetector(
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.v2DriverList),
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                        color: accentColor.withOpacity(0.25)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.list_rounded,
-                          color: accentColor, size: 22.r),
-                      SizedBox(height: 6.h),
-                      Text('All Drivers',
-                          style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: accentColor)),
-                    ],
-                  ),
+                child: _QuickActionCard(
+                  icon: Icons.list_rounded,
+                  label: 'All Drivers',
+                  color: accentColor,
                 ),
               ),
             ),
@@ -859,29 +732,14 @@ class _ManageShortcuts extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const DeliveryFeedScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const DeliveryFeedScreen()),
                 ),
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                        color: AppColors.success.withOpacity(0.25)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.local_shipping,
-                          color: AppColors.success, size: 22.r),
-                      SizedBox(height: 6.h),
-                      Text('Available Deliveries',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.success)),
-                    ],
-                  ),
+                child: _QuickActionCard(
+                  icon: Icons.local_shipping,
+                  label: 'Available Deliveries',
+                  color: successColor,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -892,32 +750,53 @@ class _ManageShortcuts extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (_) => const MyQuotesScreen()),
                 ),
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                        color: Colors.blue.withOpacity(0.25)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.receipt_long,
-                          color: Colors.blue, size: 22.r),
-                      SizedBox(height: 6.h),
-                      Text('My Quotes',
-                          style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue)),
-                    ],
-                  ),
+                child: _QuickActionCard(
+                  icon: Icons.receipt_long,
+                  label: 'My Quotes',
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final TextAlign textAlign;
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.textAlign = TextAlign.center,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 14.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 22.r),
+          SizedBox(height: 6.h),
+          Text(label,
+              textAlign: textAlign,
+              style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: color)),
+        ],
+      ),
     );
   }
 }
@@ -950,16 +829,13 @@ class _SectionHeader extends StatelessWidget {
 
 class _StatusBadge extends StatelessWidget {
   final String status;
-  final bool isDark;
-  const _StatusBadge({required this.status, required this.isDark});
+  const _StatusBadge({required this.status});
 
-  Color _color(String s) => switch (s) {
-        'active' || 'completed' || 'delivered' => AppColors.success,
-        'suspended' || 'disabled' || 'rejected' || 'failed' =>
-          isDark ? AppColors.error : AppLightColors.error,
-        'in_progress' || 'picked_up' =>
-          isDark ? AppColors.warning : AppLightColors.warning,
-        _ => isDark ? AppColors.textSecondary : AppLightColors.textSecondary,
+  SosTone _tone(String s) => switch (s) {
+        'active' || 'completed' || 'delivered' => SosTone.success,
+        'suspended' || 'disabled' || 'rejected' || 'failed' => SosTone.error,
+        'in_progress' || 'picked_up' => SosTone.warning,
+        _ => SosTone.neutral,
       };
 
   String _label(String s) => switch (s) {
@@ -975,17 +851,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _color(status);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: c.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(_label(status),
-          style: TextStyle(
-              color: c, fontSize: 9.sp, fontWeight: FontWeight.w700)),
-    );
+    return SosChip(label: _label(status), tone: _tone(status));
   }
 }
 
@@ -993,13 +859,11 @@ class _StatusBadge extends StatelessWidget {
 
 class _DriverSnapshotSection extends StatelessWidget {
   final List<Map<String, dynamic>> drivers;
-  final bool isDark;
-  const _DriverSnapshotSection(
-      {required this.drivers, required this.isDark});
+  const _DriverSnapshotSection({required this.drivers});
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final accentColor = AppTheme.accent(context);
     final toShow = drivers.length > 3 ? drivers.sublist(0, 3) : drivers;
 
     return Column(
@@ -1028,7 +892,7 @@ class _DriverSnapshotSection extends StatelessWidget {
         SizedBox(height: 10.h),
         ...toShow.map((d) => Padding(
               padding: EdgeInsets.only(bottom: 8.h),
-              child: _DriverSnapshotTile(driver: d, isDark: isDark),
+              child: _DriverSnapshotTile(driver: d),
             )),
       ],
     );
@@ -1037,21 +901,12 @@ class _DriverSnapshotSection extends StatelessWidget {
 
 class _DriverSnapshotTile extends StatelessWidget {
   final Map<String, dynamic> driver;
-  final bool isDark;
-  const _DriverSnapshotTile(
-      {required this.driver, required this.isDark});
+  const _DriverSnapshotTile({required this.driver});
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor =
-        isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primaryColor =
-        isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final primaryColor = scheme.primary;
 
     final name = driver['name'] as String? ?? '—';
     final status = driver['status'] as String? ?? '';
@@ -1063,10 +918,9 @@ class _DriverSnapshotTile extends StatelessWidget {
     final vehicleType = vehicle?['type'] as String?;
 
     final statusColor = switch (status) {
-      'active' => AppColors.success,
-      'suspended' || 'disabled' =>
-        isDark ? AppColors.error : AppLightColors.error,
-      _ => textSecondary,
+      'active' => AppDesignTokens.success,
+      'suspended' || 'disabled' => AppTheme.error(context),
+      _ => AppTheme.textSecondary(context),
     };
 
     return GestureDetector(
@@ -1081,20 +935,15 @@ class _DriverSnapshotTile extends StatelessWidget {
           arguments: {'driver_id': id, 'driver': driver},
         );
       },
-      child: Container(
+      child: SosCard(
         padding: EdgeInsets.all(12.r),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: dividerColor, width: 0.8),
-        ),
         child: Row(
           children: [
             Stack(
               children: [
                 CircleAvatar(
                   radius: 18.r,
-                  backgroundColor: primaryColor.withOpacity(0.12),
+                  backgroundColor: primaryColor.withValues(alpha: 0.12),
                   child: Text(
                     name.isNotEmpty ? name[0].toUpperCase() : '?',
                     style: TextStyle(
@@ -1111,9 +960,12 @@ class _DriverSnapshotTile extends StatelessWidget {
                     width: 8.r,
                     height: 8.r,
                     decoration: BoxDecoration(
-                      color: isOnline ? AppColors.success : dividerColor,
+                      color: isOnline
+                          ? AppDesignTokens.success
+                          : scheme.outline,
                       shape: BoxShape.circle,
-                      border: Border.all(color: cardColor, width: 1.5),
+                      border: Border.all(
+                          color: scheme.surface, width: 1.5),
                     ),
                   ),
                 ),
@@ -1129,7 +981,7 @@ class _DriverSnapshotTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
-                      color: textPrimary,
+                      color: scheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 2.h),
@@ -1163,7 +1015,8 @@ class _DriverSnapshotTile extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.directions_car_rounded,
-                          size: 10.r, color: textSecondary),
+                          size: 10.r,
+                          color: AppTheme.textSecondary(context)),
                       SizedBox(width: 3.w),
                       Flexible(
                         child: Text(
@@ -1171,7 +1024,7 @@ class _DriverSnapshotTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11.sp,
-                            color: textSecondary,
+                            color: AppTheme.textSecondary(context),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1182,63 +1035,16 @@ class _DriverSnapshotTile extends StatelessWidget {
                     Text(
                       vehicleType.toUpperCase(),
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 9.sp, color: textSecondary),
+                      style: TextStyle(
+                          fontSize: 9.sp,
+                          color: AppTheme.textSecondary(context)),
                     ),
                 ],
               ),
             ),
             SizedBox(width: 6.w),
             Icon(Icons.chevron_right_rounded,
-                color: dividerColor, size: 16.r),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Error view ───────────────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final bool isDark;
-  final VoidCallback onRetry;
-  const _ErrorView(
-      {required this.message, required this.isDark, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    final errorColor = isDark ? AppColors.error : AppLightColors.error;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.r),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 56.r,
-              height: 56.r,
-              decoration: BoxDecoration(
-                color: errorColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child: Icon(Icons.wifi_off_rounded,
-                  color: errorColor, size: 28.r),
-            ),
-            SizedBox(height: 16.h),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: textSecondary, fontSize: 13.sp)),
-            SizedBox(height: 20.h),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: Icon(Icons.refresh_rounded, size: 16.r),
-              label: const Text('Retry'),
-            ),
+                color: scheme.outline, size: 16.r),
           ],
         ),
       ),
