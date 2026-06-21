@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_cubit.dart';
-import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
-import '../../core/app_theme.dart';
+import '../../widgets/widgets.dart';
 
 class OtpEntrySheet extends StatefulWidget {
   final int  deliveryId;
@@ -48,6 +48,7 @@ class _OtpEntrySheetState extends State<OtpEntrySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.only(
         left: 24.w,
@@ -64,7 +65,7 @@ class _OtpEntrySheetState extends State<OtpEntrySheet> {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: scheme.outline,
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
@@ -72,43 +73,30 @@ class _OtpEntrySheetState extends State<OtpEntrySheet> {
           SizedBox(height: 20.h),
           Text(
             widget.isPickup ? 'Pickup OTP' : 'Delivery OTP',
-            style: TextStyle(color: AppColors.textPrimary, fontSize: 18.sp, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           SizedBox(height: 6.h),
           Text(
             widget.isPickup
                 ? 'Ask the sender for the pickup OTP.'
                 : 'Ask the recipient for the delivery OTP.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13.sp),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           SizedBox(height: 24.h),
-          TextField(
+          SosTextField(
+            label: 'OTP',
             controller: _otpCtr,
             keyboardType: TextInputType.number,
-            maxLength: 6,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 12,
-            ),
-            decoration: InputDecoration(
-              hintText: '------',
-              counterText: '',
-              hintStyle: TextStyle(color: AppColors.divider, fontSize: 28.sp, letterSpacing: 12),
-            ),
+            hint: '6-digit code',
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
           ),
           SizedBox(height: 24.h),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _submit(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.isPickup ? AppColors.primary : AppColors.success,
-              ),
-              child: Text(widget.isPickup ? 'Confirm Pickup' : 'Confirm Delivery'),
-            ),
+          SosButton(
+            label: 'Verify OTP',
+            onPressed: () => _submit(context),
           ),
         ],
       ),
