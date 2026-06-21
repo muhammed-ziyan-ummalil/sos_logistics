@@ -11,6 +11,7 @@ import '../../../core/app_theme.dart';
 import '../../../utility/api_service.dart';
 import '../../../utility/form_validators.dart';
 import '../../../utility/pincode_autofill_field.dart';
+import '../../../widgets/widgets.dart';
 
 class OwnerEditProfileScreen extends StatefulWidget {
   const OwnerEditProfileScreen({super.key});
@@ -79,10 +80,10 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final primaryColor = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary  = isDark ? AppColors.textPrimary  : AppLightColors.textPrimary;
+    final scheme = Theme.of(context).colorScheme;
+    final surfaceColor = scheme.surface;
+    final primaryColor = scheme.primary;
+    final textPrimary  = scheme.onSurface;
 
     await showModalBottomSheet(
       context: context,
@@ -103,7 +104,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                       color: textPrimary)),
             ]),
           ),
-          Divider(height: 1, color: isDark ? AppColors.divider : AppLightColors.divider),
+          const Divider(height: 1),
           ListTile(
             leading: Icon(Icons.photo_library_outlined, color: primaryColor),
             title: Text('Gallery',
@@ -146,14 +147,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor      = isDark ? AppColors.background    : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface       : AppLightColors.surface;
-    final primaryColor = isDark ? AppColors.primaryLight  : AppLightColors.primary;
-    final textPrimary  = isDark ? AppColors.textPrimary   : AppLightColors.textPrimary;
-    final textSecondary= isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final dividerColor = isDark ? AppColors.divider       : AppLightColors.divider;
-    final cardColor    = isDark ? AppColors.card          : AppLightColors.card;
+    final scheme = Theme.of(context).colorScheme;
 
     return BlocListener<OwnerProfileCubit, OwnerProfileState>(
       listener: (context, state) {
@@ -161,7 +155,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
         if (state is OwnerProfileUpdated) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: const Text('Profile updated successfully'),
-            backgroundColor: primaryColor,
+            backgroundColor: scheme.primary,
             behavior: SnackBarBehavior.floating,
           ));
           Navigator.pop(context, true);
@@ -169,42 +163,28 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
         if (state is OwnerProfileError) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(state.message),
-            backgroundColor: AppColors.error,
+            backgroundColor: scheme.error,
             behavior: SnackBarBehavior.floating,
           ));
         }
       },
       child: Scaffold(
-        backgroundColor: bgColor,
-        appBar: AppBar(
-          backgroundColor: surfaceColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
-                size: 20.r, color: textPrimary),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            'Edit Profile',
-            style: TextStyle(
-                fontSize: 17.sp,
-                fontWeight: FontWeight.w700,
-                color: textPrimary,
-                letterSpacing: -0.3),
-          ),
-          centerTitle: true,
-        ),
+        appBar: const SosAppBar(title: 'Edit Profile'),
         body: BlocBuilder<OwnerProfileCubit, OwnerProfileState>(
           builder: (context, state) {
             if (state is OwnerProfileLoading) {
               return SizedBox(
                 height: 400.h,
-                child: Center(
-                    child: CircularProgressIndicator(color: primaryColor)),
+                child: const Center(child: CircularProgressIndicator()),
               );
             }
 
             final isSaving = state is OwnerProfileUpdating;
+            final primaryColor = scheme.primary;
+            final surfaceColor = scheme.surface;
+            final textSecondary = AppTheme.textSecondary(context);
+            final cardColor = AppTheme.card(context);
+            final dividerColor = AppTheme.divider(context);
 
             return SingleChildScrollView(
               padding: EdgeInsets.all(16.w),
@@ -225,9 +205,9 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                               height: 100.r,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: primaryColor.withOpacity(0.12),
+                                color: primaryColor.withValues(alpha: 0.12),
                                 border: Border.all(
-                                    color: primaryColor.withOpacity(0.3),
+                                    color: primaryColor.withValues(alpha: 0.3),
                                     width: 2),
                               ),
                               child: ClipOval(
@@ -249,7 +229,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                                 border: Border.all(color: surfaceColor, width: 2),
                               ),
                               child: Icon(Icons.camera_alt,
-                                  size: 14.r, color: Colors.white),
+                                  size: 14.r, color: scheme.onPrimary),
                             ),
                           ],
                         ),
@@ -269,21 +249,19 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                     _sectionHeader('Personal Information', textSecondary),
                     SizedBox(height: 10.h),
 
-                    _label('Full Name', textPrimary),
-                    _field(
+                    SosTextField(
+                      label: 'Full Name',
                       controller: _nameCtrl,
-                      icon: Icons.person_outline,
+                      prefixIcon: Icons.person_outline,
                       hint: 'Your full name',
-                      primaryColor: primaryColor,
-                      cardColor: cardColor,
-                      dividerColor: dividerColor,
                       validator: (v) =>
                           (v == null || v.trim().length < 2)
                               ? 'Name must be at least 2 characters'
                               : null,
                     ),
+                    SizedBox(height: 12.h),
 
-                    _label('Gender', textPrimary),
+                    _label('Gender', AppTheme.textPrimary(context)),
                     _genderDropdown(
                       primaryColor: primaryColor,
                       cardColor: cardColor,
@@ -297,24 +275,19 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                     _sectionHeader('Address', textSecondary),
                     SizedBox(height: 10.h),
 
-                    _label('Flat / Building / Street', textPrimary),
-                    _field(
+                    SosTextField(
+                      label: 'Flat / Building / Street',
                       controller: _addressLineCtrl,
-                      icon: Icons.home_outlined,
+                      prefixIcon: Icons.home_outlined,
                       hint: 'e.g. 12B, Rose Apartments, MG Road',
-                      primaryColor: primaryColor,
-                      cardColor: cardColor,
-                      dividerColor: dividerColor,
                     ),
+                    SizedBox(height: 12.h),
 
-                    _label('Area / Locality', textPrimary),
-                    _field(
+                    SosTextField(
+                      label: 'Area / Locality',
                       controller: _areaCtrl,
-                      icon: Icons.place_outlined,
+                      prefixIcon: Icons.place_outlined,
                       hint: 'e.g. Koramangala',
-                      primaryColor: primaryColor,
-                      cardColor: cardColor,
-                      dividerColor: dividerColor,
                     ),
 
                     SizedBox(height: 14.h),
@@ -322,46 +295,31 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _label('City', textPrimary),
-                              _field(
-                                controller: _cityCtrl,
-                                icon: Icons.location_city_outlined,
-                                hint: 'e.g. Bangalore',
-                                primaryColor: primaryColor,
-                                cardColor: cardColor,
-                                dividerColor: dividerColor,
-                                validator: (v) =>
-                                    (v == null || v.trim().isEmpty)
-                                        ? 'City is required'
-                                        : null,
-                              ),
-                            ],
+                          child: SosTextField(
+                            label: 'City',
+                            controller: _cityCtrl,
+                            prefixIcon: Icons.location_city_outlined,
+                            hint: 'e.g. Bangalore',
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? 'City is required'
+                                    : null,
                           ),
                         ),
                         SizedBox(width: 12.w),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _label('State', textPrimary),
-                              _field(
-                                controller: _stateCtrl,
-                                icon: Icons.map_outlined,
-                                hint: 'e.g. Karnataka',
-                                primaryColor: primaryColor,
-                                cardColor: cardColor,
-                                dividerColor: dividerColor,
-                              ),
-                            ],
+                          child: SosTextField(
+                            label: 'State',
+                            controller: _stateCtrl,
+                            prefixIcon: Icons.map_outlined,
+                            hint: 'e.g. Karnataka',
                           ),
                         ),
                       ],
                     ),
 
-                    _label('Pincode', textPrimary),
+                    SizedBox(height: 12.h),
+                    _label('Pincode', AppTheme.textPrimary(context)),
                     PincodeAutofillField(
                       controller: _pincodeCtrl,
                       cityController: _cityCtrl,
@@ -373,64 +331,41 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                     SizedBox(height: 32.h),
 
                     // ── Save ─────────────────────────────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isSaving ? null : _save,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 14.h),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r)),
-                          elevation: 0,
-                        ),
-                        child: isSaving
-                            ? SizedBox(
-                                width: 20.r,
-                                height: 20.r,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white),
-                              )
-                            : Text(
-                                'Save Changes',
-                                style: TextStyle(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w700),
-                              ),
-                      ),
+                    SosButton(
+                      label: 'Save Changes',
+                      loading: isSaving,
+                      onPressed: isSaving ? null : _save,
                     ),
 
                     SizedBox(height: 32.h),
 
                     // ── Danger Zone ───────────────────────────────────────────
-                    _sectionHeader('Danger Zone', const Color(0xFFDC2626)),
+                    _sectionHeader('Danger Zone', scheme.error),
                     SizedBox(height: 10.h),
                     Container(
                       decoration: BoxDecoration(
                         color: cardColor,
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                            color: const Color(0xFFDC2626).withOpacity(0.2)),
+                            color: scheme.error.withValues(alpha: 0.2)),
                       ),
                       child: ListTile(
-                        leading: const Icon(Icons.delete_outline_rounded,
-                            color: Color(0xFFDC2626)),
-                        title: const Text(
+                        leading: Icon(Icons.delete_outline_rounded,
+                            color: scheme.error),
+                        title: Text(
                           'Delete Account',
                           style: TextStyle(
-                              color: Color(0xFFDC2626),
+                              color: scheme.error,
                               fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
                           '30-day grace period before permanent deletion',
                           style: TextStyle(
                               fontSize: 12.sp,
-                              color: const Color(0xFFDC2626).withOpacity(0.7)),
+                              color: scheme.error.withValues(alpha: 0.7)),
                         ),
-                        trailing: const Icon(Icons.chevron_right_rounded,
-                            color: Color(0xFFDC2626)),
+                        trailing: Icon(Icons.chevron_right_rounded,
+                            color: scheme.error),
                         onTap: () => _showDeleteAccountDialog(primaryColor),
                       ),
                     ),
@@ -494,7 +429,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
     required Color textSecondary,
   }) {
     return DropdownButtonFormField<String>(
-      value: _selectedGender,
+      initialValue: _selectedGender,
       dropdownColor: cardColor,
       hint: Row(children: [
         Icon(Icons.wc_outlined, size: 20.r, color: primaryColor),
@@ -525,53 +460,12 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
     );
   }
 
-  Widget _field({
-    required TextEditingController controller,
-    required IconData icon,
-    required String hint,
-    required Color primaryColor,
-    required Color cardColor,
-    required Color dividerColor,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: cardColor,
-        prefixIcon: Icon(icon, size: 20.r, color: primaryColor),
-        contentPadding:
-            EdgeInsets.symmetric(vertical: 14.h, horizontal: 12.w),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide(color: dividerColor)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide(color: dividerColor)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: BorderSide(color: primaryColor, width: 1.5)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide: const BorderSide(color: Color(0xFFDC2626))),
-        focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.r),
-            borderSide:
-                const BorderSide(color: Color(0xFFDC2626), width: 1.5)),
-      ),
-    );
-  }
-
   // ── Delete account ────────────────────────────────────────────────────────────
   Future<void> _showDeleteAccountDialog(Color primaryColor) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final textPrimary  = isDark ? AppColors.textPrimary  : AppLightColors.textPrimary;
-    final textSecondary= isDark ? AppColors.textSecondary: AppLightColors.textSecondary;
+    final scheme = Theme.of(context).colorScheme;
+    final surfaceColor = scheme.surface;
+    final textPrimary  = scheme.onSurface;
+    final textSecondary = AppTheme.textSecondary(context);
 
     final confirmCtrl = TextEditingController();
     bool canDelete = false;
@@ -592,11 +486,11 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDC2626).withOpacity(0.08),
+                    color: scheme.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: const Icon(Icons.delete_outline_rounded,
-                      color: Color(0xFFDC2626), size: 28),
+                  child: Icon(Icons.delete_outline_rounded,
+                      color: scheme.error, size: 28),
                 ),
                 SizedBox(height: 12.h),
                 Text('Delete Account',
@@ -615,10 +509,10 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                 TextFormField(
                   controller: confirmCtrl,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.w700,
                       letterSpacing: 2,
-                      color: Color(0xFFDC2626)),
+                      color: scheme.error),
                   decoration: InputDecoration(
                     hintText: 'Type CONFIRM to proceed',
                     hintStyle: TextStyle(
@@ -627,20 +521,18 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                         letterSpacing: 0,
                         color: textSecondary),
                     filled: true,
-                    fillColor:
-                        isDark ? AppColors.card : AppLightColors.card,
+                    fillColor: AppTheme.card(context),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFDC2626))),
+                        borderSide: BorderSide(color: scheme.error)),
                     enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
                         borderSide: BorderSide(
-                            color: const Color(0xFFDC2626).withOpacity(0.4))),
+                            color: scheme.error.withValues(alpha: 0.4))),
                     focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.r),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFDC2626), width: 2)),
+                        borderSide: BorderSide(
+                            color: scheme.error, width: 2)),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
                   ),
@@ -651,23 +543,20 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: SosButton(
+                        label: 'Cancel',
+                        variant: SosButtonVariant.outline,
                         onPressed: () => Navigator.pop(dCtx, false),
-                        child: const Text('Cancel'),
                       ),
                     ),
                     SizedBox(width: 12.w),
                     Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: canDelete
-                              ? const Color(0xFFDC2626)
-                              : const Color(0xFFDC2626).withOpacity(0.3),
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed:
-                            canDelete ? () => Navigator.pop(dCtx, true) : null,
-                        child: const Text('Delete'),
+                      child: SosButton(
+                        label: 'Delete',
+                        variant: SosButtonVariant.danger,
+                        onPressed: canDelete
+                            ? () => Navigator.pop(dCtx, true)
+                            : null,
                       ),
                     ),
                   ],
@@ -690,7 +579,7 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(res['message'] as String? ?? 'Failed. Try again.'),
-          backgroundColor: AppColors.error,
+          backgroundColor: scheme.error,
           behavior: SnackBarBehavior.floating,
         ));
       }
