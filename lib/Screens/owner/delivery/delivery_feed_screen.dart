@@ -6,6 +6,7 @@ import '../../../Bloc/DeliveryFeed/delivery_feed_cubit.dart';
 import '../../../Bloc/DeliveryFeed/delivery_feed_state.dart';
 import '../../../Model/delivery_request_model.dart';
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 import 'delivery_request_detail_screen.dart';
 
@@ -35,27 +36,22 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: scheme.surfaceContainerHighest,
       body: Column(
         children: [
           // ── Header ──────────────────────────────────────────────────────────
           Container(
-            color: surfaceColor,
+            color: scheme.surface,
             child: SafeArea(
               bottom: false,
               child: Container(
                 padding: EdgeInsets.fromLTRB(16.w, 12.h, 8.w, 0),
                 decoration: BoxDecoration(
-                  color: surfaceColor,
-                  border: Border(bottom: BorderSide(color: dividerColor)),
+                  color: scheme.surface,
+                  border: Border(bottom: BorderSide(color: scheme.outline)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +64,7 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
                             style: TextStyle(
                               fontSize: 18.sp,
                               fontWeight: FontWeight.w700,
-                              color: textPrimary,
+                              color: scheme.onSurface,
                               letterSpacing: -0.4,
                             ),
                           ),
@@ -76,9 +72,7 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
                         BlocBuilder<DeliveryFeedCubit, DeliveryFeedState>(
                           builder: (_, s) => IconButton(
                             icon: Icon(Icons.refresh_rounded,
-                                color: isDark
-                                    ? AppColors.textSecondary
-                                    : AppLightColors.textSecondary,
+                                color: scheme.onSurface.withValues(alpha: 0.5),
                                 size: 20.r),
                             onPressed: s is DeliveryFeedLoading
                                 ? null
@@ -92,10 +86,9 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
                     SizedBox(height: 8.h),
                     TabBar(
                       controller: _tabController,
-                      labelColor: accentColor,
-                      unselectedLabelColor:
-                          isDark ? AppColors.textSecondary : AppLightColors.textSecondary,
-                      indicatorColor: accentColor,
+                      labelColor: scheme.primary,
+                      unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.5),
+                      indicatorColor: scheme.primary,
                       indicatorSize: TabBarIndicatorSize.label,
                       labelStyle: TextStyle(
                           fontSize: 13.sp, fontWeight: FontWeight.w600),
@@ -118,15 +111,11 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
               builder: (context, state) {
                 if (state is DeliveryFeedInitial ||
                     state is DeliveryFeedLoading) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                        color: accentColor, strokeWidth: 2.5),
-                  );
+                  return _buildSkeleton();
                 }
                 if (state is DeliveryFeedError) {
-                  return _ErrorView(
+                  return ErrorState(
                     message: state.message,
-                    isDark: isDark,
                     onRetry: () =>
                         context.read<DeliveryFeedCubit>().fetchFeed(),
                   );
@@ -143,11 +132,9 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
                     controller: _tabController,
                     children: [
                       _buildRequestList(
-                          context, openRequests, 'No open delivery requests',
-                          isDark: isDark),
+                          context, openRequests, 'No open delivery requests'),
                       _buildRequestList(
-                          context, quotedRequests, 'No quoted requests',
-                          isDark: isDark),
+                          context, quotedRequests, 'No quoted requests'),
                     ],
                   );
                 }
@@ -160,64 +147,43 @@ class _DeliveryFeedScreenState extends State<DeliveryFeedScreen>
     );
   }
 
+  Widget _buildSkeleton() {
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
+      itemCount: 4,
+      itemBuilder: (_, __) => Padding(
+        padding: EdgeInsets.only(bottom: 12.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SkeletonBox(width: double.infinity, height: 120.h),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRequestList(
     BuildContext context,
     List<DeliveryRequestModel> requests,
-    String emptyMessage, {
-    required bool isDark,
-  }) {
+    String emptyMessage,
+  ) {
     if (requests.isEmpty) {
-      return _EmptyView(message: emptyMessage, isDark: isDark);
+      return EmptyState(
+        icon: Icons.local_shipping_outlined,
+        title: emptyMessage,
+      );
     }
     return RefreshIndicator(
-      color: isDark ? AppColors.accent : AppLightColors.accent,
-      backgroundColor: isDark ? AppColors.card : AppLightColors.card,
+      color: Theme.of(context).colorScheme.primary,
       onRefresh: () => context.read<DeliveryFeedCubit>().fetchFeed(),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
         itemCount: requests.length,
         itemBuilder: (context, index) {
-          return _DeliveryRequestCard(
-              request: requests[index], isDark: isDark);
+          return _DeliveryRequestCard(request: requests[index]);
         },
-      ),
-    );
-  }
-}
-
-// ─── Empty view ───────────────────────────────────────────────────────────────
-
-class _EmptyView extends StatelessWidget {
-  final String message;
-  final bool isDark;
-  const _EmptyView({required this.message, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 64.r,
-            height: 64.r,
-            decoration: BoxDecoration(
-              color: dividerColor.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-            child: Icon(Icons.local_shipping_outlined,
-                size: 32.r, color: dividerColor),
-          ),
-          SizedBox(height: 16.h),
-          Text(message,
-              style:
-                  TextStyle(color: textSecondary, fontSize: 13.sp)),
-        ],
       ),
     );
   }
@@ -227,19 +193,12 @@ class _EmptyView extends StatelessWidget {
 
 class _DeliveryRequestCard extends StatelessWidget {
   final DeliveryRequestModel request;
-  final bool isDark;
 
-  const _DeliveryRequestCard(
-      {required this.request, required this.isDark});
+  const _DeliveryRequestCard({required this.request});
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final scheme = Theme.of(context).colorScheme;
 
     final expiryDiff =
         DateTime.tryParse(request.expiresAt)?.difference(DateTime.now());
@@ -248,7 +207,8 @@ class _DeliveryRequestCard extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
-      child: GestureDetector(
+      child: SosCard(
+        padding: EdgeInsets.zero,
         onTap: () {
           Navigator.push(
             context,
@@ -258,154 +218,124 @@ class _DeliveryRequestCard extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: dividerColor, width: 0.8),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(14.r),
-            child: Stack(
-              children: [
-                // accent top accent bar
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(height: 3.h, color: accentColor),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16.w, 16.h + 3.h, 16.w, 14.h),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Route row ──────────────────────────────────────────
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Route column
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _AddressRow(
-                                  icon: Icons.radio_button_checked_rounded,
-                                  iconColor: AppColors.success,
-                                  address: request.pickupAddress,
-                                  textColor: textPrimary,
-                                  isDark: isDark,
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(left: 6.w),
-                                  child: Container(
-                                    height: 16.h,
-                                    width: 1,
-                                    color: dividerColor,
-                                  ),
-                                ),
-                                _AddressRow(
-                                  icon: Icons.location_on_rounded,
-                                  iconColor:
-                                      isDark ? AppColors.error : AppLightColors.error,
-                                  address: request.dropAddress,
-                                  textColor: textPrimary,
-                                  isDark: isDark,
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          // Distance / duration
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppDesignTokens.radiusCard),
+          child: Stack(
+            children: [
+              // accent top bar
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(height: 3.h, color: scheme.primary),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 16.h + 3.h, 16.w, 14.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Route row ──────────────────────────────────────────
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Route column
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${request.distanceKm.toStringAsFixed(1)} km',
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: accentColor,
-                                  height: 1.1,
+                              _AddressRow(
+                                icon: Icons.radio_button_checked_rounded,
+                                iconColor: AppDesignTokens.success,
+                                address: request.pickupAddress,
+                                textColor: scheme.onSurface,
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(left: 6.w),
+                                child: Container(
+                                  height: 16.h,
+                                  width: 1,
+                                  color: scheme.outline,
                                 ),
                               ),
-                              Text(
-                                '~${request.estimatedDurationMin} min',
-                                style: TextStyle(
-                                    fontSize: 11.sp, color: textSecondary),
+                              _AddressRow(
+                                icon: Icons.location_on_rounded,
+                                iconColor: scheme.error,
+                                address: request.dropAddress,
+                                textColor: scheme.onSurface,
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                      SizedBox(height: 10.h),
-                      // ── Divider ────────────────────────────────────────────
-                      Divider(height: 1, thickness: 0.8, color: dividerColor),
-                      SizedBox(height: 10.h),
-                      // ── Meta row ───────────────────────────────────────────
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Request type badge
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.w, vertical: 3.h),
-                            decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6.r),
-                              border:
-                                  Border.all(color: accentColor.withOpacity(0.25)),
-                            ),
-                            child: Text(
-                              request.requestType
-                                  .replaceAll('_', ' ')
-                                  .toUpperCase(),
+                        ),
+                        SizedBox(width: 12.w),
+                        // Distance / duration
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${request.distanceKm.toStringAsFixed(1)} km',
                               style: TextStyle(
-                                  fontSize: 9.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: accentColor),
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w800,
+                                color: scheme.primary,
+                                height: 1.1,
+                              ),
                             ),
-                          ),
-                          // Expiry
-                          if (expiryDiff != null)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.schedule_rounded,
-                                  size: 12.r,
+                            Text(
+                              '~${request.estimatedDurationMin} min',
+                              style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: scheme.onSurface.withValues(alpha: 0.5)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10.h),
+                    // ── Divider ────────────────────────────────────────────
+                    Divider(height: 1, thickness: 0.8, color: scheme.outline),
+                    SizedBox(height: 10.h),
+                    // ── Meta row ───────────────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Request type badge
+                        SosChip(
+                          label: request.requestType
+                              .replaceAll('_', ' ')
+                              .toUpperCase(),
+                          tone: SosTone.info,
+                        ),
+                        // Expiry
+                        if (expiryDiff != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: 12.r,
+                                color: isExpiringSoon
+                                    ? scheme.error
+                                    : AppDesignTokens.warning,
+                              ),
+                              SizedBox(width: 3.w),
+                              Text(
+                                _formatExpiry(expiryDiff),
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w500,
                                   color: isExpiringSoon
-                                      ? (isDark
-                                          ? AppColors.error
-                                          : AppLightColors.error)
-                                      : (isDark
-                                          ? AppColors.warning
-                                          : AppLightColors.warning),
+                                      ? scheme.error
+                                      : AppDesignTokens.warning,
                                 ),
-                                SizedBox(width: 3.w),
-                                Text(
-                                  _formatExpiry(expiryDiff),
-                                  style: TextStyle(
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: isExpiringSoon
-                                        ? (isDark
-                                            ? AppColors.error
-                                            : AppLightColors.error)
-                                        : (isDark
-                                            ? AppColors.warning
-                                            : AppLightColors.warning),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -428,14 +358,12 @@ class _AddressRow extends StatelessWidget {
   final Color iconColor;
   final String address;
   final Color textColor;
-  final bool isDark;
 
   const _AddressRow({
     required this.icon,
     required this.iconColor,
     required this.address,
     required this.textColor,
-    required this.isDark,
   });
 
   String _truncate(String a) {
@@ -464,55 +392,6 @@ class _AddressRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ─── Error view ───────────────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final bool isDark;
-  final VoidCallback onRetry;
-
-  const _ErrorView(
-      {required this.message, required this.isDark, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    final errorColor = isDark ? AppColors.error : AppLightColors.error;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.r),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 56.r,
-              height: 56.r,
-              decoration: BoxDecoration(
-                color: errorColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child:
-                  Icon(Icons.wifi_off_rounded, color: errorColor, size: 28.r),
-            ),
-            SizedBox(height: 16.h),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: textSecondary, fontSize: 13.sp)),
-            SizedBox(height: 20.h),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: Icon(Icons.refresh_rounded, size: 16.r),
-              label: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
