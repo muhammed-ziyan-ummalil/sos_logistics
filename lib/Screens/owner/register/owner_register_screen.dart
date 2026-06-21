@@ -7,9 +7,9 @@ import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_state.dart';
 import '../../../core/app_constants.dart';
-import '../../../core/app_theme.dart';
 import '../../../utility/pincode_autofill_field.dart';
 import '../../../utility/form_validators.dart';
+import '../../../widgets/widgets.dart';
 
 class OwnerRegisterScreen extends StatefulWidget {
   const OwnerRegisterScreen({super.key});
@@ -139,21 +139,25 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     );
   }
 
-  Widget _sectionLabel(String text) => Padding(
-    padding: EdgeInsets.only(bottom: 8.h, top: 20.h),
-    child: Text(
-      text,
-      style: TextStyle(
-        color: AppColors.accent,
-        fontSize: 12.sp,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.8,
+  Widget _sectionLabel(String text) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h, top: 20.h),
+      child: Text(
+        text,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.primary,
+          letterSpacing: 0.8,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme  = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return BlocListener<OwnerRegisterCubit, OwnerRegisterState>(
       listener: (ctx, state) {
         if (state is OwnerRegisterSuccess) {
@@ -161,12 +165,9 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
             context: ctx,
             barrierDismissible: false,
             builder: (_) => AlertDialog(
-              backgroundColor: AppColors.card,
-              title: const Text('Registration Submitted',
-                  style: TextStyle(color: AppColors.textPrimary)),
+              title: const Text('Registration Submitted'),
               content: const Text(
                 'Your application has been submitted. You can log in after admin approval.',
-                style: TextStyle(color: AppColors.textSecondary),
               ),
               actions: [
                 TextButton(
@@ -181,17 +182,15 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
           );
         } else if (state is OwnerRegisterError) {
           ScaffoldMessenger.of(ctx).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
           );
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: const Text('Fleet Owner Registration'),
-          backgroundColor: AppColors.surface,
-          leading: BackButton(color: AppColors.textSecondary),
-        ),
+        appBar: const SosAppBar(title: 'Fleet Owner Registration'),
         body: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           child: Form(
@@ -201,24 +200,18 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
               children: [
                 // Personal Details
                 _sectionLabel('PERSONAL DETAILS'),
-                TextFormField(
+                SosTextField(
+                  label: 'Full Name',
                   controller: _nameCtr,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outline, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.person_outline,
                   validator: (v) => (v?.trim().isEmpty ?? true) ? 'Name is required' : null,
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Email Address',
                   controller: _emailCtr,
                   keyboardType: TextInputType.emailAddress,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: Icon(Icons.email_outlined, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.email_outlined,
                   validator: (v) {
                     final val = v?.trim() ?? '';
                     if (val.isEmpty) return 'Email is required';
@@ -227,14 +220,11 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   },
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Phone Number',
                   controller: _phoneCtr,
                   keyboardType: TextInputType.phone,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.phone_outlined,
                   validator: (v) {
                     if (v?.trim().isEmpty ?? true) return 'Phone is required';
                     if ((v?.trim().length ?? 0) < 10) return 'Enter a valid phone number';
@@ -244,11 +234,11 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                 SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedGender,
-                  dropdownColor: AppColors.card,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
+                  dropdownColor: scheme.surface,
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
                     labelText: 'Gender (Optional)',
-                    prefixIcon: Icon(Icons.wc_outlined, color: AppColors.textSecondary),
+                    prefixIcon: Icon(Icons.wc_outlined, color: scheme.onSurfaceVariant),
                   ),
                   items: _genderOptions
                       .map((g) => DropdownMenuItem(value: g, child: Text(g)))
@@ -256,20 +246,16 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   onChanged: (v) => setState(() => _selectedGender = v),
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Password',
                   controller: _passCtr,
                   obscureText: _obscurePass,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: AppColors.textSecondary,
-                      ),
-                      onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                  prefixIcon: Icons.lock_outline,
+                  suffix: IconButton(
+                    icon: Icon(
+                      _obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                     ),
+                    onPressed: () => setState(() => _obscurePass = !_obscurePass),
                   ),
                   validator: (v) {
                     if (v?.trim().isEmpty ?? true) return 'Password is required';
@@ -278,20 +264,16 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   },
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Confirm Password',
                   controller: _confPassCtr,
                   obscureText: _obscureConf,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConf ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: AppColors.textSecondary,
-                      ),
-                      onPressed: () => setState(() => _obscureConf = !_obscureConf),
+                  prefixIcon: Icons.lock_outline,
+                  suffix: IconButton(
+                    icon: Icon(
+                      _obscureConf ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                     ),
+                    onPressed: () => setState(() => _obscureConf = !_obscureConf),
                   ),
                   validator: (v) {
                     if (v?.trim().isEmpty ?? true) return 'Confirm your password';
@@ -300,13 +282,10 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   },
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Business Name (Optional)',
                   controller: _bizNameCtr,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Business Name (Optional)',
-                    prefixIcon: Icon(Icons.business_outlined, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.business_outlined,
                 ),
 
                 // Address
@@ -319,43 +298,31 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   validator: FormValidators.pincode,
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Flat / Building / Street',
                   controller: _addressLineCtrl,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Flat / Building / Street',
-                    prefixIcon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.home_outlined,
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Area / Locality',
                   controller: _areaCtrl,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Area / Locality',
-                    prefixIcon: Icon(Icons.place_outlined, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.place_outlined,
                 ),
                 SizedBox(height: 12.h),
                 Row(children: [
-                  Expanded(child: TextFormField(
+                  Expanded(child: SosTextField(
+                    label: 'City',
                     controller: _cityCtrl,
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'City',
-                      prefixIcon: Icon(Icons.location_city_outlined, color: AppColors.textSecondary),
-                    ),
+                    prefixIcon: Icons.location_city_outlined,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'City required' : null,
                   )),
                   SizedBox(width: 12.w),
-                  Expanded(child: TextFormField(
+                  Expanded(child: SosTextField(
+                    label: 'State',
                     controller: _stateCtrl,
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                    decoration: const InputDecoration(
-                      labelText: 'State',
-                      prefixIcon: Icon(Icons.map_outlined, color: AppColors.textSecondary),
-                    ),
+                    prefixIcon: Icons.map_outlined,
                   )),
                 ]),
 
@@ -367,9 +334,9 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     width: double.infinity,
                     padding: EdgeInsets.all(16.r),
                     decoration: BoxDecoration(
-                      color: AppColors.card,
+                      color: scheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.divider),
+                      border: Border.all(color: scheme.outlineVariant),
                     ),
                     child: _kycDocPath != null
                         ? Row(children: [
@@ -379,14 +346,14 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                             ),
                             SizedBox(width: 12.w),
                             Expanded(child: Text('KYC document selected',
-                                style: TextStyle(color: AppColors.success, fontSize: 13.sp))),
-                            Icon(Icons.check_circle, color: AppColors.success, size: 20.r),
+                                style: TextStyle(color: Colors.green.shade600, fontSize: 13.sp))),
+                            Icon(Icons.check_circle, color: Colors.green.shade600, size: 20.r),
                           ])
                         : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.upload_file_rounded, color: AppColors.textSecondary, size: 24.r),
+                            Icon(Icons.upload_file_rounded, color: scheme.onSurfaceVariant, size: 24.r),
                             SizedBox(width: 8.w),
                             Text('Upload KYC Document',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 14.sp)),
+                                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14.sp)),
                           ]),
                   ),
                 ),
@@ -396,22 +363,22 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                 TextFormField(
                   controller: _vehicleRegCtr,
                   textCapitalization: TextCapitalization.characters,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
                     labelText: 'Registration Number',
-                    prefixIcon: Icon(Icons.directions_car_outlined, color: AppColors.textSecondary),
+                    prefixIcon: Icon(Icons.directions_car_outlined, color: scheme.onSurfaceVariant),
                   ),
                   validator: (v) =>
                       (v?.trim().isEmpty ?? true) ? 'Vehicle registration number required' : null,
                 ),
                 SizedBox(height: 12.h),
                 DropdownButtonFormField<String>(
-                  value: _vehicleType,
-                  dropdownColor: AppColors.card,
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
+                  initialValue: _vehicleType,
+                  dropdownColor: scheme.surface,
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
                     labelText: 'Vehicle Type',
-                    prefixIcon: Icon(Icons.local_shipping_outlined, color: AppColors.textSecondary),
+                    prefixIcon: Icon(Icons.local_shipping_outlined, color: scheme.onSurfaceVariant),
                   ),
                   items: _vehicleTypes.map((t) => DropdownMenuItem(
                     value: t,
@@ -420,32 +387,21 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   onChanged: (v) => setState(() => _vehicleType = v ?? 'bike'),
                 ),
                 SizedBox(height: 12.h),
-                TextFormField(
+                SosTextField(
+                  label: 'Capacity (kg) - Optional',
                   controller: _capacityCtr,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14.sp),
-                  decoration: const InputDecoration(
-                    labelText: 'Capacity (kg) — Optional',
-                    prefixIcon: Icon(Icons.scale_outlined, color: AppColors.textSecondary),
-                  ),
+                  prefixIcon: Icons.scale_outlined,
                 ),
                 SizedBox(height: 32.h),
 
                 BlocBuilder<OwnerRegisterCubit, OwnerRegisterState>(
                   builder: (_, state) {
                     final loading = state is OwnerRegisterLoading || _isSendingOtp;
-                    return SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: loading ? null : _submit,
-                        child: loading
-                            ? SizedBox(
-                                height: 20.r, width: 20.r,
-                                child: const CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
-                              )
-                            : const Text('Submit Registration'),
-                      ),
+                    return SosButton(
+                      label: 'Create Account',
+                      loading: loading,
+                      onPressed: loading ? null : _submit,
                     );
                   },
                 ),
