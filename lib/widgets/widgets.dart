@@ -11,3 +11,4 @@ export 'empty_state.dart';
 export 'error_state.dart';
 export 'stat_tile.dart';
 export 'wallet_balance_card.dart';
+export 'sos_logo_mark.dart';
