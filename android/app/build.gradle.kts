@@ -28,6 +28,13 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Google Maps key for the AndroidManifest ${GOOGLE_MAPS_API_KEY} placeholder.
+        // Set GOOGLE_MAPS_API_KEY in android/gradle.properties or ~/.gradle/gradle.properties.
+        // Empty fallback keeps debug builds working before the real key is configured
+        // (maps tiles will not render until a real key is provided).
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] =
+            (project.findProperty("GOOGLE_MAPS_API_KEY") as String?) ?: ""
     }
 
     buildTypes {
