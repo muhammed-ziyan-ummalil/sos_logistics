@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sos_auth/sos_auth.dart';
-import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
+import '../../core/app_theme.dart';
+import '../../widgets/widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,10 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isOwner = _role == UserRole.owner;
+    final scheme  = Theme.of(context).colorScheme;
+    final tt      = Theme.of(context).textTheme;
     return MultiBlocListener(
       listeners: [
         BlocListener<AuthCubit, AuthState>(
@@ -88,122 +89,83 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             } else if (state is AuthError) {
               ScaffoldMessenger.of(ctx).showSnackBar(
-                SnackBar(content: Text(state.message), backgroundColor: AppTheme.error(context)),
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: scheme.error,
+                ),
               );
             }
           },
         ),
       ],
       child: Scaffold(
-        backgroundColor: AppTheme.bg(context),
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: BackButton(color: AppTheme.textSecondary(context)),
-        ),
+        appBar: const SosAppBar(title: ''),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesignTokens.spacingXL,
+              vertical: AppDesignTokens.spacingL,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 16.h),
-                  Container(
-                    width: 64.r,
-                    height: 64.r,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary(context),
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    child: Icon(
-                      isOwner
-                          ? Icons.admin_panel_settings_rounded
-                          : Icons.local_shipping_rounded,
-                      color: Colors.white,
-                      size: 32.r,
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
+                  const SizedBox(height: AppDesignTokens.spacingL),
+                  const SosLogoMark(size: 64),
+                  const SizedBox(height: AppDesignTokens.spacingXL),
                   Text(
                     'Welcome back',
-                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14.sp),
+                    style: tt.bodyMedium,
                   ),
-                  SizedBox(height: 4.h),
+                  const SizedBox(height: AppDesignTokens.spacingXS),
                   Text(
                     isOwner ? 'Fleet Owner Login' : 'Driver Login',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary(context),
-                      fontSize: 26.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: tt.headlineMedium,
                   ),
-                  SizedBox(height: 8.h),
+                  const SizedBox(height: AppDesignTokens.spacingS),
                   Text(
                     isOwner
                         ? 'Sign in to manage your fleet and deliveries.'
                         : 'Sign in to start accepting delivery jobs.',
-                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
+                    style: tt.bodyMedium,
                   ),
-                  SizedBox(height: 36.h),
-                  TextFormField(
+                  const SizedBox(height: AppDesignTokens.spacingXXL),
+                  SosTextField(
+                    label: 'Email',
                     controller: _emailCtr,
+                    hint: 'you@example.com',
                     keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14.sp),
-                    decoration: InputDecoration(
-                      labelText: 'Email Address',
-                      prefixIcon: Icon(Icons.email_outlined, color: AppTheme.textSecondary(context)),
-                    ),
-                    validator: (v) {
-                      final val = v?.trim() ?? '';
-                      if (val.isEmpty) return 'Enter email address';
+                    prefixIcon: Icons.email_outlined,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Enter email address';
                       if (!val.contains('@')) return 'Enter a valid email';
                       return null;
                     },
                   ),
-                  SizedBox(height: 16.h),
-                  TextFormField(
+                  const SizedBox(height: AppDesignTokens.spacingL),
+                  SosTextField(
+                    label: 'Password',
                     controller: _passCtr,
                     obscureText: _obscure,
-                    style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14.sp),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline, color: AppTheme.textSecondary(context)),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppTheme.textSecondary(context),
-                        ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
+                    prefixIcon: Icons.lock_outline,
+                    suffix: IconButton(
+                      icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                     validator: (v) => (v?.trim().isEmpty ?? true) ? 'Enter password' : null,
                   ),
-                  SizedBox(height: 32.h),
+                  const SizedBox(height: AppDesignTokens.spacingXXL),
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (_, state) {
-                      final loading = state is AuthLoading;
-
-                      return SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: loading ? null : _submit,
-                          child: loading
-                              ? SizedBox(
-                                  height: 20.r,
-                                  width:  20.r,
-                                  child: const CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Sign In'),
-                        ),
+                      return SosButton(
+                        label: 'Sign In',
+                        loading: state is AuthLoading,
+                        onPressed: state is AuthLoading ? null : _submit,
                       );
                     },
                   ),
-                  SizedBox(height: 24.h),
+                  const SizedBox(height: AppDesignTokens.spacingXL),
                   if (isOwner)
                     Center(
                       child: Row(
@@ -211,17 +173,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Text(
                             "Don't have an account? ",
-                            style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.v2OwnerRegister),
+                            onTap: () =>
+                                Navigator.pushNamed(context, AppRoutes.v2OwnerRegister),
                             child: Text(
                               'Create account',
-                              style: TextStyle(
-                                color: AppTheme.primary(context),
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                         ],
@@ -231,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Center(
                       child: Text(
                         'Contact your fleet owner to get an account.',
-                        style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12.sp),
+                        style: Theme.of(context).textTheme.bodySmall,
                         textAlign: TextAlign.center,
                       ),
                     ),
