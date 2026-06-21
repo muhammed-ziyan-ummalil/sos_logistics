@@ -7,6 +7,7 @@ import '../../../Bloc/Fleet/driver_detail_state.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_state.dart';
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 class DriverDetailScreen extends StatefulWidget {
   final String driverId;
@@ -31,25 +32,17 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surface = isDark ? AppColors.surface : AppLightColors.surface;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-
     return BlocConsumer<DriverDetailCubit, DriverDetailState>(
       listener: (ctx, state) {
         if (state is DriverDetailActionSuccess) {
           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
             content: Text(state.message),
-            backgroundColor: AppColors.success,
+            backgroundColor: AppDesignTokens.success,
           ));
         } else if (state is DriverDetailActionError) {
           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
             content: Text(state.message),
-            backgroundColor: isDark ? AppColors.error : AppLightColors.error,
+            backgroundColor: AppTheme.error(ctx),
           ));
         }
       },
@@ -61,52 +54,57 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
 
         if (isFullLoading) {
           return Scaffold(
-            backgroundColor: bg,
-            appBar: AppBar(
-              backgroundColor: surface,
-              leading: BackButton(color: textSecondary),
-              title: const Text('Driver Detail'),
-            ),
-            body: Center(
-              child: CircularProgressIndicator(
-                  color: accentColor, strokeWidth: 2.5),
+            appBar: const SosAppBar(title: 'Driver Detail'),
+            body: Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                children: [
+                  SosCard(
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            SkeletonBox(width: 56.r, height: 56.r, radius: 28.r),
+                            SizedBox(width: 14.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SkeletonBox(width: 140.w, height: 16.h),
+                                  SizedBox(height: 8.h),
+                                  SkeletonBox(width: 80.w, height: 12.h),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16.h),
+                        SkeletonBox(width: double.infinity, height: 12.h),
+                        SizedBox(height: 8.h),
+                        SkeletonBox(width: double.infinity, height: 12.h),
+                        SizedBox(height: 8.h),
+                        SkeletonBox(width: 200.w, height: 12.h),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  SosCard(child: SkeletonBox(width: double.infinity, height: 72.h)),
+                  SizedBox(height: 16.h),
+                  SosCard(child: SkeletonBox(width: double.infinity, height: 100.h)),
+                ],
+              ),
             ),
           );
         }
 
         if (state is DriverDetailError && _resolveDriver(state) == null) {
           return Scaffold(
-            backgroundColor: bg,
-            appBar: AppBar(
-              backgroundColor: surface,
-              leading: BackButton(color: textSecondary),
-              title: const Text('Driver Detail'),
-            ),
-            body: Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.r),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline,
-                        color:
-                            isDark ? AppColors.error : AppLightColors.error,
-                        size: 40.r),
-                    SizedBox(height: 12.h),
-                    Text(state.message,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: textSecondary, fontSize: 13.sp)),
-                    SizedBox(height: 20.h),
-                    ElevatedButton(
-                      onPressed: () => context
-                          .read<DriverDetailCubit>()
-                          .fetchDriver(widget.driverId),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
+            appBar: const SosAppBar(title: 'Driver Detail'),
+            body: ErrorState(
+              message: state.message,
+              onRetry: () => context
+                  .read<DriverDetailCubit>()
+                  .fetchDriver(widget.driverId),
             ),
           );
         }
@@ -117,11 +115,8 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         final isSuspended = status == 'suspended' || status == 'disabled';
 
         return Scaffold(
-          backgroundColor: bg,
-          appBar: AppBar(
-            backgroundColor: surface,
-            leading: BackButton(color: textSecondary),
-            title: Text(name),
+          appBar: SosAppBar(
+            title: name,
             actions: [
               if (isActionLoading)
                 Padding(
@@ -130,7 +125,8 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     width: 18.r,
                     height: 18.r,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: accentColor),
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
             ],
@@ -161,7 +157,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     message:
                         'This will allow $name to go online and receive deliveries.',
                     confirmLabel: 'Activate',
-                    confirmColor: AppColors.success,
+                    isDestructive: false,
                     onConfirm: () => context
                         .read<DriverDetailCubit>()
                         .setStatus(widget.driverId, 'active'),
@@ -172,8 +168,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     message:
                         '$name will be taken offline and cannot receive any deliveries.',
                     confirmLabel: 'Suspend',
-                    confirmColor:
-                        isDark ? AppColors.error : AppLightColors.error,
+                    isDestructive: true,
                     onConfirm: () => context
                         .read<DriverDetailCubit>()
                         .setStatus(widget.driverId, 'suspended'),
@@ -205,23 +200,20 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
     required String title,
     required String message,
     required String confirmLabel,
-    required Color confirmColor,
+    required bool isDestructive,
     required VoidCallback onConfirm,
   }) async {
-    final isDark = Theme.of(ctx).brightness == Brightness.dark;
+    final scheme = Theme.of(ctx).colorScheme;
     final confirmed = await showDialog<bool>(
       context: ctx,
-      builder: (_) => AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surface : AppLightColors.surface,
+      builder: (dlgCtx) => AlertDialog(
+        backgroundColor: scheme.surface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r)),
         title: Text(
           title,
           style: TextStyle(
-            color: isDark
-                ? AppColors.textPrimary
-                : AppLightColors.textPrimary,
+            color: scheme.onSurface,
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -229,31 +221,24 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
         content: Text(
           message,
           style: TextStyle(
-            color: isDark
-                ? AppColors.textSecondary
-                : AppLightColors.textSecondary,
+            color: scheme.onSurface.withValues(alpha: 0.65),
             fontSize: 13.sp,
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppLightColors.textSecondary,
-              ),
-            ),
+          SosButton(
+            label: 'Cancel',
+            variant: SosButtonVariant.outline,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dlgCtx, false),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              confirmLabel,
-              style: TextStyle(
-                  color: confirmColor, fontWeight: FontWeight.w600),
-            ),
+          SosButton(
+            label: confirmLabel,
+            variant: isDestructive
+                ? SosButtonVariant.danger
+                : SosButtonVariant.primary,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dlgCtx, true),
           ),
         ],
       ),
@@ -270,12 +255,7 @@ class _DriverInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? AppColors.card : AppLightColors.card;
-    final divider = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final scheme = Theme.of(context).colorScheme;
 
     final name = driver['name'] as String? ?? '—';
     final phone = driver['phone'] as String? ?? '—';
@@ -287,13 +267,7 @@ class _DriverInfoCard extends StatelessWidget {
     final license = driver['license_number'] as String?;
     final licenseExpiry = driver['license_expiry'] as String?;
 
-    return Container(
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: divider, width: 0.8),
-      ),
+    return SosCard(
       child: Column(
         children: [
           Row(
@@ -302,11 +276,11 @@ class _DriverInfoCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 28.r,
-                    backgroundColor: primary.withOpacity(0.15),
+                    backgroundColor: scheme.primary.withValues(alpha: 0.15),
                     child: Text(
                       name.isNotEmpty ? name[0].toUpperCase() : '?',
                       style: TextStyle(
-                        color: primary,
+                        color: scheme.primary,
                         fontWeight: FontWeight.w700,
                         fontSize: 22.sp,
                       ),
@@ -319,9 +293,11 @@ class _DriverInfoCard extends StatelessWidget {
                       width: 13.r,
                       height: 13.r,
                       decoration: BoxDecoration(
-                        color: isOnline ? AppColors.success : divider,
+                        color: isOnline
+                            ? AppDesignTokens.success
+                            : scheme.outline,
                         shape: BoxShape.circle,
-                        border: Border.all(color: card, width: 2),
+                        border: Border.all(color: scheme.surface, width: 2),
                       ),
                     ),
                   ),
@@ -335,7 +311,7 @@ class _DriverInfoCard extends StatelessWidget {
                     Text(
                       name,
                       style: TextStyle(
-                        color: textPrimary,
+                        color: scheme.onSurface,
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w700,
                       ),
@@ -354,7 +330,7 @@ class _DriverInfoCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 16.h),
-          Divider(color: divider, height: 1),
+          Divider(color: scheme.outline, height: 1),
           SizedBox(height: 14.h),
           _InfoRow(
               icon: Icons.phone_outlined, label: 'Phone', value: phone),
@@ -395,41 +371,26 @@ class _VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? AppColors.card : AppLightColors.card;
-    final divider = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final accent = isDark ? AppColors.accent : AppLightColors.accent;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final error = isDark ? AppColors.error : AppLightColors.error;
+    final scheme = Theme.of(context).colorScheme;
 
     final vehicle = driver['vehicle'] as Map<String, dynamic>?;
     final hasVehicle = vehicle != null;
     final plate = vehicle?['reg_number'] as String? ?? '—';
     final type = vehicle?['type'] as String? ?? '—';
 
-    return Container(
-      padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: divider, width: 0.8),
-      ),
+    return SosCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(Icons.directions_car_rounded,
-                  color: accent, size: 16.r),
+                  color: scheme.primary, size: 16.r),
               SizedBox(width: 6.w),
               Text(
                 'ASSIGNED VEHICLE',
                 style: TextStyle(
-                  color: accent,
+                  color: scheme.primary,
                   fontSize: 11.sp,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.8,
@@ -445,11 +406,11 @@ class _VehicleCard extends StatelessWidget {
                   width: 44.r,
                   height: 44.r,
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.12),
+                    color: scheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(Icons.directions_car_rounded,
-                      color: primary, size: 22.r),
+                      color: scheme.primary, size: 22.r),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
@@ -459,7 +420,7 @@ class _VehicleCard extends StatelessWidget {
                       Text(
                         plate,
                         style: TextStyle(
-                          color: textPrimary,
+                          color: scheme.onSurface,
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w700,
                         ),
@@ -467,26 +428,19 @@ class _VehicleCard extends StatelessWidget {
                       Text(
                         type.toUpperCase(),
                         style: TextStyle(
-                            color: textSecondary, fontSize: 11.sp),
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                            fontSize: 11.sp),
                       ),
                     ],
                   ),
                 ),
-                OutlinedButton(
+                SosButton(
+                  label: 'Remove',
+                  variant: SosButtonVariant.danger,
+                  fullWidth: false,
                   onPressed: isActionLoading
                       ? null
-                      : () => _confirmRemove(context, error),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: error.withOpacity(0.5)),
-                    foregroundColor: error,
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, vertical: 8.h),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r)),
-                  ),
-                  child: Text('Remove',
-                      style: TextStyle(
-                          fontSize: 11.sp, fontWeight: FontWeight.w500)),
+                      : () => _confirmRemove(context),
                 ),
               ],
             ),
@@ -497,32 +451,28 @@ class _VehicleCard extends StatelessWidget {
                   width: 44.r,
                   height: 44.r,
                   decoration: BoxDecoration(
-                    color: divider.withOpacity(0.3),
+                    color: scheme.outline.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Icon(Icons.directions_car_rounded,
-                      color: textSecondary, size: 22.r),
+                      color: scheme.onSurface.withValues(alpha: 0.4),
+                      size: 22.r),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
                     'No vehicle assigned',
                     style: TextStyle(
-                        color: textSecondary, fontSize: 13.sp),
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                        fontSize: 13.sp),
                   ),
                 ),
-                ElevatedButton(
+                SosButton(
+                  label: 'Assign',
+                  fullWidth: false,
                   onPressed: isActionLoading
                       ? null
                       : () => _showAssignSheet(context),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, vertical: 8.h),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.r)),
-                  ),
-                  child:
-                      Text('Assign', style: TextStyle(fontSize: 11.sp)),
                 ),
               ],
             ),
@@ -532,21 +482,18 @@ class _VehicleCard extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmRemove(BuildContext context, Color error) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Future<void> _confirmRemove(BuildContext context) async {
+    final scheme = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surface : AppLightColors.surface,
+      builder: (dlgCtx) => AlertDialog(
+        backgroundColor: scheme.surface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r)),
         title: Text(
           'Remove Vehicle',
           style: TextStyle(
-            color: isDark
-                ? AppColors.textPrimary
-                : AppLightColors.textPrimary,
+            color: scheme.onSurface,
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -554,31 +501,22 @@ class _VehicleCard extends StatelessWidget {
         content: Text(
           'The vehicle will be unlinked from this driver. The driver will need a vehicle reassigned before going online.',
           style: TextStyle(
-            color: isDark
-                ? AppColors.textSecondary
-                : AppLightColors.textSecondary,
+            color: scheme.onSurface.withValues(alpha: 0.65),
             fontSize: 13.sp,
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppLightColors.textSecondary,
-              ),
-            ),
+          SosButton(
+            label: 'Cancel',
+            variant: SosButtonVariant.outline,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dlgCtx, false),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Remove',
-              style: TextStyle(
-                  color: error, fontWeight: FontWeight.w600),
-            ),
+          SosButton(
+            label: 'Remove',
+            variant: SosButtonVariant.danger,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dlgCtx, true),
           ),
         ],
       ),
@@ -612,23 +550,13 @@ class _AssignVehicleSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppColors.surface : AppLightColors.surface;
-    final card = isDark ? AppColors.card : AppLightColors.card;
-    final divider = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final error = isDark ? AppColors.error : AppLightColors.error;
-    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       constraints: BoxConstraints(maxHeight: 0.75.sh),
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
       decoration: BoxDecoration(
-        color: surface,
+        color: scheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       child: Column(
@@ -639,7 +567,7 @@ class _AssignVehicleSheet extends StatelessWidget {
               width: 40.w,
               height: 4.h,
               decoration: BoxDecoration(
-                color: divider,
+                color: scheme.outline,
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
@@ -648,14 +576,16 @@ class _AssignVehicleSheet extends StatelessWidget {
           Text(
             'Assign Vehicle',
             style: TextStyle(
-              color: textPrimary,
+              color: scheme.onSurface,
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
             ),
           ),
           Text(
             'Tap a vehicle to assign it to this driver',
-            style: TextStyle(color: textSecondary, fontSize: 12.sp),
+            style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.55),
+                fontSize: 12.sp),
           ),
           SizedBox(height: 16.h),
           Expanded(
@@ -664,14 +594,15 @@ class _AssignVehicleSheet extends StatelessWidget {
                 if (state is OwnerVehiclesLoading) {
                   return Center(
                     child: CircularProgressIndicator(
-                        color: accent, strokeWidth: 2.5),
+                        color: scheme.primary, strokeWidth: 2.5),
                   );
                 }
                 if (state is OwnerVehiclesError) {
                   return Center(
                     child: Text(
                       state.message,
-                      style: TextStyle(color: error, fontSize: 13.sp),
+                      style:
+                          TextStyle(color: scheme.error, fontSize: 13.sp),
                     ),
                   );
                 }
@@ -682,7 +613,8 @@ class _AssignVehicleSheet extends StatelessWidget {
                         'No vehicles found.\nAdd a vehicle first.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: textSecondary, fontSize: 13.sp),
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                            fontSize: 13.sp),
                       ),
                     );
                   }
@@ -702,11 +634,10 @@ class _AssignVehicleSheet extends StatelessWidget {
                       final isAssigned = assignedDriver != null;
                       final assignedName =
                           assignedDriver?['name'] as String? ?? '';
-                      final badgeColor =
-                          isAssigned ? error : AppColors.success;
                       final badgeLabel =
                           isAssigned ? 'ASSIGNED' : 'AVAILABLE';
-                      final iconColor = isAssigned ? error : primary;
+                      final iconColor =
+                          isAssigned ? scheme.error : scheme.primary;
 
                       return GestureDetector(
                         onTap: () async {
@@ -714,14 +645,12 @@ class _AssignVehicleSheet extends StatelessWidget {
                           if (isAssigned) {
                             final confirmed = await showDialog<bool>(
                               context: ctx,
-                              builder: (_) => AlertDialog(
-                                backgroundColor: isDark
-                                    ? AppColors.surface
-                                    : AppLightColors.surface,
+                              builder: (dlgCtx) => AlertDialog(
+                                backgroundColor: scheme.surface,
                                 title: Text(
                                   'Reassign Vehicle?',
                                   style: TextStyle(
-                                    color: textPrimary,
+                                    color: scheme.onSurface,
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -730,29 +659,25 @@ class _AssignVehicleSheet extends StatelessWidget {
                                   '$plate is currently assigned to $assignedName. '
                                   'Reassigning will remove it from them.',
                                   style: TextStyle(
-                                    color: textSecondary,
+                                    color: scheme.onSurface
+                                        .withValues(alpha: 0.65),
                                     fontSize: 13.sp,
                                   ),
                                 ),
                                 actions: [
-                                  TextButton(
+                                  SosButton(
+                                    label: 'Cancel',
+                                    variant: SosButtonVariant.outline,
+                                    fullWidth: false,
                                     onPressed: () =>
-                                        Navigator.pop(_, false),
-                                    child: Text('Cancel',
-                                        style: TextStyle(
-                                            color: textSecondary,
-                                            fontSize: 13.sp)),
+                                        Navigator.pop(dlgCtx, false),
                                   ),
-                                  ElevatedButton(
+                                  SosButton(
+                                    label: 'Reassign',
+                                    variant: SosButtonVariant.danger,
+                                    fullWidth: false,
                                     onPressed: () =>
-                                        Navigator.pop(_, true),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: error,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: Text('Reassign',
-                                        style:
-                                            TextStyle(fontSize: 13.sp)),
+                                        Navigator.pop(dlgCtx, true),
                                   ),
                                 ],
                               ),
@@ -769,12 +694,12 @@ class _AssignVehicleSheet extends StatelessWidget {
                           margin: EdgeInsets.only(bottom: 8.h),
                           padding: EdgeInsets.all(14.r),
                           decoration: BoxDecoration(
-                            color: card,
+                            color: scheme.surface,
                             borderRadius: BorderRadius.circular(12.r),
                             border: Border.all(
                                 color: isAssigned
-                                    ? error.withOpacity(0.3)
-                                    : divider,
+                                    ? scheme.error.withValues(alpha: 0.3)
+                                    : scheme.outline,
                                 width: 0.8),
                           ),
                           child: Row(
@@ -783,7 +708,7 @@ class _AssignVehicleSheet extends StatelessWidget {
                                 width: 40.r,
                                 height: 40.r,
                                 decoration: BoxDecoration(
-                                  color: iconColor.withOpacity(0.12),
+                                  color: iconColor.withValues(alpha: 0.12),
                                   borderRadius:
                                       BorderRadius.circular(10.r),
                                 ),
@@ -802,7 +727,7 @@ class _AssignVehicleSheet extends StatelessWidget {
                                     Text(
                                       plate,
                                       style: TextStyle(
-                                        color: textPrimary,
+                                        color: scheme.onSurface,
                                         fontSize: 14.sp,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -812,16 +737,19 @@ class _AssignVehicleSheet extends StatelessWidget {
                                           ? '${type.toUpperCase()} · ${capacity}kg'
                                           : type.toUpperCase(),
                                       style: TextStyle(
-                                        color: textSecondary,
+                                        color: scheme.onSurface
+                                            .withValues(alpha: 0.55),
                                         fontSize: 11.sp,
                                       ),
                                     ),
-                                    if (isAssigned && assignedName.isNotEmpty) ...[
+                                    if (isAssigned &&
+                                        assignedName.isNotEmpty) ...[
                                       SizedBox(height: 2.h),
                                       Text(
                                         'Driver: $assignedName',
                                         style: TextStyle(
-                                          color: error.withOpacity(0.8),
+                                          color: scheme.error
+                                              .withValues(alpha: 0.8),
                                           fontSize: 10.sp,
                                         ),
                                       ),
@@ -829,22 +757,11 @@ class _AssignVehicleSheet extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w, vertical: 4.h),
-                                decoration: BoxDecoration(
-                                  color: badgeColor.withOpacity(0.1),
-                                  borderRadius:
-                                      BorderRadius.circular(8.r),
-                                ),
-                                child: Text(
-                                  badgeLabel,
-                                  style: TextStyle(
-                                    color: badgeColor,
-                                    fontSize: 9.sp,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                              SosChip(
+                                label: badgeLabel,
+                                tone: isAssigned
+                                    ? SosTone.error
+                                    : SosTone.success,
                               ),
                             ],
                           ),
@@ -884,33 +801,26 @@ class _StatusControlCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? AppColors.card : AppLightColors.card;
-    final divider = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final error = isDark ? AppColors.error : AppLightColors.error;
+    final scheme = Theme.of(context).colorScheme;
 
     final isCreated =
         !isActive && !isSuspended && currentStatus != 'rejected';
 
     final statusColor = isActive
-        ? AppColors.success
+        ? AppDesignTokens.success
         : isSuspended
-            ? error
-            : textSecondary;
+            ? scheme.error
+            : scheme.onSurface.withValues(alpha: 0.55);
     final borderColor = isActive
-        ? AppColors.success.withOpacity(0.3)
+        ? AppDesignTokens.success.withValues(alpha: 0.3)
         : isSuspended
-            ? error.withOpacity(0.3)
-            : divider;
+            ? scheme.error.withValues(alpha: 0.3)
+            : scheme.outline;
 
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: card,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: borderColor, width: 0.8),
       ),
@@ -922,7 +832,7 @@ class _StatusControlCard extends StatelessWidget {
                 width: 40.r,
                 height: 40.r,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10.r),
                 ),
                 child: Icon(
@@ -947,7 +857,7 @@ class _StatusControlCard extends StatelessWidget {
                               ? 'Driver is Suspended'
                               : 'Driver Created — Pending Activation',
                       style: TextStyle(
-                        color: textPrimary,
+                        color: scheme.onSurface,
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
                       ),
@@ -960,7 +870,8 @@ class _StatusControlCard extends StatelessWidget {
                               ? 'Cannot go online or receive deliveries'
                               : 'Assign a vehicle and activate to enable',
                       style: TextStyle(
-                          color: textSecondary, fontSize: 11.sp),
+                          color: scheme.onSurface.withValues(alpha: 0.55),
+                          fontSize: 11.sp),
                     ),
                   ],
                 ),
@@ -968,40 +879,22 @@ class _StatusControlCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 14.h),
-          Divider(color: divider, height: 1),
+          Divider(color: scheme.outline, height: 1),
           SizedBox(height: 14.h),
           if (!isActive)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: isLoading ? null : onActivate,
-                icon: Icon(Icons.play_circle_rounded, size: 16.r),
-                label: Text(
-                    isCreated ? 'Activate Driver' : 'Reactivate Driver'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r)),
-                ),
-              ),
+            SosButton(
+              label: isCreated ? 'Activate Driver' : 'Reactivate Driver',
+              icon: Icons.play_circle_rounded,
+              loading: isLoading,
+              onPressed: isLoading ? null : onActivate,
             ),
           if (isActive)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: isLoading ? null : onSuspend,
-                icon: Icon(Icons.pause_circle_rounded,
-                    size: 16.r, color: error),
-                label: Text('Suspend Driver',
-                    style: TextStyle(color: error)),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: error.withOpacity(0.4)),
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r)),
-                ),
-              ),
+            SosButton(
+              label: 'Suspend Driver',
+              variant: SosButtonVariant.danger,
+              icon: Icons.pause_circle_rounded,
+              loading: isLoading,
+              onPressed: isLoading ? null : onSuspend,
             ),
         ],
       ),
@@ -1017,9 +910,7 @@ class _PerformanceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final error = isDark ? AppColors.error : AppLightColors.error;
-    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+    final scheme = Theme.of(context).colorScheme;
 
     final perf = driver['performance'] as Map<String, dynamic>? ??
         driver['stats'] as Map<String, dynamic>? ??
@@ -1037,7 +928,9 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Acceptance',
             value: '${acceptanceRate.toStringAsFixed(1)}%',
             icon: Icons.thumb_up_rounded,
-            color: acceptanceRate >= 80 ? AppColors.success : (isDark ? AppColors.warning : AppLightColors.warning),
+            color: acceptanceRate >= 80
+                ? AppDesignTokens.success
+                : AppDesignTokens.warning,
           ),
         ),
         SizedBox(width: 10.w),
@@ -1046,7 +939,7 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Completed',
             value: completedJobs.toString(),
             icon: Icons.check_circle_rounded,
-            color: AppColors.success,
+            color: AppDesignTokens.success,
           ),
         ),
         SizedBox(width: 10.w),
@@ -1055,7 +948,7 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Missed',
             value: missedJobs.toString(),
             icon: Icons.cancel_rounded,
-            color: missedJobs == 0 ? AppColors.success : error,
+            color: missedJobs == 0 ? AppDesignTokens.success : scheme.error,
           ),
         ),
         SizedBox(width: 10.w),
@@ -1064,7 +957,7 @@ class _PerformanceRow extends StatelessWidget {
             label: 'Total',
             value: totalJobs.toString(),
             icon: Icons.receipt_long_rounded,
-            color: accent,
+            color: scheme.primary,
           ),
         ),
       ],
@@ -1085,18 +978,14 @@ class _PerfMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? AppColors.card : AppLightColors.card;
-    final divider = isDark ? AppColors.divider : AppLightColors.divider;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
-        color: card,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: divider, width: 0.8),
+        border: Border.all(color: scheme.outline, width: 0.8),
       ),
       child: Column(
         children: [
@@ -1113,7 +1002,9 @@ class _PerfMetric extends StatelessWidget {
           SizedBox(height: 2.h),
           Text(
             label,
-            style: TextStyle(color: textSecondary, fontSize: 9.sp),
+            style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.55),
+                fontSize: 9.sp),
           ),
         ],
       ),
@@ -1129,12 +1020,11 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark ? AppColors.accent : AppLightColors.accent;
+    final scheme = Theme.of(context).colorScheme;
     return Text(
       label,
       style: TextStyle(
-        color: accent,
+        color: scheme.primary,
         fontSize: 11.sp,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,
@@ -1152,25 +1042,24 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       children: [
-        Icon(icon, color: textSecondary, size: 15.r),
+        Icon(icon,
+            color: scheme.onSurface.withValues(alpha: 0.55), size: 15.r),
         SizedBox(width: 8.w),
         Text(
           '$label: ',
-          style: TextStyle(color: textSecondary, fontSize: 12.sp),
+          style: TextStyle(
+              color: scheme.onSurface.withValues(alpha: 0.55),
+              fontSize: 12.sp),
         ),
         Expanded(
           child: Text(
             value,
             style: TextStyle(
-              color: textPrimary,
+              color: scheme.onSurface,
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
             ),
@@ -1185,11 +1074,10 @@ class _StatusBadge extends StatelessWidget {
   final String status;
   const _StatusBadge({required this.status});
 
-  Color _color(String s, bool isDark) => switch (s) {
-        'active' => AppColors.success,
-        'suspended' || 'disabled' || 'rejected' =>
-          isDark ? AppColors.error : AppLightColors.error,
-        _ => isDark ? AppColors.textSecondary : AppLightColors.textSecondary,
+  SosTone _tone(String s) => switch (s) {
+        'active' => SosTone.success,
+        'suspended' || 'disabled' || 'rejected' => SosTone.error,
+        _ => SosTone.neutral,
       };
 
   String _label(String s) => switch (s) {
@@ -1203,20 +1091,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final c = _color(status, isDark);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: c.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Text(
-        _label(status),
-        style: TextStyle(
-            color: c, fontSize: 9.sp, fontWeight: FontWeight.w700),
-      ),
-    );
+    return SosChip(label: _label(status), tone: _tone(status));
   }
 }
 
@@ -1226,15 +1101,14 @@ class _OnlineBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textSecondary =
-        isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final color = isOnline ? AppColors.success : textSecondary;
+    final scheme = Theme.of(context).colorScheme;
+    final color =
+        isOnline ? AppDesignTokens.success : scheme.onSurface.withValues(alpha: 0.4);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Row(
