@@ -4,7 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../Bloc/QuoteSubmit/quote_submit_cubit.dart';
 import '../../../Bloc/QuoteSubmit/quote_submit_state.dart';
+import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 class VehiclePickerBottomSheet extends StatelessWidget {
   final int requestId;
@@ -39,12 +41,7 @@ class VehiclePickerBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final scheme = Theme.of(context).colorScheme;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -54,7 +51,7 @@ class VehiclePickerBottomSheet extends StatelessWidget {
       builder: (context, controller) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surface : AppLightColors.surface,
+            color: scheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
           ),
           child: Padding(
@@ -68,7 +65,7 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                     width: 40.w,
                     height: 4.h,
                     decoration: BoxDecoration(
-                      color: dividerColor,
+                      color: scheme.outline,
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
@@ -79,13 +76,15 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
-                    color: textPrimary,
+                    color: scheme.onSurface,
                   ),
                 ),
                 SizedBox(height: 4.h),
                 Text(
                   'Choose which vehicle to send a quote with',
-                  style: TextStyle(fontSize: 12.sp, color: textSecondary),
+                  style: TextStyle(
+                      fontSize: 12.sp,
+                      color: scheme.onSurface.withValues(alpha: 0.5)),
                 ),
                 SizedBox(height: 16.h),
                 BlocConsumer<QuoteSubmitCubit, QuoteSubmitState>(
@@ -95,7 +94,7 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         SnackBar(
                           content: Text(state.message),
-                          backgroundColor: AppColors.success,
+                          backgroundColor: AppDesignTokens.success,
                         ),
                       );
                     }
@@ -103,8 +102,7 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         SnackBar(
                           content: Text(state.message),
-                          backgroundColor:
-                              isDark ? AppColors.error : AppLightColors.error,
+                          backgroundColor: Theme.of(ctx).colorScheme.error,
                         ),
                       );
                     }
@@ -113,18 +111,18 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                     if (state is QuoteSubmitLoading) {
                       return Expanded(
                         child: Center(
-                          child: CircularProgressIndicator(color: accentColor),
+                          child: SkeletonBox(
+                            width: double.infinity,
+                            height: 80.h,
+                          ),
                         ),
                       );
                     }
                     if (vehicles.isEmpty) {
-                      return Expanded(
-                        child: Center(
-                          child: Text(
-                            'No vehicles available for this request.',
-                            style: TextStyle(
-                                fontSize: 13.sp, color: textSecondary),
-                          ),
+                      return const Expanded(
+                        child: EmptyState(
+                          icon: Icons.directions_car_outlined,
+                          title: 'No vehicles available for this request.',
                         ),
                       );
                     }
@@ -141,15 +139,9 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                           final extraKm =
                               double.tryParse('${fee['extra_km'] ?? 0}') ?? 0;
 
-                          return Container(
-                            margin: EdgeInsets.only(bottom: 12.h),
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: dividerColor, width: 0.8),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(16.w),
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 12.h),
+                            child: SosCard(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -162,15 +154,17 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                         style: TextStyle(
                                           fontSize: 15.sp,
                                           fontWeight: FontWeight.w600,
-                                          color: textPrimary,
+                                          color: Theme.of(ctx)
+                                              .colorScheme
+                                              .onSurface,
                                         ),
                                       ),
                                       Text(
-                                        '₹${totalFee.toStringAsFixed(0)}',
+                                        '${AppConstants.currencySymbol}${totalFee.toStringAsFixed(0)}',
                                         style: TextStyle(
                                           fontSize: 18.sp,
                                           fontWeight: FontWeight.bold,
-                                          color: AppColors.success,
+                                          color: AppDesignTokens.success,
                                         ),
                                       ),
                                     ],
@@ -179,7 +173,11 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                   Text(
                                     '${v['type'] ?? 'Vehicle'} • Driver: ${v['driver_name'] ?? 'Assigned'}',
                                     style: TextStyle(
-                                        fontSize: 12.sp, color: textSecondary),
+                                        fontSize: 12.sp,
+                                        color: Theme.of(ctx)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5)),
                                   ),
                                   if (fee.isNotEmpty) ...[
                                     SizedBox(height: 8.h),
@@ -187,39 +185,33 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                       spacing: 4.w,
                                       runSpacing: 4.h,
                                       children: [
-                                        _chip('Base: ₹${fee['base_fee'] ?? 0}',
-                                            isDark: isDark),
-                                        _chip(
-                                            'Per km: ₹${fee['per_km_fee'] ?? 0}',
-                                            isDark: isDark),
+                                        SosChip(
+                                          label:
+                                              'Base: ${AppConstants.currencySymbol}${fee['base_fee'] ?? 0}',
+                                          tone: SosTone.neutral,
+                                        ),
+                                        SosChip(
+                                          label:
+                                              'Per km: ${AppConstants.currencySymbol}${fee['per_km_fee'] ?? 0}',
+                                          tone: SosTone.neutral,
+                                        ),
                                         if (extraKm > 0)
-                                          _chip(
-                                            'Extra: ₹${fee['extra_km_charge'] ?? 0}',
-                                            isDark: isDark,
-                                            red: true,
+                                          SosChip(
+                                            label:
+                                                'Extra: ${AppConstants.currencySymbol}${fee['extra_km_charge'] ?? 0}',
+                                            tone: SosTone.error,
                                           ),
                                       ],
                                     ),
                                   ],
                                   SizedBox(height: 12.h),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () =>
-                                          ctx.read<QuoteSubmitCubit>().submitQuote(
-                                                requestId,
-                                                int.tryParse('${v['id']}') ?? 0,
-                                              ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: accentColor,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8.r),
-                                        ),
-                                      ),
-                                      child: const Text('Send Quote'),
-                                    ),
+                                  SosButton(
+                                    label: 'Send Quote',
+                                    onPressed: () =>
+                                        ctx.read<QuoteSubmitCubit>().submitQuote(
+                                              requestId,
+                                              int.tryParse('${v['id']}') ?? 0,
+                                            ),
                                   ),
                                 ],
                               ),
@@ -235,30 +227,6 @@ class VehiclePickerBottomSheet extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _chip(String text, {required bool isDark, bool red = false}) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: red
-            ? (isDark
-                ? AppColors.error.withOpacity(0.15)
-                : AppLightColors.error.withOpacity(0.1))
-            : (isDark ? AppColors.divider : AppLightColors.divider)
-                .withOpacity(0.5),
-        borderRadius: BorderRadius.circular(4.r),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10.sp,
-          color: red
-              ? (isDark ? AppColors.error : AppLightColors.error)
-              : (isDark ? AppColors.textSecondary : AppLightColors.textSecondary),
-        ),
-      ),
     );
   }
 }
