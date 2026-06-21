@@ -3,7 +3,9 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
+    // com.google.gms.google-services is applied conditionally at the bottom of this
+    // file — only when google-services.json exists — so the app still builds before
+    // `flutterfire configure --project=sos-6b1be` has been run.
 }
 
 android {
@@ -54,4 +56,11 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+// Apply the Google Services plugin (FCM) only when its config file is present.
+// Until `flutterfire configure --project=sos-6b1be` generates google-services.json,
+// the plugin is skipped so the app builds; Firebase init in main.dart is guarded.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
