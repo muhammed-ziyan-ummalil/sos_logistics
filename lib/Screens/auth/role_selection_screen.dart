@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
+import '../../widgets/widgets.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -44,16 +45,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 48.h),
-              Center(
-                child: Container(
-                  width: 72.r,
-                  height: 72.r,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary(context),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Icon(Icons.local_shipping_rounded, color: Colors.white, size: 36.r),
-                ),
+              const Center(
+                child: SosLogoMark(size: 72),
               ),
               SizedBox(height: 32.h),
               Text(
@@ -82,27 +75,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 );
               }),
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _selectedRole != null ? _onContinue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary(context),
-                    disabledBackgroundColor: AppTheme.card(context),
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r),
-                    ),
-                  ),
-                  child: Text(
-                    'Continue',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              SosButton(
+                label: 'Continue',
+                onPressed: _selectedRole == null ? null : _onContinue,
               ),
               SizedBox(height: 32.h),
             ],
@@ -146,7 +121,7 @@ class _RoleCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.primary(context).withOpacity(0.12) : AppTheme.card(context),
+          color: selected ? AppTheme.primary(context).withValues(alpha: 0.12) : AppTheme.card(context),
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
             color: selected ? AppTheme.primary(context) : AppTheme.divider(context),
