@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/app_theme.dart';
+import '../../../widgets/widgets.dart';
 
 class OwnerSupportScreen extends StatefulWidget {
   const OwnerSupportScreen({super.key});
@@ -16,35 +17,22 @@ class _OwnerSupportScreenState extends State<OwnerSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.background : AppLightColors.background;
-    final surfaceColor = isDark ? AppColors.surface : AppLightColors.surface;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: surfaceColor,
-        leading: BackButton(
-            color: isDark ? AppColors.textSecondary : AppLightColors.textSecondary),
-        title: Text('Support',
-            style: TextStyle(color: textPrimary, fontSize: 17.sp)),
-        centerTitle: true,
-      ),
+      backgroundColor: AppTheme.bg(context),
+      appBar: const SosAppBar(title: 'Support'),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 40.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SupportHeader(isDark: isDark),
+            _SupportHeader(),
             SizedBox(height: 24.h),
-            _ContactSection(isDark: isDark),
+            _ContactSection(),
             SizedBox(height: 24.h),
             _FaqSection(
                 expandedIndex: _expandedFaq,
                 onToggle: (i) =>
-                    setState(() => _expandedFaq = _expandedFaq == i ? null : i),
-                isDark: isDark),
+                    setState(() => _expandedFaq = _expandedFaq == i ? null : i)),
           ],
         ),
       ),
@@ -55,29 +43,19 @@ class _OwnerSupportScreenState extends State<OwnerSupportScreen> {
 // ─── Support header ───────────────────────────────────────────────────────────
 
 class _SupportHeader extends StatelessWidget {
-  final bool isDark;
-  const _SupportHeader({required this.isDark});
-
   @override
   Widget build(BuildContext context) {
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
+    final primary = Theme.of(context).colorScheme.primary;
 
-    return Container(
+    return SosCard(
       padding: EdgeInsets.all(16.r),
-      decoration: BoxDecoration(
-        color: primary.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: primary.withOpacity(0.15)),
-      ),
       child: Row(
         children: [
           Container(
             width: 44.r,
             height: 44.r,
             decoration: BoxDecoration(
-              color: primary.withOpacity(0.12),
+              color: primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(Icons.support_agent_rounded, color: primary, size: 24.r),
@@ -91,11 +69,14 @@ class _SupportHeader extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w700,
-                        color: textPrimary)),
+                        color: AppTheme.textPrimary(context))),
                 SizedBox(height: 3.h),
                 Text(
                     'Reach out for account help, delivery issues, or payment queries.',
-                    style: TextStyle(fontSize: 12.sp, color: textSecondary, height: 1.4)),
+                    style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppTheme.textSecondary(context),
+                        height: 1.4)),
               ],
             ),
           ),
@@ -108,12 +89,9 @@ class _SupportHeader extends StatelessWidget {
 // ─── Contact section ──────────────────────────────────────────────────────────
 
 class _ContactSection extends StatelessWidget {
-  final bool isDark;
-  const _ContactSection({required this.isDark});
-
   @override
   Widget build(BuildContext context) {
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final accentColor = AppTheme.accent(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +114,6 @@ class _ContactSection extends StatelessWidget {
           label: 'Email Support',
           value: 'support@sossss.net',
           subtitle: 'Response within 24 hours',
-          isDark: isDark,
           onTap: () => _copyToClipboard(context, 'support@sossss.net'),
         ),
         SizedBox(height: 10.h),
@@ -144,8 +121,7 @@ class _ContactSection extends StatelessWidget {
           icon: Icons.phone_outlined,
           label: 'Phone / WhatsApp',
           value: '+234 800 767 7777',
-          subtitle: 'Mon–Fri, 9:00 AM – 6:00 PM WAT',
-          isDark: isDark,
+          subtitle: 'Mon-Fri, 9:00 AM - 6:00 PM WAT',
           onTap: () => _copyToClipboard(context, '+2348007677777'),
         ),
         SizedBox(height: 10.h),
@@ -154,7 +130,6 @@ class _ContactSection extends StatelessWidget {
           label: 'Live Chat',
           value: 'Available in app',
           subtitle: 'Fastest response during business hours',
-          isDark: isDark,
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Live chat coming soon!')),
@@ -181,7 +156,6 @@ class _ContactTile extends StatelessWidget {
   final String label;
   final String value;
   final String subtitle;
-  final bool isDark;
   final VoidCallback onTap;
 
   const _ContactTile({
@@ -189,65 +163,54 @@ class _ContactTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.subtitle,
-    required this.isDark,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final primary = isDark ? AppColors.primaryLight : AppLightColors.primary;
+    final primary = Theme.of(context).colorScheme.primary;
 
-    return GestureDetector(
+    return SosCard(
       onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(14.r),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(color: dividerColor, width: 0.8),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40.r,
-              height: 40.r,
-              decoration: BoxDecoration(
-                color: primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Icon(icon, color: primary, size: 20.r),
+      padding: EdgeInsets.all(14.r),
+      child: Row(
+        children: [
+          Container(
+            width: 40.r,
+            height: 40.r,
+            decoration: BoxDecoration(
+              color: primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10.r),
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: TextStyle(
-                          fontSize: 12.sp,
-                          color: textSecondary,
-                          fontWeight: FontWeight.w500)),
-                  SizedBox(height: 2.h),
-                  Text(value,
-                      style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimary)),
-                  SizedBox(height: 2.h),
-                  Text(subtitle,
-                      style:
-                          TextStyle(fontSize: 11.sp, color: textSecondary)),
-                ],
-              ),
+            child: Icon(icon, color: primary, size: 20.r),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppTheme.textSecondary(context),
+                        fontWeight: FontWeight.w500)),
+                SizedBox(height: 2.h),
+                Text(value,
+                    style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary(context))),
+                SizedBox(height: 2.h),
+                Text(subtitle,
+                    style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppTheme.textSecondary(context))),
+              ],
             ),
-            Icon(Icons.copy_rounded,
-                size: 16.r, color: isDark ? AppColors.divider : AppLightColors.divider),
-          ],
-        ),
+          ),
+          Icon(Icons.copy_rounded,
+              size: 16.r, color: AppTheme.divider(context)),
+        ],
       ),
     );
   }
@@ -258,12 +221,10 @@ class _ContactTile extends StatelessWidget {
 class _FaqSection extends StatelessWidget {
   final int? expandedIndex;
   final ValueChanged<int> onToggle;
-  final bool isDark;
 
   const _FaqSection({
     required this.expandedIndex,
     required this.onToggle,
-    required this.isDark,
   });
 
   static const _faqs = [
@@ -277,7 +238,7 @@ class _FaqSection extends StatelessWidget {
     ),
     (
       'How do I withdraw my earnings?',
-      'Go to Account → My Wallet → Withdraw. Enter the amount and submit. The funds will be transferred to your registered bank account within 1–3 business days. Ensure your Bank Details are up to date under Account settings.'
+      'Go to Account -> My Wallet -> Withdraw. Enter the amount and submit. The funds will be transferred to your registered bank account within 1-3 business days. Ensure your Bank Details are up to date under Account settings.'
     ),
     (
       'What vehicle types are supported?',
@@ -285,7 +246,7 @@ class _FaqSection extends StatelessWidget {
     ),
     (
       'How is my fleet\'s performance calculated?',
-      'Performance metrics are derived from delivery completion records. Acceptance rate = (completed deliveries / total assigned deliveries) × 100. Missed jobs are counted when a driver fails to complete an accepted delivery.'
+      'Performance metrics are derived from delivery completion records. Acceptance rate = (completed deliveries / total assigned deliveries) x 100. Missed jobs are counted when a driver fails to complete an accepted delivery.'
     ),
     (
       'Can I temporarily deactivate a driver?',
@@ -297,13 +258,13 @@ class _FaqSection extends StatelessWidget {
     ),
     (
       'How do I update my bank details?',
-      'Go to Account → Bank Details. Enter your bank name, account number, account holder name, and IFSC/sort code. Withdrawals are always made to the most recently saved bank details.'
+      'Go to Account -> Bank Details. Enter your bank name, account number, account holder name, and IFSC/sort code. Withdrawals are always made to the most recently saved bank details.'
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final accentColor = AppTheme.accent(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,7 +292,6 @@ class _FaqSection extends StatelessWidget {
               answer: faq.$2,
               isExpanded: expandedIndex == i,
               onTap: () => onToggle(i),
-              isDark: isDark,
             ),
           );
         }),
@@ -345,23 +305,18 @@ class _FaqItem extends StatelessWidget {
   final String answer;
   final bool isExpanded;
   final VoidCallback onTap;
-  final bool isDark;
 
   const _FaqItem({
     required this.question,
     required this.answer,
     required this.isExpanded,
     required this.onTap,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.card : AppLightColors.card;
-    final dividerColor = isDark ? AppColors.divider : AppLightColors.divider;
-    final textPrimary = isDark ? AppColors.textPrimary : AppLightColors.textPrimary;
-    final textSecondary = isDark ? AppColors.textSecondary : AppLightColors.textSecondary;
-    final accentColor = isDark ? AppColors.accent : AppLightColors.accent;
+    final accentColor = AppTheme.accent(context);
+    final scheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: onTap,
@@ -369,10 +324,14 @@ class _FaqItem extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(14.r),
         decoration: BoxDecoration(
-          color: isExpanded ? accentColor.withOpacity(0.04) : cardColor,
+          color: isExpanded
+              ? accentColor.withValues(alpha: 0.04)
+              : scheme.surface,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-              color: isExpanded ? accentColor.withOpacity(0.3) : dividerColor,
+              color: isExpanded
+                  ? accentColor.withValues(alpha: 0.3)
+                  : scheme.outline,
               width: isExpanded ? 1.2 : 0.8),
         ),
         child: Column(
@@ -385,7 +344,7 @@ class _FaqItem extends StatelessWidget {
                       style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
-                          color: textPrimary)),
+                          color: AppTheme.textPrimary(context))),
                 ),
                 SizedBox(width: 8.w),
                 AnimatedRotation(
@@ -393,7 +352,9 @@ class _FaqItem extends StatelessWidget {
                   turns: isExpanded ? 0.5 : 0,
                   child: Icon(Icons.keyboard_arrow_down_rounded,
                       size: 20.r,
-                      color: isExpanded ? accentColor : textSecondary),
+                      color: isExpanded
+                          ? accentColor
+                          : AppTheme.textSecondary(context)),
                 ),
               ],
             ),
@@ -402,7 +363,7 @@ class _FaqItem extends StatelessWidget {
               Text(answer,
                   style: TextStyle(
                       fontSize: 13.sp,
-                      color: textSecondary,
+                      color: AppTheme.textSecondary(context),
                       height: 1.5)),
             ],
           ],
