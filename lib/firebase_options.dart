@@ -33,13 +33,15 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // REPLACE_ME values below — run `flutterfire configure --project=sos-6b1be`
-  // targeting package com.sossss.logistics to get real values.
+  // Shared Firebase project (sos-6b1be) with the farmer app, so the existing
+  // sos_web service account (sos-farmer.json) can deliver pushes to this app too.
+  // Uses the farmer Firebase Android app (package com.sosfarmer.app); the build
+  // applicationId is aligned to match google-services.json.
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
+    apiKey: 'AIzaSyCmxmaKVuCx-oG6gcR13qZkYKhMTwcoPYQ',
+    appId: '1:954237017102:android:8152f5ff73c4edd419305f',
+    messagingSenderId: '954237017102',
     projectId: 'sos-6b1be',
-    storageBucket: 'REPLACE_ME',
+    storageBucket: 'sos-6b1be.firebasestorage.app',
   );
 }

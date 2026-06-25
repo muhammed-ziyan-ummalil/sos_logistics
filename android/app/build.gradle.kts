@@ -24,8 +24,11 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.sossss.logistics"
+        // Aligned to the farmer Firebase Android app so the shared sos-6b1be project
+        // + google-services.json deliver FCM here. (For a dedicated logistics app,
+        // register com.sossss.logistics in the sos-6b1be console, swap
+        // google-services.json + firebase_options.dart, and restore this id.)
+        applicationId = "com.sosfarmer.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
