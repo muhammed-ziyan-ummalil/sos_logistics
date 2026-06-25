@@ -101,7 +101,7 @@ class SOSLogisticsApp extends StatelessWidget {
         // V2 cubits — shared sos_auth AuthCubit
         BlocProvider(
           create: (_) => AuthCubit(
-            authService: AuthService(baseUrl: 'https://api.sossss.net/'),
+            authService: AuthService(baseUrl: 'https://api.sossss.net/api/'),
             tokenStorage: V2TokenStorage(),
           ),
         ),
