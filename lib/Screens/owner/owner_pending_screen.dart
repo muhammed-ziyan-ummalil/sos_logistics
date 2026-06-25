@@ -50,7 +50,7 @@ class OwnerPendingScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: SosButton(
-                      label: 'Check approval status',
+                      label: 'Refresh',
                       loading: loading,
                       onPressed:
                           loading ? null : () => ctx.read<AuthCubit>().init(),
