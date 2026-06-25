@@ -72,6 +72,9 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
           'city':               _cityCtrl.text.trim(),
           'state':              _stateCtrl.text.trim(),
           'pincode':            _pincodeCtrl.text.trim(),
+          // Test-mode OTP prefill (no live SMS yet).
+          if (session.devEmailOtp != null) 'dev_email_otp': session.devEmailOtp,
+          if (session.devSmsOtp != null)   'dev_sms_otp':   session.devSmsOtp,
         },
       );
       await tokenStorage.savePendingRegistration(pendingSession);
