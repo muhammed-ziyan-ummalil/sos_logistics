@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_state.dart';
@@ -25,17 +23,11 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   final _phoneCtr       = TextEditingController();
   final _passCtr        = TextEditingController();
   final _confPassCtr    = TextEditingController();
-  final _bizNameCtr     = TextEditingController();
-  final _vehicleRegCtr  = TextEditingController();
-  final _capacityCtr    = TextEditingController();
 
   bool   _obscurePass  = true;
   bool   _obscureConf  = true;
-  String _vehicleType  = 'bike';
-  String? _kycDocPath;
   String? _selectedGender;
 
-  static const _vehicleTypes = ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'];
   static const _genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
   final _addressLineCtrl = TextEditingController();
@@ -47,17 +39,10 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   @override
   void dispose() {
     _nameCtr.dispose(); _emailCtr.dispose(); _phoneCtr.dispose();
-    _passCtr.dispose(); _confPassCtr.dispose(); _bizNameCtr.dispose();
-    _vehicleRegCtr.dispose(); _capacityCtr.dispose();
+    _passCtr.dispose(); _confPassCtr.dispose();
     _addressLineCtrl.dispose(); _areaCtrl.dispose(); _cityCtrl.dispose();
     _stateCtrl.dispose(); _pincodeCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickKycDoc() async {
-    final picker = ImagePicker();
-    final file   = await picker.pickImage(source: ImageSource.gallery);
-    if (file != null) setState(() => _kycDocPath = file.path);
   }
 
   bool _isSendingOtp = false;
@@ -81,11 +66,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         password:   _passCtr.text.trim(),
         capability: 'fleet_owner',
         extra: {
-          'business_name':      _bizNameCtr.text.trim(),
-          'vehicle_reg_number': _vehicleRegCtr.text.trim(),
-          'vehicle_type':       _vehicleType,
-          'capacity_kg':        double.tryParse(_capacityCtr.text.trim()) ?? 0.0,
-          'kyc_doc_path':       _kycDocPath ?? '',
           'gender':             (_selectedGender ?? 'male').toLowerCase(),
           'address_line':       _addressLineCtrl.text.trim(),
           'area':               _areaCtrl.text.trim(),
@@ -118,18 +98,12 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   }
 
   void _completeRegistration(PendingRegistrationSession pending, String sessionId) {
-    final kycPath = pending.extra['kyc_doc_path'] as String?;
     context.read<OwnerRegisterCubit>().register(
       name:             pending.name,
       email:            pending.email,
       phone:            pending.phone,
       password:         pending.password,
       sessionId:        sessionId,
-      businessName:     pending.extra['business_name'] as String?,
-      kycDocPath:       (kycPath == null || kycPath.isEmpty) ? null : kycPath,
-      vehicleRegNumber: pending.extra['vehicle_reg_number'] as String? ?? '',
-      vehicleType:      pending.extra['vehicle_type'] as String? ?? 'bike',
-      capacityKg:       pending.extra['capacity_kg'] as double?,
       gender:           pending.extra['gender'] as String?,
       addressLine:      pending.extra['address_line'] as String?,
       area:             pending.extra['area'] as String?,
@@ -281,12 +255,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: 12.h),
-                SosTextField(
-                  label: 'Business Name (Optional)',
-                  controller: _bizNameCtr,
-                  prefixIcon: Icons.business_outlined,
-                ),
 
                 // Address
                 _sectionLabel('ADDRESS'),
@@ -326,73 +294,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                   )),
                 ]),
 
-                // KYC
-                _sectionLabel('KYC DOCUMENT'),
-                GestureDetector(
-                  onTap: _pickKycDoc,
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(16.r),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: scheme.outlineVariant),
-                    ),
-                    child: _kycDocPath != null
-                        ? Row(children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8.r),
-                              child: Image.file(File(_kycDocPath!), height: 60.r, width: 80.r, fit: BoxFit.cover),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(child: Text('KYC document selected',
-                                style: TextStyle(color: Colors.green.shade600, fontSize: 13.sp))),
-                            Icon(Icons.check_circle, color: Colors.green.shade600, size: 20.r),
-                          ])
-                        : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.upload_file_rounded, color: scheme.onSurfaceVariant, size: 24.r),
-                            SizedBox(width: 8.w),
-                            Text('Upload KYC Document',
-                                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14.sp)),
-                          ]),
-                  ),
-                ),
-
-                // Vehicle
-                _sectionLabel('FIRST VEHICLE (REQUIRED)'),
-                TextFormField(
-                  controller: _vehicleRegCtr,
-                  textCapitalization: TextCapitalization.characters,
-                  style: theme.textTheme.bodyMedium,
-                  decoration: InputDecoration(
-                    labelText: 'Registration Number',
-                    prefixIcon: Icon(Icons.directions_car_outlined, color: scheme.onSurfaceVariant),
-                  ),
-                  validator: (v) =>
-                      (v?.trim().isEmpty ?? true) ? 'Vehicle registration number required' : null,
-                ),
-                SizedBox(height: 12.h),
-                DropdownButtonFormField<String>(
-                  initialValue: _vehicleType,
-                  dropdownColor: scheme.surface,
-                  style: theme.textTheme.bodyMedium,
-                  decoration: InputDecoration(
-                    labelText: 'Vehicle Type',
-                    prefixIcon: Icon(Icons.local_shipping_outlined, color: scheme.onSurfaceVariant),
-                  ),
-                  items: _vehicleTypes.map((t) => DropdownMenuItem(
-                    value: t,
-                    child: Text(t.replaceAll('_', ' ').toUpperCase()),
-                  )).toList(),
-                  onChanged: (v) => setState(() => _vehicleType = v ?? 'bike'),
-                ),
-                SizedBox(height: 12.h),
-                SosTextField(
-                  label: 'Capacity (kg) - Optional',
-                  controller: _capacityCtr,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: Icons.scale_outlined,
-                ),
                 SizedBox(height: 32.h),
 
                 BlocBuilder<OwnerRegisterCubit, OwnerRegisterState>(
