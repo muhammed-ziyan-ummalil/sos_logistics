@@ -135,37 +135,48 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     final theme  = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return BlocListener<OwnerRegisterCubit, OwnerRegisterState>(
-      listener: (ctx, state) {
-        if (state is OwnerRegisterSuccess) {
-          showDialog(
-            context: ctx,
-            barrierDismissible: false,
-            builder: (_) => AlertDialog(
-              title: const Text('Registration Submitted'),
-              content: const Text(
-                'Your application has been submitted. You can log in after admin approval.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.pushReplacementNamed(ctx, AppRoutes.roleSelection);
-                  },
-                  child: const Text('OK'),
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<OwnerRegisterCubit, OwnerRegisterState>(
+          listener: (ctx, state) {
+            if (state is OwnerRegisterSuccess) {
+              // Auto-login so the owner lands on the locked pending dashboard
+              // (unlocks once an admin approves), instead of bouncing to login.
+              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                  content: Text('Account created. Awaiting admin approval.')));
+              ctx.read<AuthCubit>().login(
+                    _emailCtr.text.trim(),
+                    _passCtr.text.trim(),
+                  );
+            } else if (state is OwnerRegisterError) {
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Theme.of(ctx).colorScheme.error,
                 ),
-              ],
-            ),
-          );
-        } else if (state is OwnerRegisterError) {
-          ScaffoldMessenger.of(ctx).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-          );
-        }
-      },
+              );
+            }
+          },
+        ),
+        BlocListener<AuthCubit, AuthState>(
+          listener: (ctx, state) {
+            if (state is AuthAuthenticated) {
+              final ownerCap = state.person.capabilities
+                  .where((c) => c.capability == Capability.fleetOwner)
+                  .firstOrNull;
+              Navigator.pushReplacementNamed(
+                ctx,
+                (ownerCap != null && ownerCap.status == 'active')
+                    ? AppRoutes.v2OwnerDashboard
+                    : AppRoutes.v2OwnerPending,
+              );
+            } else if (state is AuthError) {
+              // Registered but auto-login failed; let them log in manually.
+              Navigator.pushReplacementNamed(ctx, AppRoutes.login);
+            }
+          },
+        ),
+      ],
       child: Scaffold(
         appBar: const SosAppBar(title: 'Fleet Owner Registration'),
         body: SingleChildScrollView(
