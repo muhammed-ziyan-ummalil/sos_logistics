@@ -8,6 +8,7 @@ import '../../../core/app_constants.dart';
 import '../../../utility/pincode_autofill_field.dart';
 import '../../../utility/form_validators.dart';
 import '../../../widgets/widgets.dart';
+import '../../../services/firebase_notification_service.dart';
 
 class OwnerRegisterScreen extends StatefulWidget {
   const OwnerRegisterScreen({super.key});
@@ -161,6 +162,8 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         BlocListener<AuthCubit, AuthState>(
           listener: (ctx, state) {
             if (state is AuthAuthenticated) {
+              // Register the FCM token so the approval push reaches this owner.
+              FirebaseNotificationService.syncTokenAfterLogin();
               final ownerCap = state.person.capabilities
                   .where((c) => c.capability == Capability.fleetOwner)
                   .firstOrNull;
