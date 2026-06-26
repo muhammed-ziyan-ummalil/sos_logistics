@@ -31,6 +31,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   google_maps_flutter: ^2.9.0
   flutter_google_places_sdk: ^0.4.3
+  geolocator: ^14.0.0
   # Push notifications — FCM
   # Run `flutterfire configure --project=sos-6b1be` to generate
   # android/app/google-services.json and update lib/firebase_options.dart,

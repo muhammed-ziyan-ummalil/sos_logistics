@@ -39,9 +39,11 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   final _stateCtrl       = TextEditingController();
   final _pincodeCtrl     = TextEditingController();
 
-  // Service area (region targeting): owner taps a map to mark their delivery centre.
+  // Service area (region targeting): owner taps a map to mark their delivery
+  // centre and sets how far out they serve (radius in km).
   double? _serviceLat;
   double? _serviceLng;
+  double? _serviceRadiusKm;
 
   @override
   void dispose() {
@@ -81,6 +83,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
           'pincode':            _pincodeCtrl.text.trim(),
           if (_serviceLat != null) 'service_lat': _serviceLat.toString(),
           if (_serviceLng != null) 'service_lng': _serviceLng.toString(),
+          if (_serviceRadiusKm != null) 'service_radius_km': _serviceRadiusKm.toString(),
           // Test-mode OTP prefill (no live SMS yet).
           if (session.devEmailOtp != null) 'dev_email_otp': session.devEmailOtp,
           if (session.devSmsOtp != null)   'dev_sms_otp':   session.devSmsOtp,
@@ -124,6 +127,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
       pincode:          pending.extra['pincode'] as String?,
       serviceLat:       pending.extra['service_lat'] as String?,
       serviceLng:       pending.extra['service_lng'] as String?,
+      serviceRadiusKm:  pending.extra['service_radius_km'] as String?,
     );
   }
 
@@ -131,13 +135,19 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     final initial = (_serviceLat != null && _serviceLng != null)
         ? LatLng(_serviceLat!, _serviceLng!)
         : null;
-    final picked = await Navigator.of(context).push<LatLng>(
-      MaterialPageRoute(builder: (_) => ServiceAreaPickerScreen(initial: initial)),
+    final result = await Navigator.of(context).push<ServiceAreaResult>(
+      MaterialPageRoute(
+        builder: (_) => ServiceAreaPickerScreen(
+          initial: initial,
+          initialRadiusKm: _serviceRadiusKm,
+        ),
+      ),
     );
-    if (picked != null) {
+    if (result != null) {
       setState(() {
-        _serviceLat = picked.latitude;
-        _serviceLng = picked.longitude;
+        _serviceLat = result.center.latitude;
+        _serviceLng = result.center.longitude;
+        _serviceRadiusKm = result.radiusKm;
       });
     }
   }
@@ -355,7 +365,9 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     ),
                     title: Text(
                       (_serviceLat != null && _serviceLng != null)
-                          ? 'Service area set'
+                          ? (_serviceRadiusKm != null
+                              ? 'Service area set | ${_serviceRadiusKm!.round()} km radius'
+                              : 'Service area set')
                           : 'Pick your service area on map',
                       style: theme.textTheme.bodyMedium,
                     ),
