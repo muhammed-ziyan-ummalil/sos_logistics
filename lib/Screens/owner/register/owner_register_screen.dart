@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_cubit.dart';
 import '../../../Bloc/OwnerOnboarding/owner_register_state.dart';
@@ -9,6 +10,7 @@ import '../../../utility/pincode_autofill_field.dart';
 import '../../../utility/form_validators.dart';
 import '../../../widgets/widgets.dart';
 import '../../../services/firebase_notification_service.dart';
+import 'service_area_picker_screen.dart';
 
 class OwnerRegisterScreen extends StatefulWidget {
   const OwnerRegisterScreen({super.key});
@@ -36,6 +38,10 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   final _cityCtrl        = TextEditingController();
   final _stateCtrl       = TextEditingController();
   final _pincodeCtrl     = TextEditingController();
+
+  // Service area (region targeting): owner taps a map to mark their delivery centre.
+  double? _serviceLat;
+  double? _serviceLng;
 
   @override
   void dispose() {
@@ -73,6 +79,8 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
           'city':               _cityCtrl.text.trim(),
           'state':              _stateCtrl.text.trim(),
           'pincode':            _pincodeCtrl.text.trim(),
+          if (_serviceLat != null) 'service_lat': _serviceLat.toString(),
+          if (_serviceLng != null) 'service_lng': _serviceLng.toString(),
           // Test-mode OTP prefill (no live SMS yet).
           if (session.devEmailOtp != null) 'dev_email_otp': session.devEmailOtp,
           if (session.devSmsOtp != null)   'dev_sms_otp':   session.devSmsOtp,
@@ -114,7 +122,24 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
       city:             pending.extra['city'] as String?,
       state:            pending.extra['state'] as String?,
       pincode:          pending.extra['pincode'] as String?,
+      serviceLat:       pending.extra['service_lat'] as String?,
+      serviceLng:       pending.extra['service_lng'] as String?,
     );
+  }
+
+  Future<void> _pickServiceArea() async {
+    final initial = (_serviceLat != null && _serviceLng != null)
+        ? LatLng(_serviceLat!, _serviceLng!)
+        : null;
+    final picked = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(builder: (_) => ServiceAreaPickerScreen(initial: initial)),
+    );
+    if (picked != null) {
+      setState(() {
+        _serviceLat = picked.latitude;
+        _serviceLng = picked.longitude;
+      });
+    }
   }
 
   Widget _sectionLabel(String text) {
@@ -310,6 +335,40 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                     prefixIcon: Icons.map_outlined,
                   )),
                 ]),
+
+                // Service Area (region targeting for delivery requests)
+                _sectionLabel('SERVICE AREA'),
+                Text(
+                  'Mark the centre of the area you deliver in so we only send you nearby '
+                  'delivery requests. Optional, but recommended.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                SosCard(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      Icons.my_location_outlined,
+                      color: (_serviceLat != null) ? scheme.primary : scheme.onSurfaceVariant,
+                    ),
+                    title: Text(
+                      (_serviceLat != null && _serviceLng != null)
+                          ? 'Service area set'
+                          : 'Pick your service area on map',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    subtitle: (_serviceLat != null && _serviceLng != null)
+                        ? Text(
+                            '${_serviceLat!.toStringAsFixed(5)}, ${_serviceLng!.toStringAsFixed(5)}',
+                            style: theme.textTheme.bodySmall,
+                          )
+                        : null,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _pickServiceArea,
+                  ),
+                ),
 
                 SizedBox(height: 32.h),
 

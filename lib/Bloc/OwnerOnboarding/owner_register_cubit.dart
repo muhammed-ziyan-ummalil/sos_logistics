@@ -17,6 +17,8 @@ class OwnerRegisterCubit extends Cubit<OwnerRegisterState> {
     String? city,
     String? state,
     String? pincode,
+    String? serviceLat,
+    String? serviceLng,
   }) async {
     emit(OwnerRegisterLoading());
 
@@ -34,6 +36,9 @@ class OwnerRegisterCubit extends Cubit<OwnerRegisterState> {
       if (city != null && city.isNotEmpty) 'city': city,
       if (state != null && state.isNotEmpty) 'state': state,
       if (pincode != null && pincode.isNotEmpty) 'pincode': pincode,
+      // Service-area centre for delivery region targeting (vehicle_owners.service_lat/lng).
+      if (serviceLat != null && serviceLat.isNotEmpty) 'service_lat': serviceLat,
+      if (serviceLng != null && serviceLng.isNotEmpty) 'service_lng': serviceLng,
     };
 
     const Map<String, String>? files = null;
