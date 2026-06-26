@@ -1,7 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../Screens/owner/delivery/delivery_feed_screen.dart';
+import '../Screens/owner/delivery/delivery_request_detail_screen.dart';
+import '../core/app_constants.dart';
 import '../utility/v2_token_storage.dart';
 
 // ─── Notification channel constants ──────────────────────────────────────────
@@ -38,6 +42,7 @@ class FirebaseNotificationService {
     await _initLocalNotification();
     _listenFirebaseMessages();
     _listenTokenRefresh();
+    await handleKilledState();
     await _syncTokenToBackend();
   }
 
@@ -93,10 +98,32 @@ class FirebaseNotificationService {
       _showNotification(message);
     });
 
-    // BACKGROUND/KILLED → tapped: app was opened by tapping a notification.
+    // BACKGROUND → tapped: app was opened by tapping a notification.
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      // No specific navigation in logistics right now; extend here as needed.
+      _routeFromMessage(message);
     });
+  }
+
+  // ─── Routing from a tapped/opened message ──────────────────────────────────
+
+  /// Routes the owner to the relevant delivery screen when a notification is
+  /// tapped (background) or used to cold-start the app (terminated). Only acts
+  /// on `new_delivery_request` data messages; everything else is a no-op.
+  static void _routeFromMessage(RemoteMessage message) {
+    if (message.data['type'] != 'new_delivery_request') return;
+
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return;
+
+    final requestId = int.tryParse('${message.data['request_id'] ?? ''}');
+
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => requestId != null
+            ? DeliveryRequestDetailScreen(requestId: requestId)
+            : const DeliveryFeedScreen(),
+      ),
+    );
   }
 
   // ─── Show local notification ────────────────────────────────────────────────
@@ -132,8 +159,11 @@ class FirebaseNotificationService {
   static Future<void> handleKilledState() async {
     final RemoteMessage? message = await _messaging.getInitialMessage();
     if (message != null) {
-      // App was opened via FCM notification while terminated — handle routing
-      // here as needed.
+      // App was opened via FCM notification while terminated. The navigator may
+      // not have mounted yet during init(); defer routing to the first frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _routeFromMessage(message);
+      });
     }
   }
 
