@@ -9,6 +9,7 @@ import '../../Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
+import '../../core/dashboard_back_handler.dart';
 import '../../widgets/widgets.dart';
 import '../delivery/active_delivery_screen.dart';
 import '../history/history_screen.dart';
@@ -21,9 +22,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with DashboardBackHandler {
   int _tab = 0;
   Timer? _pollTimer;
+
+  @override
+  int get selectedTabIndex => _tab;
+
+  @override
+  void onBackToFirstTab() => setState(() => _tab = 0);
 
   final List<Widget> _pages = const [
     _DashboardTab(),
@@ -53,17 +60,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.bg(context),
-      body: IndexedStack(index: _tab, children: _pages),
-      bottomNavigationBar: SosBottomNav(
-        currentIndex: _tab,
-        onTap: (i) => setState(() => _tab = i),
-        items: const [
-          SosNavItem(icon: Icons.home_rounded, label: 'Home'),
-          SosNavItem(icon: Icons.history_rounded, label: 'History'),
-          SosNavItem(icon: Icons.person_rounded, label: 'Profile'),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) => handleDashboardPop(didPop),
+      child: Scaffold(
+        backgroundColor: AppTheme.bg(context),
+        body: IndexedStack(index: _tab, children: _pages),
+        bottomNavigationBar: SosBottomNav(
+          currentIndex: _tab,
+          onTap: (i) => setState(() => _tab = i),
+          items: const [
+            SosNavItem(icon: Icons.home_rounded, label: 'Home'),
+            SosNavItem(icon: Icons.history_rounded, label: 'History'),
+            SosNavItem(icon: Icons.person_rounded, label: 'Profile'),
+          ],
+        ),
       ),
     );
   }
