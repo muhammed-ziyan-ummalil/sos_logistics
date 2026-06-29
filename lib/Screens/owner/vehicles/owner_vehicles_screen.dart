@@ -146,6 +146,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     String? imageBackPath;
     String? rcDocPath;
     String? insuranceDocPath;
+    String? formError;
 
     // Existing uploaded media (edit mode) so the picker tiles preview the
     // current images. Stored as relative paths under the API host.
@@ -373,6 +374,15 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       },
                     ),
                     SizedBox(height: 20.h),
+                    if (formError != null) ...[
+                      Text(
+                        formError!,
+                        style: TextStyle(
+                            color: Theme.of(sheetCtx).colorScheme.error,
+                            fontSize: 12.sp),
+                      ),
+                      SizedBox(height: 10.h),
+                    ],
                     ValueListenableBuilder<bool>(
                       valueListenable: dirty,
                       builder: (context, isDirty, _) => SosButton(
@@ -380,59 +390,33 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       onPressed: (isEdit && !isDirty)
                           ? null
                           : () {
+                        setSheetState(() => formError = null);
                         final reg = regCtr.text.trim();
                         if (!isEdit && reg.isEmpty) return;
                         final rcNumber = rcNumberCtr.text.trim();
                         if (typeCtr.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Vehicle type is required.'),
-                            ),
-                          );
+                          setSheetState(() => formError = 'Vehicle type is required.');
                           return;
                         }
                         if (!isEdit) {
                           if (rcNumber.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vehicle RC number is required.'),
-                              ),
-                            );
+                            setSheetState(() => formError = 'Vehicle RC number is required.');
                             return;
                           }
                           if (imageFrontPath == null || imageBackPath == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Please add both front and back vehicle photos.'),
-                              ),
-                            );
+                            setSheetState(() => formError = 'Please add both front and back vehicle photos.');
                             return;
                           }
                           if (rcDocPath == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Please upload the RC document photo.'),
-                              ),
-                            );
+                            setSheetState(() => formError = 'Please upload the RC document photo.');
                             return;
                           }
                           if (insuranceDocPath == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Please upload the insurance document photo.'),
-                              ),
-                            );
+                            setSheetState(() => formError = 'Please upload the insurance document photo.');
                             return;
                           }
                           if (nameCtr.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vehicle name is required.'),
-                              ),
-                            );
+                            setSheetState(() => formError = 'Vehicle name is required.');
                             return;
                           }
                         }
@@ -447,22 +431,12 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             gstPct == null || gstPct < 0 || gstPct > 100 ||
                             maxDist == null || maxDist < 0 ||
                             maxDist < includedKm) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Enter valid values. GST must be 0-100. Max distance must be at least the included distance.',
-                              ),
-                            ),
-                          );
+                          setSheetState(() => formError = 'Enter valid values. GST must be 0-100. Max distance must be at least the included distance.');
                           return;
                         }
                         final cap = double.tryParse(capacityCtr.text.trim());
-                        if (!isEdit && (cap == null || cap <= 0)) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Enter a valid capacity (kg).'),
-                            ),
-                          );
+                        if (cap == null || cap <= 0) {
+                          setSheetState(() => formError = 'Enter a valid capacity (kg).');
                           return;
                         }
                         Navigator.pop(sheetCtx);
