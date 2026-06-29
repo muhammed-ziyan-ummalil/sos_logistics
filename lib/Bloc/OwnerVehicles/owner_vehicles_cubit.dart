@@ -25,6 +25,7 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     String? rcNumber,
     String? imageFrontPath,
     String? imageBackPath,
+    String? rcDocPath,
     String? insuranceDocPath,
     String? insuranceExpiry,
     double? minimumFee,
@@ -52,6 +53,7 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     final files = <String, String>{};
     if (imageFrontPath != null) files['image_front'] = imageFrontPath;
     if (imageBackPath != null) files['image_back'] = imageBackPath;
+    if (rcDocPath != null) files['rc_doc'] = rcDocPath;
     if (insuranceDocPath != null) files['insurance_doc'] = insuranceDocPath;
 
     final res = await ApiServiceV2.instance.postMultipart(

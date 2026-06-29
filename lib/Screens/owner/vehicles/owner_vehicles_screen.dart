@@ -144,6 +144,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
 
     String? imageFrontPath;
     String? imageBackPath;
+    String? rcDocPath;
     String? insuranceDocPath;
 
     showModalBottomSheet(
@@ -296,6 +297,22 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       },
                     ),
                     SizedBox(height: 16.h),
+                    Text('RC Document',
+                        style: Theme.of(sheetCtx).textTheme.labelMedium),
+                    SizedBox(height: 8.h),
+                    _PhotoPickerTile(
+                      label: 'RC Document - Upload',
+                      path: rcDocPath,
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(
+                            source: ImageSource.gallery);
+                        if (file != null) {
+                          setSheetState(() => rcDocPath = file.path);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 16.h),
                     Text('Insurance Document (optional)',
                         style: Theme.of(sheetCtx).textTheme.labelMedium),
                     SizedBox(height: 8.h),
@@ -344,6 +361,15 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             );
                             return;
                           }
+                          if (rcDocPath == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Please upload the RC document photo.'),
+                              ),
+                            );
+                            return;
+                          }
                         }
                         final minFee     = double.tryParse(minFeeCtr.text.trim());
                         final includedKm = double.tryParse(includedKmCtr.text.trim());
@@ -387,6 +413,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             rcNumber: rcNumber,
                             imageFrontPath: imageFrontPath,
                             imageBackPath: imageBackPath,
+                            rcDocPath: rcDocPath,
                             insuranceDocPath: insuranceDocPath,
                             capacityKg: cap,
                             minimumFee: minFee,
