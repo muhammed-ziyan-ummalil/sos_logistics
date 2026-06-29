@@ -24,11 +24,11 @@ android {
     }
 
     defaultConfig {
-        // Aligned to the farmer Firebase Android app so the shared sos-6b1be project
-        // + google-services.json deliver FCM here. (For a dedicated logistics app,
-        // register com.sossss.logistics in the sos-6b1be console, swap
-        // google-services.json + firebase_options.dart, and restore this id.)
-        applicationId = "com.sosfarmer.app"
+        // Dedicated logistics app in the sos-6b1be Firebase project. Register this
+        // package in the console, drop its google-services.json into android/app/,
+        // and run `flutterfire configure --project=sos-6b1be` to (re)generate
+        // lib/firebase_options.dart for this app.
+        applicationId = "com.sossss.logistics"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
