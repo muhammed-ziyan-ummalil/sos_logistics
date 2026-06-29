@@ -40,6 +40,44 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     return 'Good evening';
   }
 
+  void _showNotifications(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 32.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              margin: EdgeInsets.only(bottom: 20.h),
+              decoration: BoxDecoration(
+                color: AppTheme.textSecondary(context).withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            Icon(Icons.notifications_off_outlined,
+                size: 44.r, color: AppTheme.textSecondary(context)),
+            SizedBox(height: 12.h),
+            Text('No notifications',
+                style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(height: 6.h),
+            Text(
+              'Delivery and approval updates arrive as push notifications.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,8 +87,12 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             ? '${_greeting()}, $_ownerName'
             : _greeting(),
         actions: [
-          const SosChip(label: 'LIVE', tone: SosTone.success),
-          SizedBox(width: 4.w),
+          IconButton(
+            icon: Icon(Icons.notifications_none_rounded,
+                color: AppTheme.textSecondary(context), size: 22.r),
+            tooltip: 'Notifications',
+            onPressed: () => _showNotifications(context),
+          ),
           BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
             builder: (_, s) => IconButton(
               icon: Icon(Icons.refresh_rounded,
