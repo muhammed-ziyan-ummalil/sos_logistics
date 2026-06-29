@@ -138,12 +138,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
         text: fieldText('max_delivery_distance_km'));
     final gstPctCtr     = TextEditingController(
         text: isEdit ? fieldText('logistic_gst_percent') : '12');
-    const vehicleTypes  = ['bike', 'three_wheeler', 'mini_truck', 'truck', 'reefer'];
-    final initialType   = (vehicle?['type'] as String?)?.toLowerCase();
-    String selectedType =
-        (initialType != null && vehicleTypes.contains(initialType))
-            ? initialType
-            : 'bike';
+    // Vehicle type is free text (e.g. Bike, Mini Truck, Reefer); prefilled with
+    // the existing value when editing.
+    final typeCtr = TextEditingController(text: fieldText('type'));
 
     String? imageFrontPath;
     String? imageBackPath;
@@ -264,40 +261,10 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       prefixIcon: Icons.route_rounded,
                     ),
                     SizedBox(height: 12.h),
-                    Text('Vehicle Type',
-                        style: Theme.of(sheetCtx).textTheme.labelMedium),
-                    SizedBox(height: 8.h),
-                    Wrap(
-                      spacing: 8.w,
-                      children: vehicleTypes.map((t) {
-                        final sel = selectedType == t;
-                        final primary = colorScheme.primary;
-                        return GestureDetector(
-                          onTap: () => setSheetState(() => selectedType = t),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 14.w, vertical: 8.h),
-                            decoration: BoxDecoration(
-                              color: sel
-                                  ? primary.withValues(alpha: 0.12)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(
-                                  color: sel ? primary : colorScheme.outline),
-                            ),
-                            child: Text(t.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: sel
-                                      ? FontWeight.w700
-                                      : FontWeight.w400,
-                                  color: sel
-                                      ? primary
-                                      : AppTheme.textSecondary(sheetCtx),
-                                )),
-                          ),
-                        );
-                      }).toList(),
+                    SosTextField(
+                      label: 'Vehicle Type',
+                      controller: typeCtr,
+                      prefixIcon: Icons.local_shipping_outlined,
                     ),
                     SizedBox(height: 16.h),
                     Text('Vehicle Photos',
@@ -352,6 +319,14 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         if (!isEdit && reg.isEmpty) return;
                         final rcNumber = rcNumberCtr.text.trim();
                         if (!isEdit) {
+                          if (typeCtr.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Vehicle type is required.'),
+                              ),
+                            );
+                            return;
+                          }
                           if (rcNumber.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -395,7 +370,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         if (isEdit) {
                           context.read<OwnerVehiclesCubit>().updateVehicle(
                             vehicleId: vehicle['id'] as int,
-                            type: selectedType,
+                            type: typeCtr.text.trim(),
                             capacityKg: cap,
                             minimumFee: minFee,
                             includedDistanceKm: includedKm,
@@ -407,7 +382,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           final name = nameCtr.text.trim();
                           context.read<OwnerVehiclesCubit>().addVehicle(
                             regNumber: reg,
-                            type: selectedType,
+                            type: typeCtr.text.trim(),
                             vehicleName: name.isEmpty ? null : name,
                             rcNumber: rcNumber,
                             imageFrontPath: imageFrontPath,
