@@ -472,6 +472,8 @@ class _VehicleTile extends StatelessWidget {
     final vStatus       = (vehicle['status'] as String?)?.toLowerCase() ?? 'active';
     final isPending     = vStatus == 'pending';
     final isInactive    = vStatus == 'inactive' || vStatus == 'maintenance';
+    final rejectionReason = (vehicle['rejection_reason'] as String?)?.trim();
+    final isRejected    = rejectionReason != null && rejectionReason.isNotEmpty;
     final capacityKg    = vehicle['capacity_kg'];
     final insuranceExpiry = vehicle['insurance_expiry'] as String?;
     final minimumFee    = vehicle['minimum_fee'];
@@ -523,6 +525,15 @@ class _VehicleTile extends StatelessWidget {
                         color: AppTheme.textSecondary(context)),
                   ),
                 ],
+                if (isRejected) ...[
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Rejected: $rejectionReason',
+                    style: TextStyle(
+                        fontSize: 10.sp,
+                        color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
               ],
             ),
           ),
@@ -530,16 +541,20 @@ class _VehicleTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               SosChip(
-                label: isPending
-                    ? 'PENDING'
-                    : isInactive
-                        ? vStatus.toUpperCase()
-                        : (isAssigned ? 'ASSIGNED' : 'AVAILABLE'),
-                tone: isPending
-                    ? SosTone.warning
-                    : isInactive
-                        ? SosTone.neutral
-                        : (isAssigned ? SosTone.success : SosTone.neutral),
+                label: isRejected
+                    ? 'REJECTED'
+                    : isPending
+                        ? 'PENDING'
+                        : isInactive
+                            ? vStatus.toUpperCase()
+                            : (isAssigned ? 'ASSIGNED' : 'AVAILABLE'),
+                tone: isRejected
+                    ? SosTone.error
+                    : isPending
+                        ? SosTone.warning
+                        : isInactive
+                            ? SosTone.neutral
+                            : (isAssigned ? SosTone.success : SosTone.neutral),
               ),
               if (isAssigned) ...[
                 SizedBox(height: 3.h),
