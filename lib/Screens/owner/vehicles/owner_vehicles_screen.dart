@@ -147,6 +147,50 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     String? rcDocPath;
     String? insuranceDocPath;
 
+    // Existing uploaded media (edit mode) so the picker tiles preview the
+    // current images. Stored as relative paths under the API host.
+    String? existingMediaUrl(String key) {
+      final p = vehicle?[key] as String?;
+      if (p == null || p.isEmpty) return null;
+      if (p.startsWith('http')) return p;
+      return 'https://api.sossss.net/${p.replaceFirst(RegExp(r'^/+'), '')}';
+    }
+
+    // Dirty tracking: the Save Changes button (edit mode) is disabled until a
+    // field is changed or a new image is picked.
+    final dirty = ValueNotifier<bool>(false);
+    bool computeDirty() {
+      if (imageFrontPath != null ||
+          imageBackPath != null ||
+          rcDocPath != null ||
+          insuranceDocPath != null) {
+        return true;
+      }
+      bool diff(TextEditingController c, String key, [String fallback = '']) {
+        final init = isEdit ? fieldText(key) : fallback;
+        return c.text.trim() != init.trim();
+      }
+
+      return diff(typeCtr, 'type') ||
+          diff(nameCtr, 'vehicle_name') ||
+          diff(rcNumberCtr, 'rc_number') ||
+          diff(capacityCtr, 'capacity_kg') ||
+          diff(minFeeCtr, 'minimum_fee') ||
+          diff(includedKmCtr, 'included_distance_km', '25') ||
+          diff(perKmFeeCtr, 'per_km_fee') ||
+          diff(gstPctCtr, 'logistic_gst_percent', '12') ||
+          diff(maxDistCtr, 'max_delivery_distance_km');
+    }
+
+    if (isEdit) {
+      for (final c in [
+        typeCtr, nameCtr, rcNumberCtr, capacityCtr, minFeeCtr,
+        includedKmCtr, perKmFeeCtr, gstPctCtr, maxDistCtr,
+      ]) {
+        c.addListener(() => dirty.value = computeDirty());
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -274,10 +318,12 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     _PhotoPickerTile(
                       label: 'Vehicle Photo - Front',
                       path: imageFrontPath,
+                      existingUrl: existingMediaUrl('image_front_url'),
                       onTap: () async {
                         final path = await pickImageWithSource(sheetCtx);
                         if (path != null) {
                           setSheetState(() => imageFrontPath = path);
+                          dirty.value = computeDirty();
                         }
                       },
                     ),
@@ -285,10 +331,12 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     _PhotoPickerTile(
                       label: 'Vehicle Photo - Back',
                       path: imageBackPath,
+                      existingUrl: existingMediaUrl('image_back_url'),
                       onTap: () async {
                         final path = await pickImageWithSource(sheetCtx);
                         if (path != null) {
                           setSheetState(() => imageBackPath = path);
+                          dirty.value = computeDirty();
                         }
                       },
                     ),
@@ -299,10 +347,12 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     _PhotoPickerTile(
                       label: 'RC Document - Upload',
                       path: rcDocPath,
+                      existingUrl: existingMediaUrl('rc_doc_url'),
                       onTap: () async {
                         final path = await pickImageWithSource(sheetCtx);
                         if (path != null) {
                           setSheetState(() => rcDocPath = path);
+                          dirty.value = computeDirty();
                         }
                       },
                     ),
@@ -313,29 +363,35 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     _PhotoPickerTile(
                       label: 'Insurance - Upload',
                       path: insuranceDocPath,
+                      existingUrl: existingMediaUrl('insurance_doc_url'),
                       onTap: () async {
                         final path = await pickImageWithSource(sheetCtx);
                         if (path != null) {
                           setSheetState(() => insuranceDocPath = path);
+                          dirty.value = computeDirty();
                         }
                       },
                     ),
                     SizedBox(height: 20.h),
-                    SosButton(
+                    ValueListenableBuilder<bool>(
+                      valueListenable: dirty,
+                      builder: (context, isDirty, _) => SosButton(
                       label: isEdit ? 'Save Changes' : 'Add Vehicle',
-                      onPressed: () {
+                      onPressed: (isEdit && !isDirty)
+                          ? null
+                          : () {
                         final reg = regCtr.text.trim();
                         if (!isEdit && reg.isEmpty) return;
                         final rcNumber = rcNumberCtr.text.trim();
+                        if (typeCtr.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Vehicle type is required.'),
+                            ),
+                          );
+                          return;
+                        }
                         if (!isEdit) {
-                          if (typeCtr.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vehicle type is required.'),
-                              ),
-                            );
-                            return;
-                          }
                           if (rcNumber.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -420,6 +476,10 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             perKmFee: perKm,
                             logisticGstPercent: gstPct,
                             maxDeliveryDistanceKm: maxDist,
+                            imageFrontPath: imageFrontPath,
+                            imageBackPath: imageBackPath,
+                            rcDocPath: rcDocPath,
+                            insuranceDocPath: insuranceDocPath,
                           );
                         } else {
                           final name = nameCtr.text.trim();
@@ -441,6 +501,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           );
                         }
                       },
+                      ),
                     ),
                   ],
                 ),
@@ -602,46 +663,69 @@ class _VehicleTile extends StatelessWidget {
 class _PhotoPickerTile extends StatelessWidget {
   final String label;
   final String? path;
+  final String? existingUrl;
   final VoidCallback onTap;
   const _PhotoPickerTile({
     required this.label,
     required this.path,
+    this.existingUrl,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasNew = path != null;
+    final hasExisting = !hasNew && existingUrl != null && existingUrl!.isNotEmpty;
+
+    Widget preview;
+    if (hasNew) {
+      preview = ClipRRect(
+        borderRadius: BorderRadius.circular(6.r),
+        child: Image.file(File(path!),
+            height: 40.r, width: 52.r, fit: BoxFit.cover),
+      );
+    } else if (hasExisting) {
+      preview = ClipRRect(
+        borderRadius: BorderRadius.circular(6.r),
+        child: Image.network(
+          existingUrl!,
+          height: 40.r,
+          width: 52.r,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Icon(Icons.broken_image_outlined,
+              color: AppTheme.textSecondary(context), size: 24.r),
+        ),
+      );
+    } else {
+      preview = Icon(Icons.add_a_photo_outlined,
+          color: AppTheme.textSecondary(context), size: 24.r);
+    }
+
+    final text = hasNew
+        ? '$label - new photo selected'
+        : hasExisting
+            ? '$label - tap to replace'
+            : 'Upload $label';
+
     return SosCard(
       onTap: onTap,
       padding: EdgeInsets.all(14.r),
       child: Row(
         children: [
-          if (path != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6.r),
-              child: Image.file(
-                File(path!),
-                height: 40.r,
-                width: 52.r,
-                fit: BoxFit.cover,
-              ),
-            )
-          else
-            Icon(Icons.add_a_photo_outlined,
-                color: AppTheme.textSecondary(context), size: 24.r),
+          preview,
           SizedBox(width: 10.w),
           Expanded(
             child: Text(
-              path != null ? '$label selected' : 'Upload $label',
+              text,
               style: TextStyle(
-                color: path != null
+                color: (hasNew || hasExisting)
                     ? AppDesignTokens.success
                     : AppTheme.textSecondary(context),
                 fontSize: 13.sp,
               ),
             ),
           ),
-          if (path != null)
+          if (hasNew)
             Icon(Icons.check_circle,
                 color: AppDesignTokens.success, size: 18.r),
         ],
