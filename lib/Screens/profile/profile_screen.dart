@@ -55,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Map<String, dynamic>? get _driver       => _data?['driver']       as Map<String, dynamic>?;
   Map<String, dynamic>? get _vehicle      => _data?['vehicle']      as Map<String, dynamic>?;
-  Map<String, dynamic>? get _availability => _data?['availability'] as Map<String, dynamic>?;
   Map<String, dynamic>? get _owner        => _data?['owner']        as Map<String, dynamic>?;
 
   String get _accountStatus => (_driver?['status'] as String? ?? 'active').toLowerCase();
@@ -248,9 +247,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final vehicleType = (_vehicle?['type'] as String? ?? '').toUpperCase();
     final vehicleLabel = _vehicle != null ? '$vehicleReg · $vehicleType' : 'Not assigned';
 
-    final availStatus = (_availability?['status'] as String? ?? 'offline').toUpperCase();
-    final isOnline = availStatus == 'ONLINE';
-
     return _menuGroup(
       context: context,
       title: 'Fleet',
@@ -269,14 +265,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           trailing: Text(
             vehicleLabel,
             style: TextStyle(fontSize: 13.sp, color: AppTheme.textSecondary(context)),
-          ),
-        ),
-        _DriverMenuTile(
-          icon: Icons.sensors_rounded,
-          title: 'Availability',
-          trailing: SosChip(
-            label: availStatus,
-            tone: isOnline ? SosTone.success : SosTone.neutral,
           ),
         ),
       ],

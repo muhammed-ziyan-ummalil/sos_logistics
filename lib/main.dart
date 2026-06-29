@@ -8,7 +8,6 @@ import 'package:sos_auth/sos_auth.dart';
 
 import 'Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import 'Bloc/Auth/password_reset_cubit.dart';
-import 'Bloc/Availability/availability_cubit.dart';
 import 'Bloc/DeliveryFeed/delivery_feed_cubit.dart';
 import 'Bloc/Fleet/driver_detail_cubit.dart';
 import 'Bloc/Fleet/fleet_dashboard_cubit.dart';
@@ -95,7 +94,6 @@ class SOSLogisticsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => AvailabilityCubit()),
         BlocProvider(create: (_) => ActiveDeliveryCubit()),
         BlocProvider(create: (_) => HistoryCubit()),
         // V2 cubits — shared sos_auth AuthCubit

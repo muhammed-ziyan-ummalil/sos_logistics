@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../Bloc/Availability/availability_cubit.dart';
-import '../../Bloc/Availability/availability_state.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
 import '../../core/app_theme.dart';
@@ -42,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> with DashboardBackHandler {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _poll());
-    // Live-refresh the active-delivery banner so a newly assigned job appears
+    // Live-refresh the assigned-delivery view so a newly assigned job appears
     // without the driver leaving and re-entering the home screen.
     _pollTimer = Timer.periodic(const Duration(seconds: 20), (_) => _poll());
   }
@@ -96,33 +94,29 @@ class _DashboardTab extends StatelessWidget {
           padding: EdgeInsets.all(20.r),
           children: [
             // ── Header ──────────────────────────────────────────────────
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppConstants.appName,
-                        style: TextStyle(
-                          color: AppTheme.textPrimary(context),
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        'Driver Dashboard',
-                        style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
-                      ),
-                    ],
+                Text(
+                  AppConstants.appName,
+                  style: TextStyle(
+                    color: AppTheme.textPrimary(context),
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const _AvailabilityToggle(),
+                Text(
+                  'Driver Dashboard',
+                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
+                ),
               ],
             ),
             SizedBox(height: 24.h),
 
-            // ── Active delivery banner ───────────────────────────────────
+            // ── Assigned delivery ────────────────────────────────────────
+            // The owner assigns vehicles + deliveries to the driver. The driver
+            // only performs the delivery actions (OTP, status, photos); there
+            // is no online/offline toggle and no offer feed.
             BlocBuilder<ActiveDeliveryCubit, ActiveDeliveryState>(
               builder: (ctx, state) {
                 if (state is ActiveDeliveryLoaded) {
@@ -134,78 +128,22 @@ class _DashboardTab extends StatelessWidget {
                     child: _ActiveDeliveryBanner(),
                   );
                 }
-                return const SizedBox.shrink();
+                if (state is ActiveDeliveryError) {
+                  return ErrorState(
+                    message: state.message,
+                    onRetry: () => ctx.read<ActiveDeliveryCubit>().fetchActiveDelivery(),
+                  );
+                }
+                if (state is ActiveDeliveryInitial || state is ActiveDeliveryLoading) {
+                  return _LoadingCard();
+                }
+                // ActiveDeliveryNone (or any post-completion state): empty state.
+                return _NoDeliveryCard();
               },
             ),
-
-            // Drivers now receive delivery jobs via the owner quote marketplace
-            _WaitingCard(),
           ],
         ),
       ),
-    );
-  }
-}
-
-// ── Availability toggle ──────────────────────────────────────────────────────
-class _AvailabilityToggle extends StatelessWidget {
-  const _AvailabilityToggle();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AvailabilityCubit, AvailabilityState>(
-      builder: (ctx, state) {
-        final isOnline  = state is AvailabilityUpdated && state.isOnline;
-        final isLoading = state is AvailabilityLoading;
-        final onColor   = AppTheme.success(context);
-        final offColor  = AppTheme.textSecondary(context);
-        final dotColor  = isOnline ? onColor : offColor;
-
-        return GestureDetector(
-          onTap: isLoading ? null : () => ctx.read<AvailabilityCubit>().toggle(),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-            decoration: BoxDecoration(
-              color: isOnline
-                  ? AppTheme.success(context).withValues(alpha: 0.12)
-                  : AppTheme.card(context),
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: isOnline ? onColor.withValues(alpha: 0.5) : AppTheme.divider(context),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isLoading)
-                  SizedBox(
-                    width: 12.r,
-                    height: 12.r,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: AppTheme.accent(context),
-                    ),
-                  )
-                else
-                  Container(
-                    width: 8.r,
-                    height: 8.r,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
-                  ),
-                SizedBox(width: 6.w),
-                Text(
-                  isLoading ? '...' : (isOnline ? 'Online' : 'Offline'),
-                  style: TextStyle(
-                    color: isOnline ? onColor : offColor,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -244,18 +182,38 @@ class _ActiveDeliveryBanner extends StatelessWidget {
   }
 }
 
-// ── Waiting card ─────────────────────────────────────────────────────────────
-class _WaitingCard extends StatelessWidget {
+// ── Loading card ─────────────────────────────────────────────────────────────
+class _LoadingCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SosCard(
+      padding: EdgeInsets.all(32.r),
+      child: Center(
+        child: SizedBox(
+          width: 28.r,
+          height: 28.r,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppTheme.accent(context),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── No active delivery card ──────────────────────────────────────────────────
+class _NoDeliveryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SosCard(
       padding: EdgeInsets.all(32.r),
       child: Column(
         children: [
-          Icon(Icons.wifi_tethering_rounded, color: AppTheme.textSecondary(context), size: 48.r),
+          Icon(Icons.local_shipping_outlined, color: AppTheme.textSecondary(context), size: 48.r),
           SizedBox(height: 16.h),
           Text(
-            'Waiting for orders...',
+            'No active delivery',
             style: TextStyle(
               color: AppTheme.textPrimary(context),
               fontSize: 16.sp,
@@ -264,7 +222,7 @@ class _WaitingCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Go online to start receiving delivery offers.',
+            'Your owner will assign deliveries to you. Pull down to refresh.',
             style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
             textAlign: TextAlign.center,
           ),
