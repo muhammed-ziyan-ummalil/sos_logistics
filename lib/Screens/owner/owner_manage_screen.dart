@@ -90,14 +90,11 @@ class _DriversManageCard extends StatelessWidget {
           // Stats from FleetDashboardCubit
           BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
             builder: (_, state) {
-              int total = 0, active = 0, online = 0;
+              int total = 0, approved = 0, pending = 0;
               if (state is FleetDashboardLoaded) {
                 total = state.drivers.length;
-                active = state.drivers.where((d) => d['status'] == 'active').length;
-                online = state.drivers.where((d) {
-                  final v = d['is_online'];
-                  return v == true || v == 1 || v == '1';
-                }).length;
+                approved = state.drivers.where((d) => d['status'] == 'approved').length;
+                pending = state.drivers.where((d) => d['status'] == 'pending').length;
               }
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -114,16 +111,16 @@ class _DriversManageCard extends StatelessWidget {
                     Expanded(
                       child: StatTile(
                         icon: Icons.check_circle_outline_rounded,
-                        label: 'Active',
-                        value: active.toString(),
+                        label: 'Approved',
+                        value: approved.toString(),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: StatTile(
-                        icon: Icons.wifi_rounded,
-                        label: 'Online',
-                        value: online.toString(),
+                        icon: Icons.hourglass_empty_rounded,
+                        label: 'Pending',
+                        value: pending.toString(),
                       ),
                     ),
                   ],
