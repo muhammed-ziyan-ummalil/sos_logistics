@@ -7,7 +7,9 @@ import '../../../Bloc/Fleet/driver_detail_state.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_state.dart';
 import '../../../core/app_theme.dart';
+import '../../../utility/api_service.dart';
 import '../../../widgets/widgets.dart';
+import 'temp_password_sheet.dart';
 
 class DriverDetailScreen extends StatefulWidget {
   final String driverId;
@@ -175,6 +177,16 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                   ),
                 ),
                 SizedBox(height: 16.h),
+                _SectionLabel(label: 'LOGIN ACCESS'),
+                SizedBox(height: 10.h),
+                SosButton(
+                  label: 'Reset Password',
+                  icon: Icons.lock_reset_rounded,
+                  variant: SosButtonVariant.outline,
+                  fullWidth: true,
+                  onPressed: isActionLoading ? null : () => _resetPassword(context),
+                ),
+                SizedBox(height: 16.h),
                 _SectionLabel(label: 'PERFORMANCE'),
                 SizedBox(height: 10.h),
                 _PerformanceRow(driver: driver),
@@ -244,6 +256,78 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
       ),
     );
     if (confirmed == true) onConfirm();
+  }
+
+  Future<void> _resetPassword(BuildContext context) async {
+    final confirmed = await _confirmDialog(
+      context,
+      title: 'Reset Password',
+      message:
+          'A new temporary password is generated. The current one stops working and the driver must set a new password on next login. Use this if the original password was lost.',
+      confirmLabel: 'Reset',
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final res = await ApiServiceUnified.instance
+        .resetDriverPassword(int.tryParse(widget.driverId) ?? 0);
+    if (!context.mounted) return;
+
+    if (res['status'] == 'success') {
+      final temp = res['data']?['temp_password']?.toString() ?? '';
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: false,
+        enableDrag: false,
+        backgroundColor: Colors.transparent,
+        builder: (sheetCtx) => TempPasswordSheet(
+          tempPassword: temp,
+          onDismissed: () => Navigator.pop(sheetCtx),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(res['message']?.toString() ?? 'Could not reset password.'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ));
+    }
+  }
+
+  Future<bool?> _confirmDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return showDialog<bool>(
+      context: context,
+      builder: (dlgCtx) => AlertDialog(
+        backgroundColor: scheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Text(title,
+            style: TextStyle(
+                color: scheme.onSurface,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600)),
+        content: Text(message,
+            style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.65), fontSize: 13.sp)),
+        actions: [
+          SosButton(
+            label: 'Cancel',
+            variant: SosButtonVariant.outline,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dlgCtx, false),
+          ),
+          SosButton(
+            label: confirmLabel,
+            fullWidth: false,
+            onPressed: () => Navigator.pop(dlgCtx, true),
+          ),
+        ],
+      ),
+    );
   }
 }
 

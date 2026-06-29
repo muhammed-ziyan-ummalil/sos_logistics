@@ -136,6 +136,10 @@ class ApiServiceUnified {
         if (notificationId != null) 'notification_id': notificationId,
         'mark_all': markAll ? 1 : 0,
       });
+
+  /// Owner re-issues a driver's temp password. Returns the new plaintext once.
+  Future<Map<String, dynamic>> resetDriverPassword(int driverId) =>
+      post('owner/drivers/$driverId/reset-password');
 }
 
 /// V2 API client — JWT auth with custom interceptors.
