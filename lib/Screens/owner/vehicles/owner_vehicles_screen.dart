@@ -469,6 +469,9 @@ class _VehicleTile extends StatelessWidget {
     final assignedDriver = vehicle['assigned_driver'] as Map<String, dynamic>?;
     final driverName    = assignedDriver?['name'] as String? ?? 'Unassigned';
     final isAssigned    = assignedDriver != null;
+    final vStatus       = (vehicle['status'] as String?)?.toLowerCase() ?? 'active';
+    final isPending     = vStatus == 'pending';
+    final isInactive    = vStatus == 'inactive' || vStatus == 'maintenance';
     final capacityKg    = vehicle['capacity_kg'];
     final insuranceExpiry = vehicle['insurance_expiry'] as String?;
     final minimumFee    = vehicle['minimum_fee'];
@@ -527,8 +530,16 @@ class _VehicleTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               SosChip(
-                label: isAssigned ? 'ASSIGNED' : 'AVAILABLE',
-                tone: isAssigned ? SosTone.success : SosTone.neutral,
+                label: isPending
+                    ? 'PENDING'
+                    : isInactive
+                        ? vStatus.toUpperCase()
+                        : (isAssigned ? 'ASSIGNED' : 'AVAILABLE'),
+                tone: isPending
+                    ? SosTone.warning
+                    : isInactive
+                        ? SosTone.neutral
+                        : (isAssigned ? SosTone.success : SosTone.neutral),
               ),
               if (isAssigned) ...[
                 SizedBox(height: 3.h),
