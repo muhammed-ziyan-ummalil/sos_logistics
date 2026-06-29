@@ -157,7 +157,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                     ctx: context,
                     title: 'Activate Driver',
                     message:
-                        'This will allow $name to go online and receive deliveries.',
+                        'This will allow $name to receive delivery assignments.',
                     confirmLabel: 'Activate',
                     isDestructive: false,
                     onConfirm: () => context
@@ -187,7 +187,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen> {
                   onPressed: isActionLoading ? null : () => _resetPassword(context),
                 ),
                 SizedBox(height: 16.h),
-                _SectionLabel(label: 'PERFORMANCE'),
+                _SectionLabel(label: 'DELIVERIES'),
                 SizedBox(height: 10.h),
                 _PerformanceRow(driver: driver),
                 SizedBox(height: 32.h),
@@ -345,9 +345,6 @@ class _DriverInfoCard extends StatelessWidget {
     final phone = driver['phone'] as String? ?? '—';
     final email = driver['email'] as String? ?? '—';
     final status = driver['status'] as String? ?? '';
-    final isOnline = driver['is_online'] == true ||
-        driver['is_online'] == 1 ||
-        driver['is_online'] == '1';
     final license = driver['license_number'] as String?;
     final licenseExpiry = driver['license_expiry'] as String?;
 
@@ -356,36 +353,17 @@ class _DriverInfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 28.r,
-                    backgroundColor: scheme.primary.withValues(alpha: 0.15),
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        color: scheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22.sp,
-                      ),
-                    ),
+              CircleAvatar(
+                radius: 28.r,
+                backgroundColor: scheme.primary.withValues(alpha: 0.15),
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: TextStyle(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22.sp,
                   ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 13.r,
-                      height: 13.r,
-                      decoration: BoxDecoration(
-                        color: isOnline
-                            ? AppDesignTokens.success
-                            : scheme.outline,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: scheme.surface, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               SizedBox(width: 14.w),
               Expanded(
@@ -401,13 +379,7 @@ class _DriverInfoCard extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    Row(
-                      children: [
-                        _StatusBadge(status: status),
-                        SizedBox(width: 6.w),
-                        _OnlineBadge(isOnline: isOnline),
-                      ],
-                    ),
+                    _StatusBadge(status: status),
                   ],
                 ),
               ),
@@ -949,9 +921,9 @@ class _StatusControlCard extends StatelessWidget {
                     SizedBox(height: 2.h),
                     Text(
                       isActive
-                          ? 'Can go online and receive deliveries'
+                          ? 'Available for delivery assignments'
                           : isSuspended
-                              ? 'Cannot go online or receive deliveries'
+                              ? 'Will not receive new deliveries'
                               : 'Assign a vehicle and activate to enable',
                       style: TextStyle(
                           color: scheme.onSurface.withValues(alpha: 0.55),
@@ -999,8 +971,6 @@ class _PerformanceRow extends StatelessWidget {
     final perf = driver['performance'] as Map<String, dynamic>? ??
         driver['stats'] as Map<String, dynamic>? ??
         {};
-    final acceptanceRate =
-        (perf['acceptance_rate'] as num?)?.toDouble() ?? 0.0;
     final missedJobs = (perf['missed_jobs'] as num?)?.toInt() ?? 0;
     final completedJobs = (perf['completed_jobs'] as num?)?.toInt() ?? 0;
     final totalJobs = (perf['total_jobs'] as num?)?.toInt() ?? 0;
@@ -1009,12 +979,10 @@ class _PerformanceRow extends StatelessWidget {
       children: [
         Expanded(
           child: _PerfMetric(
-            label: 'Acceptance',
-            value: '${acceptanceRate.toStringAsFixed(1)}%',
-            icon: Icons.thumb_up_rounded,
-            color: acceptanceRate >= 80
-                ? AppDesignTokens.success
-                : AppDesignTokens.warning,
+            label: 'Total',
+            value: totalJobs.toString(),
+            icon: Icons.receipt_long_rounded,
+            color: scheme.primary,
           ),
         ),
         SizedBox(width: 10.w),
@@ -1029,19 +997,10 @@ class _PerformanceRow extends StatelessWidget {
         SizedBox(width: 10.w),
         Expanded(
           child: _PerfMetric(
-            label: 'Missed',
+            label: 'Cancelled',
             value: missedJobs.toString(),
             icon: Icons.cancel_rounded,
             color: missedJobs == 0 ? AppDesignTokens.success : scheme.error,
-          ),
-        ),
-        SizedBox(width: 10.w),
-        Expanded(
-          child: _PerfMetric(
-            label: 'Total',
-            value: totalJobs.toString(),
-            icon: Icons.receipt_long_rounded,
-            color: scheme.primary,
           ),
         ),
       ],
@@ -1179,44 +1138,3 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _OnlineBadge extends StatelessWidget {
-  final bool isOnline;
-  const _OnlineBadge({required this.isOnline});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color =
-        isOnline ? AppDesignTokens.success : scheme.onSurface.withValues(alpha: 0.4);
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5.r,
-            height: 5.r,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: 4.w),
-          Text(
-            isOnline ? 'ONLINE' : 'OFFLINE',
-            style: TextStyle(
-              color: color,
-              fontSize: 9.sp,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
