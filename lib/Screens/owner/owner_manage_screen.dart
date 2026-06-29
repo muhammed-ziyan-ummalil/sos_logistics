@@ -229,7 +229,14 @@ class _VehiclesManageCard extends StatelessWidget {
                         v['assigned_driver'] != null ||
                         v['assigned_driver_id'] != null)
                     .length;
-                available = total - assigned;
+                // Available = approved (active) AND unassigned. A pending vehicle
+                // is not available until an admin approves it.
+                available = state.vehicles.where((v) {
+                  final st = (v['status'] as String?)?.toLowerCase();
+                  final isAssigned = v['assigned_driver'] != null ||
+                      v['assigned_driver_id'] != null;
+                  return st == 'active' && !isAssigned;
+                }).length;
               }
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
