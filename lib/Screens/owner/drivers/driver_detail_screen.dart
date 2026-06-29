@@ -663,10 +663,18 @@ class _AssignVehicleSheet extends StatelessWidget {
                   );
                 }
                 if (state is OwnerVehiclesLoaded) {
-                  if (state.vehicles.isEmpty) {
+                  // Only approved (status == active) vehicles can be assigned;
+                  // pending/rejected/inactive vehicles are excluded.
+                  final assignable = state.vehicles
+                      .where((v) =>
+                          (v['status'] as String?)?.toLowerCase() == 'active')
+                      .toList();
+                  if (assignable.isEmpty) {
                     return Center(
                       child: Text(
-                        'No vehicles found.\nAdd a vehicle first.',
+                        state.vehicles.isEmpty
+                            ? 'No vehicles found.\nAdd a vehicle first.'
+                            : 'No approved vehicles available.\nVehicles must be approved before they can be assigned.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: scheme.onSurface.withValues(alpha: 0.55),
@@ -675,9 +683,9 @@ class _AssignVehicleSheet extends StatelessWidget {
                     );
                   }
                   return ListView.builder(
-                    itemCount: state.vehicles.length,
+                    itemCount: assignable.length,
                     itemBuilder: (_, i) {
-                      final v = state.vehicles[i];
+                      final v = assignable[i];
                       final vid = v['id']?.toString() ??
                           v['vehicle_id']?.toString() ??
                           '';
