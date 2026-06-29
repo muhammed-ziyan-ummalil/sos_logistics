@@ -147,6 +147,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
 
     String? imageFrontPath;
     String? imageBackPath;
+    String? insuranceDocPath;
 
     showModalBottomSheet(
       context: context,
@@ -327,6 +328,22 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         }
                       },
                     ),
+                    SizedBox(height: 16.h),
+                    Text('Insurance Document (optional)',
+                        style: Theme.of(sheetCtx).textTheme.labelMedium),
+                    SizedBox(height: 8.h),
+                    _PhotoPickerTile(
+                      label: 'Insurance - Upload',
+                      path: insuranceDocPath,
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(
+                            source: ImageSource.gallery);
+                        if (file != null) {
+                          setSheetState(() => insuranceDocPath = file.path);
+                        }
+                      },
+                    ),
                     SizedBox(height: 20.h),
                     SosButton(
                       label: isEdit ? 'Save Changes' : 'Add Vehicle',
@@ -395,6 +412,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             rcNumber: rcNumber,
                             imageFrontPath: imageFrontPath,
                             imageBackPath: imageBackPath,
+                            insuranceDocPath: insuranceDocPath,
                             capacityKg: cap,
                             minimumFee: minFee,
                             includedDistanceKm: includedKm,
