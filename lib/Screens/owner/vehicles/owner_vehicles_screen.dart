@@ -195,7 +195,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     ),
                     SizedBox(height: 12.h),
                     SosTextField(
-                      label: 'Vehicle Name (optional)',
+                      label: 'Vehicle Name',
                       controller: nameCtr,
                       prefixIcon: Icons.directions_car_outlined,
                     ),
@@ -313,7 +313,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       },
                     ),
                     SizedBox(height: 16.h),
-                    Text('Insurance Document (optional)',
+                    Text('Insurance Document',
                         style: Theme.of(sheetCtx).textTheme.labelMedium),
                     SizedBox(height: 8.h),
                     _PhotoPickerTile(
@@ -370,6 +370,23 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             );
                             return;
                           }
+                          if (insuranceDocPath == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Please upload the insurance document photo.'),
+                              ),
+                            );
+                            return;
+                          }
+                          if (nameCtr.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Vehicle name is required.'),
+                              ),
+                            );
+                            return;
+                          }
                         }
                         final minFee     = double.tryParse(minFeeCtr.text.trim());
                         final includedKm = double.tryParse(includedKmCtr.text.trim());
@@ -392,6 +409,14 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           return;
                         }
                         final cap = double.tryParse(capacityCtr.text.trim());
+                        if (!isEdit && (cap == null || cap <= 0)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Enter a valid capacity (kg).'),
+                            ),
+                          );
+                          return;
+                        }
                         Navigator.pop(sheetCtx);
                         if (isEdit) {
                           context.read<OwnerVehiclesCubit>().updateVehicle(
@@ -409,7 +434,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           context.read<OwnerVehiclesCubit>().addVehicle(
                             regNumber: reg,
                             type: typeCtr.text.trim(),
-                            vehicleName: name.isEmpty ? null : name,
+                            vehicleName: name,
                             rcNumber: rcNumber,
                             imageFrontPath: imageFrontPath,
                             imageBackPath: imageBackPath,
