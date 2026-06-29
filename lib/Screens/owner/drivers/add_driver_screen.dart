@@ -17,73 +17,52 @@ class AddDriverScreen extends StatefulWidget {
 }
 
 class _AddDriverScreenState extends State<AddDriverScreen> {
-  final _formKey    = GlobalKey<FormState>();
-  final _nameCtr    = TextEditingController();
-  final _emailCtr   = TextEditingController();
-  final _phoneCtr   = TextEditingController();
-  final _licenseCtr = TextEditingController();
+  final _formKey  = GlobalKey<FormState>();
+  final _nameCtr  = TextEditingController();
+  final _emailCtr = TextEditingController();
+  final _phoneCtr = TextEditingController();
 
-  DateTime? _licenseExpiry;
-  String? _licenseDocPath;
-  String? _idProofDocPath;
+  String? _licenseFrontPath;
+  String? _licenseBackPath;
 
   @override
   void dispose() {
     _nameCtr.dispose();
     _emailCtr.dispose();
     _phoneCtr.dispose();
-    _licenseCtr.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDoc(bool isLicense) async {
+  Future<void> _pickLicence(bool isFront) async {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file != null) {
       setState(() {
-        if (isLicense) {
-          _licenseDocPath = file.path;
+        if (isFront) {
+          _licenseFrontPath = file.path;
         } else {
-          _idProofDocPath = file.path;
+          _licenseBackPath = file.path;
         }
       });
     }
   }
 
-  Future<void> _pickDate() async {
-    final colorScheme = Theme.of(context).colorScheme;
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now.add(const Duration(days: 365)),
-      firstDate: now,
-      lastDate: DateTime(now.year + 20),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: colorScheme,
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) setState(() => _licenseExpiry = picked);
-  }
-
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    if (_licenseFrontPath == null || _licenseBackPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload both front and back of the driving licence.'),
+        ),
+      );
+      return;
+    }
     context.read<AddDriverCubit>().createDriver(
       name: _nameCtr.text.trim(),
       email: _emailCtr.text.trim(),
       phone: _phoneCtr.text.trim(),
-      licenseNumber: _licenseCtr.text.trim().isEmpty
-          ? null
-          : _licenseCtr.text.trim(),
-      licenseDocPath: _licenseDocPath,
-      idProofDocPath: _idProofDocPath,
-      licenseExpiry: _licenseExpiry != null
-          ? '${_licenseExpiry!.year}-'
-              '${_licenseExpiry!.month.toString().padLeft(2, '0')}-'
-              '${_licenseExpiry!.day.toString().padLeft(2, '0')}'
-          : null,
+      licenseFrontPath: _licenseFrontPath,
+      licenseBackPath: _licenseBackPath,
     );
   }
 
@@ -211,71 +190,26 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
                 ),
                 SizedBox(height: 24.h),
 
-                // ── License ────────────────────────────────────────────
-                _SectionLabel(label: 'LICENSE DETAILS'),
-                SizedBox(height: 10.h),
-                SosTextField(
-                  label: 'License Number (Optional)',
-                  controller: _licenseCtr,
-                  prefixIcon: Icons.badge_outlined,
-                ),
-                SizedBox(height: 12.h),
-                // Date picker row
-                SosCard(
-                  onTap: _pickDate,
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 16.w, vertical: 14.h),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        color: _licenseExpiry != null
-                            ? AppDesignTokens.success
-                            : AppTheme.textSecondary(context),
-                        size: 20.r,
-                      ),
-                      SizedBox(width: 12.w),
-                      Text(
-                        _licenseExpiry != null
-                            ? 'Expiry: ${_licenseExpiry!.day}/${_licenseExpiry!.month}/${_licenseExpiry!.year}'
-                            : 'License Expiry Date (Optional)',
-                        style: TextStyle(
-                          color: _licenseExpiry != null
-                              ? AppTheme.textPrimary(context)
-                              : AppTheme.textSecondary(context),
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                      if (_licenseExpiry != null) ...[
-                        const Spacer(),
-                        Icon(Icons.check_circle,
-                            color: AppDesignTokens.success, size: 16.r),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(height: 24.h),
-
-                // ── KYC documents ──────────────────────────────────────
-                _SectionLabel(label: 'KYC DOCUMENTS'),
+                // ── Driving licence ────────────────────────────────────
+                _SectionLabel(label: 'DRIVING LICENCE'),
                 SizedBox(height: 4.h),
                 Text(
-                  'Documents are optional — you can add them later from the driver profile.',
+                  'Upload clear photos of both sides of the driving licence.',
                   style: TextStyle(
                       color: AppTheme.textSecondary(context),
                       fontSize: 11.sp),
                 ),
                 SizedBox(height: 10.h),
                 _docPickerTile(
-                  label: 'License Document',
-                  path: _licenseDocPath,
-                  onTap: () => _pickDoc(true),
+                  label: 'Driving Licence - Front',
+                  path: _licenseFrontPath,
+                  onTap: () => _pickLicence(true),
                 ),
                 SizedBox(height: 10.h),
                 _docPickerTile(
-                  label: 'ID Proof Document',
-                  path: _idProofDocPath,
-                  onTap: () => _pickDoc(false),
+                  label: 'Driving Licence - Back',
+                  path: _licenseBackPath,
+                  onTap: () => _pickLicence(false),
                 ),
                 SizedBox(height: 32.h),
 

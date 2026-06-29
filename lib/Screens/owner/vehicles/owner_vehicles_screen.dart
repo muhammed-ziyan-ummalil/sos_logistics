@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_state.dart';
@@ -124,6 +127,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     }
 
     final regCtr        = TextEditingController(text: fieldText('reg_number'));
+    final nameCtr       = TextEditingController(text: fieldText('vehicle_name'));
+    final rcNumberCtr    = TextEditingController(text: fieldText('rc_number'));
     final capacityCtr   = TextEditingController(text: fieldText('capacity_kg'));
     final minFeeCtr     = TextEditingController(text: fieldText('minimum_fee'));
     final includedKmCtr = TextEditingController(
@@ -139,6 +144,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
         (initialType != null && vehicleTypes.contains(initialType))
             ? initialType
             : 'bike';
+
+    String? imageFrontPath;
+    String? imageBackPath;
 
     showModalBottomSheet(
       context: context,
@@ -185,6 +193,19 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       controller: regCtr,
                       enabled: !isEdit,
                       prefixIcon: Icons.pin_rounded,
+                    ),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label: 'Vehicle Name (optional)',
+                      controller: nameCtr,
+                      prefixIcon: Icons.directions_car_outlined,
+                    ),
+                    SizedBox(height: 12.h),
+                    SosTextField(
+                      label: 'Vehicle RC Number',
+                      controller: rcNumberCtr,
+                      keyboardType: TextInputType.number,
+                      prefixIcon: Icons.numbers_rounded,
                     ),
                     SizedBox(height: 12.h),
                     SosTextField(
@@ -277,12 +298,61 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         );
                       }).toList(),
                     ),
+                    SizedBox(height: 16.h),
+                    Text('Vehicle Photos',
+                        style: Theme.of(sheetCtx).textTheme.labelMedium),
+                    SizedBox(height: 8.h),
+                    _PhotoPickerTile(
+                      label: 'Vehicle Photo - Front',
+                      path: imageFrontPath,
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(
+                            source: ImageSource.gallery);
+                        if (file != null) {
+                          setSheetState(() => imageFrontPath = file.path);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 10.h),
+                    _PhotoPickerTile(
+                      label: 'Vehicle Photo - Back',
+                      path: imageBackPath,
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(
+                            source: ImageSource.gallery);
+                        if (file != null) {
+                          setSheetState(() => imageBackPath = file.path);
+                        }
+                      },
+                    ),
                     SizedBox(height: 20.h),
                     SosButton(
                       label: isEdit ? 'Save Changes' : 'Add Vehicle',
                       onPressed: () {
                         final reg = regCtr.text.trim();
                         if (!isEdit && reg.isEmpty) return;
+                        final rcNumber = rcNumberCtr.text.trim();
+                        if (!isEdit) {
+                          if (rcNumber.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Vehicle RC number is required.'),
+                              ),
+                            );
+                            return;
+                          }
+                          if (imageFrontPath == null || imageBackPath == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Please add both front and back vehicle photos.'),
+                              ),
+                            );
+                            return;
+                          }
+                        }
                         final minFee     = double.tryParse(minFeeCtr.text.trim());
                         final includedKm = double.tryParse(includedKmCtr.text.trim());
                         final perKm      = double.tryParse(perKmFeeCtr.text.trim());
@@ -317,9 +387,14 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             maxDeliveryDistanceKm: maxDist,
                           );
                         } else {
+                          final name = nameCtr.text.trim();
                           context.read<OwnerVehiclesCubit>().addVehicle(
                             regNumber: reg,
                             type: selectedType,
+                            vehicleName: name.isEmpty ? null : name,
+                            rcNumber: rcNumber,
+                            imageFrontPath: imageFrontPath,
+                            imageBackPath: imageBackPath,
                             capacityKg: cap,
                             minimumFee: minFee,
                             includedDistanceKm: includedKm,
@@ -453,6 +528,59 @@ class _VehicleTile extends StatelessWidget {
                 size: 18.r,
                 color: colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Photo picker tile ────────────────────────────────────────────────────────
+
+class _PhotoPickerTile extends StatelessWidget {
+  final String label;
+  final String? path;
+  final VoidCallback onTap;
+  const _PhotoPickerTile({
+    required this.label,
+    required this.path,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SosCard(
+      onTap: onTap,
+      padding: EdgeInsets.all(14.r),
+      child: Row(
+        children: [
+          if (path != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6.r),
+              child: Image.file(
+                File(path!),
+                height: 40.r,
+                width: 52.r,
+                fit: BoxFit.cover,
+              ),
+            )
+          else
+            Icon(Icons.add_a_photo_outlined,
+                color: AppTheme.textSecondary(context), size: 24.r),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              path != null ? '$label selected' : 'Upload $label',
+              style: TextStyle(
+                color: path != null
+                    ? AppDesignTokens.success
+                    : AppTheme.textSecondary(context),
+                fontSize: 13.sp,
+              ),
+            ),
+          ),
+          if (path != null)
+            Icon(Icons.check_circle,
+                color: AppDesignTokens.success, size: 18.r),
         ],
       ),
     );

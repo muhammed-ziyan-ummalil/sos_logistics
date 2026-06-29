@@ -9,10 +9,8 @@ class AddDriverCubit extends Cubit<AddDriverState> {
     required String name,
     required String email,
     required String phone,
-    String? licenseNumber,
-    String? licenseDocPath,
-    String? idProofDocPath,
-    String? licenseExpiry,
+    String? licenseFrontPath,
+    String? licenseBackPath,
   }) async {
     emit(AddDriverLoading());
 
@@ -20,13 +18,11 @@ class AddDriverCubit extends Cubit<AddDriverState> {
       'name':  name,
       'email': email,
       'phone': phone,
-      if (licenseNumber != null && licenseNumber.isNotEmpty) 'license_number': licenseNumber,
-      if (licenseExpiry != null && licenseExpiry.isNotEmpty) 'license_expiry': licenseExpiry,
     };
 
     final files = <String, String>{};
-    if (licenseDocPath != null) files['license_doc']  = licenseDocPath;
-    if (idProofDocPath != null) files['id_proof_doc'] = idProofDocPath;
+    if (licenseFrontPath != null) files['license_front'] = licenseFrontPath;
+    if (licenseBackPath != null) files['license_back'] = licenseBackPath;
 
     final res = await ApiServiceV2.instance.postMultipart(
       'owner/drivers',
