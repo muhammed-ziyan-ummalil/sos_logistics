@@ -11,6 +11,7 @@ import '../../core/dashboard_back_handler.dart';
 import '../../widgets/widgets.dart';
 import '../delivery/active_delivery_screen.dart';
 import '../history/history_screen.dart';
+import '../notifications/notification_bell.dart';
 import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -94,21 +95,28 @@ class _DashboardTab extends StatelessWidget {
           padding: EdgeInsets.all(20.r),
           children: [
             // ── Header ──────────────────────────────────────────────────
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  AppConstants.appName,
-                  style: TextStyle(
-                    color: AppTheme.textPrimary(context),
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppConstants.appName,
+                        style: TextStyle(
+                          color: AppTheme.textPrimary(context),
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'Driver Dashboard',
+                        style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  'Driver Dashboard',
-                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13.sp),
-                ),
+                const NotificationBell(role: 'driver'),
               ],
             ),
             SizedBox(height: 24.h),

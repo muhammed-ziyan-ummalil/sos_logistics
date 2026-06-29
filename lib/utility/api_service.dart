@@ -120,6 +120,22 @@ class ApiServiceUnified {
 
   Future<Map<String, dynamic>> resendDropOtp(int deliveryId) =>
       post('delivery/resend-drop-otp', data: {'delivery_id': deliveryId});
+
+  // --- In-app notifications (owner + driver) ---
+  // role is 'owner' or 'driver' -> api/v2/{role}/notifications/*
+
+  Future<Map<String, dynamic>> getNotifications(String role) =>
+      post('$role/notifications/get');
+
+  Future<Map<String, dynamic>> getNotificationSummary(String role) =>
+      post('$role/notifications/summary');
+
+  Future<Map<String, dynamic>> markNotificationsRead(String role,
+          {int? notificationId, bool markAll = false}) =>
+      post('$role/notifications/mark-read', data: {
+        if (notificationId != null) 'notification_id': notificationId,
+        'mark_all': markAll ? 1 : 0,
+      });
 }
 
 /// V2 API client — JWT auth with custom interceptors.
