@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
+import '../../../utility/image_source_picker.dart';
 import '../../../Bloc/OwnerDrivers/add_driver_cubit.dart';
 import '../../../Bloc/OwnerDrivers/add_driver_state.dart';
 import '../../../core/app_theme.dart';
@@ -34,14 +34,13 @@ class _AddDriverScreenState extends State<AddDriverScreen> {
   }
 
   Future<void> _pickLicence(bool isFront) async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    if (file != null) {
+    final path = await pickImageWithSource(context);
+    if (path != null) {
       setState(() {
         if (isFront) {
-          _licenseFrontPath = file.path;
+          _licenseFrontPath = path;
         } else {
-          _licenseBackPath = file.path;
+          _licenseBackPath = path;
         }
       });
     }

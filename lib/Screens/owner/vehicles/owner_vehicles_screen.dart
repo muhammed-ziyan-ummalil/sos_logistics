@@ -3,12 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../Bloc/OwnerVehicles/owner_vehicles_cubit.dart';
 import '../../../Bloc/OwnerVehicles/owner_vehicles_state.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
+import '../../../utility/image_source_picker.dart';
 import '../../../widgets/widgets.dart';
 
 class OwnerVehiclesScreen extends StatefulWidget {
@@ -275,11 +275,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       label: 'Vehicle Photo - Front',
                       path: imageFrontPath,
                       onTap: () async {
-                        final picker = ImagePicker();
-                        final file = await picker.pickImage(
-                            source: ImageSource.gallery);
-                        if (file != null) {
-                          setSheetState(() => imageFrontPath = file.path);
+                        final path = await pickImageWithSource(sheetCtx);
+                        if (path != null) {
+                          setSheetState(() => imageFrontPath = path);
                         }
                       },
                     ),
@@ -288,11 +286,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       label: 'Vehicle Photo - Back',
                       path: imageBackPath,
                       onTap: () async {
-                        final picker = ImagePicker();
-                        final file = await picker.pickImage(
-                            source: ImageSource.gallery);
-                        if (file != null) {
-                          setSheetState(() => imageBackPath = file.path);
+                        final path = await pickImageWithSource(sheetCtx);
+                        if (path != null) {
+                          setSheetState(() => imageBackPath = path);
                         }
                       },
                     ),
@@ -304,11 +300,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       label: 'RC Document - Upload',
                       path: rcDocPath,
                       onTap: () async {
-                        final picker = ImagePicker();
-                        final file = await picker.pickImage(
-                            source: ImageSource.gallery);
-                        if (file != null) {
-                          setSheetState(() => rcDocPath = file.path);
+                        final path = await pickImageWithSource(sheetCtx);
+                        if (path != null) {
+                          setSheetState(() => rcDocPath = path);
                         }
                       },
                     ),
@@ -320,11 +314,9 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       label: 'Insurance - Upload',
                       path: insuranceDocPath,
                       onTap: () async {
-                        final picker = ImagePicker();
-                        final file = await picker.pickImage(
-                            source: ImageSource.gallery);
-                        if (file != null) {
-                          setSheetState(() => insuranceDocPath = file.path);
+                        final path = await pickImageWithSource(sheetCtx);
+                        if (path != null) {
+                          setSheetState(() => insuranceDocPath = path);
                         }
                       },
                     ),
