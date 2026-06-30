@@ -52,7 +52,8 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
     super.initState();
     _picked = widget.initial;
     final r = widget.initialRadiusKm ?? _defaultRadiusKm;
-    _radiusKm = r.clamp(_minRadiusKm, _maxRadiusKm).toDouble();
+    // Lower bound only - the radius has no upper cap (owner may serve any range).
+    _radiusKm = r < _minRadiusKm ? _minRadiusKm : r;
     _radiusCtrl = TextEditingController(text: _radiusKm.round().toString());
   }
 
@@ -67,7 +68,8 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
   void _commitTypedRadius() {
     final v = double.tryParse(_radiusCtrl.text.trim());
     if (v != null) {
-      setState(() => _radiusKm = v.clamp(_minRadiusKm, _maxRadiusKm).toDouble());
+      // Lower bound only; no upper cap.
+      setState(() => _radiusKm = v < _minRadiusKm ? _minRadiusKm : v);
     }
     _radiusCtrl.text = _radiusKm.round().toString();
   }
@@ -243,7 +245,9 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
                       min: _minRadiusKm,
                       max: _maxRadiusKm,
                       divisions: 19, // 5 km steps across 5..100
-                      value: _radiusKm,
+                      // Slider tops out at _maxRadiusKm for quick picks; type a
+                      // larger value in the field for an uncapped radius.
+                      value: _radiusKm.clamp(_minRadiusKm, _maxRadiusKm).toDouble(),
                       label: '${_radiusKm.round()} km',
                       onChanged: (v) => setState(() {
                         _radiusKm = v;
