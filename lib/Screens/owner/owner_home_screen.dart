@@ -4,11 +4,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../Bloc/Fleet/fleet_dashboard_cubit.dart';
 import '../../Bloc/Fleet/fleet_dashboard_state.dart';
+import '../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
+import '../../utility/api_service.dart';
 import '../../utility/shared_preference.dart';
 import '../../widgets/widgets.dart';
 import '../notifications/notification_bell.dart';
+import 'account/owner_edit_profile_screen.dart';
 import 'delivery/delivery_feed_screen.dart';
 import 'delivery/my_quotes_screen.dart';
 
@@ -21,17 +24,44 @@ class OwnerHomeScreen extends StatefulWidget {
 
 class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   String _ownerName = '';
+  bool _serviceAreaMissing = false;
 
   @override
   void initState() {
     super.initState();
     context.read<FleetDashboardCubit>().fetchDashboard();
     _loadName();
+    _checkServiceArea();
   }
 
   Future<void> _loadName() async {
     final info = await AppPrefs.getV2Session();
     if (mounted) setState(() => _ownerName = info['name'] ?? '');
+  }
+
+  Future<void> _checkServiceArea() async {
+    final res = await ApiServiceV2.instance.get('owner/me');
+    if (!mounted) return;
+    if (res['status'] == 'success') {
+      final owner = (res['data']?['owner'] as Map?) ?? {};
+      setState(() {
+        _serviceAreaMissing =
+            owner['service_lat'] == null || owner['service_lng'] == null;
+      });
+    }
+  }
+
+  Future<void> _openServiceAreaSetup() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => OwnerProfileCubit(),
+          child: const OwnerEditProfileScreen(),
+        ),
+      ),
+    );
+    await _checkServiceArea(); // banner clears once area is saved
   }
 
   String _greeting() {
@@ -65,23 +95,35 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ),
 
       // ── Body ───────────────────────────────────────────────────────────
-      body: BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
-        builder: (ctx, state) {
-          if (state is FleetDashboardInitial || state is FleetDashboardLoading) {
-            return _LoadingPlaceholder();
-          }
-          if (state is FleetDashboardError) {
-            return ErrorState(
-              message: state.message,
-              onRetry: () =>
-                  context.read<FleetDashboardCubit>().fetchDashboard(),
-            );
-          }
-          if (state is FleetDashboardLoaded) {
-            return _HomeBody(state: state);
-          }
-          return const SizedBox();
-        },
+      body: Column(
+        children: [
+          if (_serviceAreaMissing)
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
+              child: _ServiceAreaBanner(onTap: _openServiceAreaSetup),
+            ),
+          Expanded(
+            child: BlocBuilder<FleetDashboardCubit, FleetDashboardState>(
+              builder: (ctx, state) {
+                if (state is FleetDashboardInitial ||
+                    state is FleetDashboardLoading) {
+                  return _LoadingPlaceholder();
+                }
+                if (state is FleetDashboardError) {
+                  return ErrorState(
+                    message: state.message,
+                    onRetry: () =>
+                        context.read<FleetDashboardCubit>().fetchDashboard(),
+                  );
+                }
+                if (state is FleetDashboardLoaded) {
+                  return _HomeBody(state: state);
+                }
+                return const SizedBox();
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1045,6 +1087,84 @@ class _DriverSnapshotTile extends StatelessWidget {
             SizedBox(width: 6.w),
             Icon(Icons.chevron_right_rounded,
                 color: scheme.outline, size: 16.r),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Service area banner ──────────────────────────────────────────────────────
+
+class _ServiceAreaBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ServiceAreaBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final warningColor = AppDesignTokens.warning;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(14.r),
+        decoration: BoxDecoration(
+          color: warningColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: warningColor.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40.r,
+              height: 40.r,
+              decoration: BoxDecoration(
+                color: warningColor.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.wrong_location_rounded,
+                  color: warningColor, size: 20.r),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Set your service area',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary(context),
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    "You won't receive delivery requests until you set where you operate.",
+                    style: TextStyle(
+                      fontSize: 11.5.sp,
+                      color: AppTheme.textSecondary(context),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: warningColor,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Text(
+                'Set up',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ],
         ),
       ),
