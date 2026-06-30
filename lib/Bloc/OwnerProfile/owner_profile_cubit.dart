@@ -26,6 +26,9 @@ class OwnerProfileCubit extends Cubit<OwnerProfileState> {
     String? state,
     String? pincode,
     String? photoPath,
+    double? serviceLat,
+    double? serviceLng,
+    double? serviceRadiusKm,
   }) async {
     final current = state is OwnerProfileLoaded
         ? (state as OwnerProfileLoaded).data
@@ -41,6 +44,9 @@ class OwnerProfileCubit extends Cubit<OwnerProfileState> {
       if (city != null) 'city': city,
       if (state != null) 'state': state,
       if (pincode != null) 'pincode': pincode,
+      if (serviceLat != null) 'service_lat': serviceLat.toString(),
+      if (serviceLng != null) 'service_lng': serviceLng.toString(),
+      if (serviceRadiusKm != null) 'service_radius_km': serviceRadiusKm.toString(),
     };
 
     Map<String, dynamic> res;
