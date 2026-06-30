@@ -266,6 +266,9 @@ class _QuoteCard extends StatelessWidget {
                               if (quote.registrationNumber != null &&
                                   quote.registrationNumber!.isNotEmpty)
                                 quote.registrationNumber!,
+                              if (quote.capacityKg != null &&
+                                  quote.capacityKg! > 0)
+                                '${quote.capacityKg!.toStringAsFixed(0)} kg',
                             ].join(' • '),
                             style: TextStyle(
                                 fontSize: 12.sp,

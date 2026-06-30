@@ -14,6 +14,7 @@ class DeliveryQuoteModel {
   final String? ownerName;
   final String? registrationNumber;
   final String? vehicleType;
+  final double? capacityKg;
   final String? driverName;
 
   DeliveryQuoteModel({
@@ -32,6 +33,7 @@ class DeliveryQuoteModel {
     this.ownerName,
     this.registrationNumber,
     this.vehicleType,
+    this.capacityKg,
     this.driverName,
   });
 
@@ -52,6 +54,7 @@ class DeliveryQuoteModel {
       ownerName: json['owner_name'],
       registrationNumber: json['registration_number'],
       vehicleType: json['vehicle_type'],
+      capacityKg: double.tryParse('${json['capacity_kg']}'),
       driverName: json['driver_name'],
     );
   }
