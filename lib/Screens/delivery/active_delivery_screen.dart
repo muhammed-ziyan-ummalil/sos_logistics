@@ -158,6 +158,30 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
                   address: delivery.dropAddress,
                   color: scheme.error,
                 ),
+                if ((delivery.dropContactName?.isNotEmpty ?? false) ||
+                    (delivery.dropContactPhone?.isNotEmpty ?? false)) ...[
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: [
+                      Icon(Icons.person_pin_circle_outlined,
+                          size: 16.r, color: scheme.error),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          [
+                            if (delivery.dropContactName?.isNotEmpty ?? false)
+                              delivery.dropContactName!,
+                            if (delivery.dropContactPhone?.isNotEmpty ?? false)
+                              delivery.dropContactPhone!,
+                          ].join('  ·  '),
+                          style: TextStyle(
+                              fontSize: 12.sp,
+                              color: scheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

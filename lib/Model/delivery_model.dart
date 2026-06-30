@@ -56,7 +56,12 @@ class ActiveDelivery {
     this.pickupLng,
     this.dropLat,
     this.dropLng,
+    this.dropContactName,
+    this.dropContactPhone,
   });
+
+  final String? dropContactName;
+  final String? dropContactPhone;
 
   factory ActiveDelivery.fromJson(Map<String, dynamic> j) => ActiveDelivery(
     id:            int.tryParse(j['id'].toString()) ?? 0,
@@ -70,6 +75,8 @@ class ActiveDelivery {
     pickupLng:     j['pickup_lng']?.toString(),
     dropLat:       j['drop_lat']?.toString(),
     dropLng:       j['drop_lng']?.toString(),
+    dropContactName:  (j['drop_contact_name']  as String?)?.trim(),
+    dropContactPhone: (j['drop_contact_phone'] as String?)?.trim(),
   );
 }
 
