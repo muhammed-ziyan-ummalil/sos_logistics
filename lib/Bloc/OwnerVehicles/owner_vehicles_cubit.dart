@@ -30,7 +30,6 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     String? insuranceExpiry,
     double? minimumFee,
     double? perKmFee,
-    double? maxDeliveryDistanceKm,
     double? includedDistanceKm,
     double? logisticGstPercent,
   }) async {
@@ -45,7 +44,6 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       if (insuranceExpiry != null && insuranceExpiry.isNotEmpty) 'insurance_expiry': insuranceExpiry,
       if (minimumFee != null) 'minimum_fee': minimumFee,
       if (perKmFee != null) 'per_km_fee': perKmFee,
-      if (maxDeliveryDistanceKm != null) 'max_delivery_distance_km': maxDeliveryDistanceKm,
       if (includedDistanceKm != null) 'included_distance_km': includedDistanceKm,
       if (logisticGstPercent != null) 'logistic_gst_percent': logisticGstPercent,
     };
@@ -76,7 +74,6 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     String? insuranceExpiry,
     double? minimumFee,
     double? perKmFee,
-    double? maxDeliveryDistanceKm,
     double? includedDistanceKm,
     double? logisticGstPercent,
     String? imageFrontPath,
@@ -92,7 +89,6 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       if (insuranceExpiry != null && insuranceExpiry.isNotEmpty) 'insurance_expiry': insuranceExpiry,
       if (minimumFee != null) 'minimum_fee': minimumFee,
       if (perKmFee != null) 'per_km_fee': perKmFee,
-      if (maxDeliveryDistanceKm != null) 'max_delivery_distance_km': maxDeliveryDistanceKm,
       if (includedDistanceKm != null) 'included_distance_km': includedDistanceKm,
       if (logisticGstPercent != null) 'logistic_gst_percent': logisticGstPercent,
     };

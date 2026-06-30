@@ -134,8 +134,6 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     final includedKmCtr = TextEditingController(
         text: isEdit ? fieldText('included_distance_km') : '25');
     final perKmFeeCtr   = TextEditingController(text: fieldText('per_km_fee'));
-    final maxDistCtr    = TextEditingController(
-        text: fieldText('max_delivery_distance_km'));
     final gstPctCtr     = TextEditingController(
         text: isEdit ? fieldText('logistic_gst_percent') : '12');
     // Vehicle type is free text (e.g. Bike, Mini Truck, Reefer); prefilled with
@@ -179,14 +177,13 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
           diff(minFeeCtr, 'minimum_fee') ||
           diff(includedKmCtr, 'included_distance_km', '25') ||
           diff(perKmFeeCtr, 'per_km_fee') ||
-          diff(gstPctCtr, 'logistic_gst_percent', '12') ||
-          diff(maxDistCtr, 'max_delivery_distance_km');
+          diff(gstPctCtr, 'logistic_gst_percent', '12');
     }
 
     if (isEdit) {
       for (final c in [
         typeCtr, nameCtr, rcNumberCtr, capacityCtr, minFeeCtr,
-        includedKmCtr, perKmFeeCtr, gstPctCtr, maxDistCtr,
+        includedKmCtr, perKmFeeCtr, gstPctCtr,
       ]) {
         c.addListener(() => dirty.value = computeDirty());
       }
@@ -297,14 +294,6 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
                       prefixIcon: Icons.percent_rounded,
-                    ),
-                    SizedBox(height: 12.h),
-                    SosTextField(
-                      label: 'Max delivery distance (km)',
-                      controller: maxDistCtr,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      prefixIcon: Icons.route_rounded,
                     ),
                     SizedBox(height: 12.h),
                     SosTextField(
@@ -424,14 +413,11 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         final includedKm = double.tryParse(includedKmCtr.text.trim());
                         final perKm      = double.tryParse(perKmFeeCtr.text.trim());
                         final gstPct     = double.tryParse(gstPctCtr.text.trim());
-                        final maxDist    = double.tryParse(maxDistCtr.text.trim());
                         if (minFee == null || minFee < 0 ||
                             includedKm == null || includedKm < 0 ||
                             perKm == null || perKm < 0 ||
-                            gstPct == null || gstPct < 0 || gstPct > 100 ||
-                            maxDist == null || maxDist < 0 ||
-                            maxDist < includedKm) {
-                          setSheetState(() => formError = 'Enter valid values. GST must be 0-100. Max distance must be at least the included distance.');
+                            gstPct == null || gstPct < 0 || gstPct > 100) {
+                          setSheetState(() => formError = 'Enter valid values. GST must be 0-100.');
                           return;
                         }
                         final cap = double.tryParse(capacityCtr.text.trim());
@@ -449,7 +435,6 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             includedDistanceKm: includedKm,
                             perKmFee: perKm,
                             logisticGstPercent: gstPct,
-                            maxDeliveryDistanceKm: maxDist,
                             imageFrontPath: imageFrontPath,
                             imageBackPath: imageBackPath,
                             rcDocPath: rcDocPath,
@@ -471,7 +456,6 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             includedDistanceKm: includedKm,
                             perKmFee: perKm,
                             logisticGstPercent: gstPct,
-                            maxDeliveryDistanceKm: maxDist,
                           );
                         }
                       },
@@ -513,7 +497,6 @@ class _VehicleTile extends StatelessWidget {
     final insuranceExpiry = vehicle['insurance_expiry'] as String?;
     final minimumFee    = vehicle['minimum_fee'];
     final perKmFee      = vehicle['per_km_fee'];
-    final maxDist       = vehicle['max_delivery_distance_km'];
 
     return SosCard(
       padding: EdgeInsets.all(14.r),
@@ -553,7 +536,6 @@ class _VehicleTile extends StatelessWidget {
                         'Min ${AppConstants.currencySymbol}$minimumFee',
                       if (perKmFee != null)
                         '${AppConstants.currencySymbol}$perKmFee/km',
-                      if (maxDist != null) '≤${maxDist}km',
                     ].join(' · '),
                     style: TextStyle(
                         fontSize: 10.sp,
