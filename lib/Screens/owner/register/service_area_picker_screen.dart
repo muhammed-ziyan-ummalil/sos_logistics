@@ -45,19 +45,31 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
   double _radiusKm = _defaultRadiusKm;
   bool _locating = false;
   GoogleMapController? _mapController;
+  late final TextEditingController _radiusCtrl;
 
   @override
   void initState() {
     super.initState();
     _picked = widget.initial;
     final r = widget.initialRadiusKm ?? _defaultRadiusKm;
-    _radiusKm = r.clamp(_minRadiusKm, _maxRadiusKm);
+    _radiusKm = r.clamp(_minRadiusKm, _maxRadiusKm).toDouble();
+    _radiusCtrl = TextEditingController(text: _radiusKm.round().toString());
   }
 
   @override
   void dispose() {
     _mapController?.dispose();
+    _radiusCtrl.dispose();
     super.dispose();
+  }
+
+  /// Apply a typed radius: parse, clamp to [min,max], sync slider + circle.
+  void _commitTypedRadius() {
+    final v = double.tryParse(_radiusCtrl.text.trim());
+    if (v != null) {
+      setState(() => _radiusKm = v.clamp(_minRadiusKm, _maxRadiusKm).toDouble());
+    }
+    _radiusCtrl.text = _radiusKm.round().toString();
   }
 
   void _setPoint(LatLng pos, {bool animate = false}) {
@@ -193,12 +205,31 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
                         style: theme.textTheme.labelLarge,
                       ),
                       const Spacer(),
-                      Text(
-                        '${_radiusKm.round()} km',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: scheme.primary,
+                      SizedBox(
+                        width: 64.w,
+                        child: TextField(
+                          controller: _radiusCtrl,
+                          textAlign: TextAlign.end,
+                          keyboardType: TextInputType.number,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: scheme.primary,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                          ),
+                          onTapOutside: (_) {
+                            FocusScope.of(context).unfocus();
+                            _commitTypedRadius();
+                          },
+                          onSubmitted: (_) => _commitTypedRadius(),
                         ),
                       ),
+                      SizedBox(width: 4.w),
+                      Text('km',
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(color: scheme.primary)),
                     ],
                   ),
                   SliderTheme(
@@ -214,7 +245,10 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
                       divisions: 19, // 5 km steps across 5..100
                       value: _radiusKm,
                       label: '${_radiusKm.round()} km',
-                      onChanged: (v) => setState(() => _radiusKm = v),
+                      onChanged: (v) => setState(() {
+                        _radiusKm = v;
+                        _radiusCtrl.text = v.round().toString();
+                      }),
                     ),
                   ),
                   if (hasPoint)
