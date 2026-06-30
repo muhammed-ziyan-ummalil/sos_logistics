@@ -268,7 +268,6 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalDrivers = summary['total_drivers']?.toString() ?? '0';
     final activeDrivers = summary['active_drivers']?.toString() ?? '0';
-    final onlineDrivers = summary['online_drivers']?.toString() ?? '0';
     final activeDeliveries = summary['active_deliveries']?.toString() ?? '0';
     final earnings = summary['today_earnings'];
     final earningsStr = earnings != null
@@ -286,11 +285,6 @@ class _StatsRow extends StatelessWidget {
           label: 'Active\nDrivers',
           value: activeDrivers,
           color: AppDesignTokens.success),
-      _StatData(
-          icon: Icons.wifi_rounded,
-          label: 'Online\nNow',
-          value: onlineDrivers,
-          color: AppTheme.accent(context)),
       _StatData(
           icon: Icons.local_shipping_rounded,
           label: 'Live\nDeliveries',
