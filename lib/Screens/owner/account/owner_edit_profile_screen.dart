@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../register/service_area_picker_screen.dart';
 
 import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_state.dart';
@@ -33,6 +36,10 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
   File?   _imageFile;
   String  _existingPhotoUrl = '';
   bool    _populated = false;
+
+  double? _serviceLat;
+  double? _serviceLng;
+  double? _serviceRadiusKm;
 
   final _picker = ImagePicker();
 
@@ -67,6 +74,11 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
     _stateCtrl.text       = (owner['state']          ?? '').toString();
     _pincodeCtrl.text     = (owner['pincode']        ?? '').toString();
     _existingPhotoUrl     = (owner['profile_photo_url'] ?? '').toString();
+    double? toD(dynamic v) =>
+        v == null ? null : double.tryParse(v.toString());
+    _serviceLat      = toD(owner['service_lat']);
+    _serviceLng      = toD(owner['service_lng']);
+    _serviceRadiusKm = toD(owner['service_radius_km']);
     // Backend stores gender lowercase ('male'); options are capitalized.
     // Match case-insensitively so the dropdown prefills correctly.
     final g = (owner['gender'] ?? '').toString();
@@ -131,6 +143,27 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
     );
   }
 
+  Future<void> _pickServiceArea() async {
+    final initial = (_serviceLat != null && _serviceLng != null)
+        ? LatLng(_serviceLat!, _serviceLng!)
+        : null;
+    final result = await Navigator.of(context).push<ServiceAreaResult>(
+      MaterialPageRoute(
+        builder: (_) => ServiceAreaPickerScreen(
+          initial: initial,
+          initialRadiusKm: _serviceRadiusKm,
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _serviceLat = result.center.latitude;
+        _serviceLng = result.center.longitude;
+        _serviceRadiusKm = result.radiusKm;
+      });
+    }
+  }
+
   void _save() {
     if (!_formKey.currentState!.validate()) return;
     context.read<OwnerProfileCubit>().updateProfile(
@@ -142,6 +175,9 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
       state:       _stateCtrl.text.trim(),
       pincode:     _pincodeCtrl.text.trim(),
       photoPath:   _imageFile?.path,
+      serviceLat:      _serviceLat,
+      serviceLng:      _serviceLng,
+      serviceRadiusKm: _serviceRadiusKm,
     );
   }
 
@@ -326,6 +362,22 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
                       stateController: _stateCtrl,
                       areaController: _areaCtrl,
                       validator: FormValidators.pincode,
+                    ),
+
+                    SizedBox(height: 24.h),
+                    _sectionHeader('Service Area', textSecondary),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'The centre of the area you deliver in. You only receive '
+                      'delivery requests with a pickup inside this circle.',
+                      style: TextStyle(fontSize: 12.sp, color: textSecondary),
+                    ),
+                    SizedBox(height: 10.h),
+                    _ServiceAreaCard(
+                      lat: _serviceLat,
+                      lng: _serviceLng,
+                      radiusKm: _serviceRadiusKm,
+                      onTap: _pickServiceArea,
                     ),
 
                     SizedBox(height: 32.h),
@@ -584,5 +636,90 @@ class _OwnerEditProfileScreenState extends State<OwnerEditProfileScreen> {
         ));
       }
     }
+  }
+}
+
+/// Tappable summary of the owner's account-wide service area. Set/unset states,
+/// emerald radius pill, coordinate readout. Opens [ServiceAreaPickerScreen].
+class _ServiceAreaCard extends StatelessWidget {
+  final double? lat;
+  final double? lng;
+  final double? radiusKm;
+  final VoidCallback onTap;
+
+  const _ServiceAreaCard({
+    required this.lat,
+    required this.lng,
+    required this.radiusKm,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isSet = lat != null && lng != null;
+
+    return SosCard(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12.r),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 4.h),
+          child: Row(
+            children: [
+              Container(
+                width: 44.r,
+                height: 44.r,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (isSet ? scheme.primary : scheme.onSurfaceVariant)
+                      .withValues(alpha: 0.12),
+                ),
+                child: Icon(
+                  Icons.radar_rounded,
+                  color: isSet ? scheme.primary : scheme.onSurfaceVariant,
+                  size: 22.r,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            isSet ? 'Service area set' : 'Set your service area',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        if (isSet && radiusKm != null)
+                          SosChip(label: '${radiusKm!.round()} km'),
+                      ],
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      isSet
+                          ? '${lat!.toStringAsFixed(5)}, ${lng!.toStringAsFixed(5)}'
+                          : 'Tap to pick a centre point on the map',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
