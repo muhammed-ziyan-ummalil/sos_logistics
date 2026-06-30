@@ -38,7 +38,6 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
   static const LatLng _indiaCenter = LatLng(22.5937, 78.9629);
 
   static const double _minRadiusKm = 5;
-  static const double _maxRadiusKm = 100;
   static const double _defaultRadiusKm = 10;
 
   LatLng? _picked;
@@ -197,7 +196,7 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Service radius slider - live value + circle update.
+                  // Service radius - typed (no cap).
                   Row(
                     children: [
                       Icon(Icons.radar_outlined, size: 18.sp, color: scheme.primary),
@@ -208,18 +207,30 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
                       ),
                       const Spacer(),
                       SizedBox(
-                        width: 64.w,
+                        width: 120.w,
                         child: TextField(
                           controller: _radiusCtrl,
-                          textAlign: TextAlign.end,
+                          textAlign: TextAlign.center,
                           keyboardType: TextInputType.number,
-                          style: theme.textTheme.titleLarge?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
                             color: scheme.primary,
+                            fontWeight: FontWeight.w700,
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
+                            suffixText: 'km',
+                            suffixStyle: TextStyle(
+                                color: scheme.onSurfaceVariant, fontSize: 13.sp),
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.r),
+                              borderSide: BorderSide(color: scheme.outline),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.r),
+                              borderSide: BorderSide(color: scheme.primary),
+                            ),
                           ),
                           onTapOutside: (_) {
                             FocusScope.of(context).unfocus();
@@ -228,33 +239,9 @@ class _ServiceAreaPickerScreenState extends State<ServiceAreaPickerScreen> {
                           onSubmitted: (_) => _commitTypedRadius(),
                         ),
                       ),
-                      SizedBox(width: 4.w),
-                      Text('km',
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(color: scheme.primary)),
                     ],
                   ),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: scheme.primary,
-                      inactiveTrackColor: scheme.outline,
-                      thumbColor: scheme.primary,
-                      overlayColor: scheme.primary.withValues(alpha: 0.12),
-                    ),
-                    child: Slider(
-                      min: _minRadiusKm,
-                      max: _maxRadiusKm,
-                      divisions: 19, // 5 km steps across 5..100
-                      // Slider tops out at _maxRadiusKm for quick picks; type a
-                      // larger value in the field for an uncapped radius.
-                      value: _radiusKm.clamp(_minRadiusKm, _maxRadiusKm).toDouble(),
-                      label: '${_radiusKm.round()} km',
-                      onChanged: (v) => setState(() {
-                        _radiusKm = v;
-                        _radiusCtrl.text = v.round().toString();
-                      }),
-                    ),
-                  ),
+                  SizedBox(height: 10.h),
                   if (hasPoint)
                     Padding(
                       padding: EdgeInsets.only(bottom: 10.h),
