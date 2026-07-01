@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../Bloc/QuoteSubmit/quote_submit_cubit.dart';
+import '../../../Bloc/QuoteSubmit/quote_submit_state.dart';
 import '../../../Model/delivery_request_model.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
@@ -76,6 +77,9 @@ class _DeliveryRequestDetailScreenState
         final vehicles =
             (response['data'] as List? ?? []).cast<Map<String, dynamic>>();
         await VehiclePickerBottomSheet.show(context, widget.requestId, vehicles);
+        // Refresh after the picker closes so a just-submitted quote flips the
+        // screen out of the 'open' state (belt-and-suspenders with the listener).
+        if (mounted) _loadDetail();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -133,7 +137,18 @@ class _DeliveryRequestDetailScreenState
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => QuoteSubmitCubit(),
-      child: Scaffold(
+      child: BlocListener<QuoteSubmitCubit, QuoteSubmitState>(
+        listener: (context, state) {
+          if (state is QuoteSubmitSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Quote submitted.')),
+            );
+            // Refresh so the screen reflects the new 'quoted' state (hides the
+            // Send Quote bar + estimate, shows the submitted quote).
+            _loadDetail();
+          }
+        },
+        child: Scaffold(
         appBar: const SosAppBar(title: 'Delivery Details'),
         body: _loading
             ? _buildSkeleton()
@@ -149,6 +164,7 @@ class _DeliveryRequestDetailScreenState
                 onTap: _loadVehiclesAndShowPicker,
               )
             : null,
+        ),
       ),
     );
   }
