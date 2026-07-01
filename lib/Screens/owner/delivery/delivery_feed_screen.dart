@@ -319,7 +319,7 @@ class _DeliveryRequestCard extends StatelessWidget {
                               ),
                               SizedBox(width: 3.w),
                               Text(
-                                _formatExpiry(expiryDiff),
+                                _formatExpiry(request.expiresAt),
                                 style: TextStyle(
                                   fontSize: 11.sp,
                                   fontWeight: FontWeight.w500,
@@ -342,12 +342,13 @@ class _DeliveryRequestCard extends StatelessWidget {
     );
   }
 
-  String _formatExpiry(Duration diff) {
-    if (diff.isNegative) return 'Expired';
-    if (diff.inHours > 0) {
-      return 'Expires in ${diff.inHours}h ${diff.inMinutes.remainder(60)}m';
-    }
-    return 'Expires in ${diff.inMinutes}m';
+  String _formatExpiry(String raw) {
+    final d = DateTime.tryParse(raw)?.toLocal();
+    if (d == null) return 'Expiry unavailable';
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final label = '$dd-$mm-${d.year}';
+    return d.isBefore(DateTime.now()) ? 'Expired $label' : 'Expires on $label';
   }
 }
 
