@@ -45,12 +45,12 @@ class DeliveryRequestModel {
 
   factory DeliveryRequestModel.fromJson(Map<String, dynamic> json) {
     return DeliveryRequestModel(
-      id: json['id'] ?? 0,
+      id: int.tryParse('${json['id']}') ?? 0,
       requestType: json['request_type'] ?? '',
       sourceType: json['source_type'] ?? '',
-      sourceId: json['source_id'] ?? 0,
+      sourceId: int.tryParse('${json['source_id']}') ?? 0,
       requesterType: json['requester_type'] ?? '',
-      requesterId: json['requester_id'] ?? 0,
+      requesterId: int.tryParse('${json['requester_id']}') ?? 0,
       pickupAddress: json['pickup_address'] ?? '',
       pickupLat: double.tryParse('${json['pickup_lat']}') ?? 0,
       pickupLng: double.tryParse('${json['pickup_lng']}') ?? 0,
@@ -58,11 +58,11 @@ class DeliveryRequestModel {
       dropLat: double.tryParse('${json['drop_lat']}') ?? 0,
       dropLng: double.tryParse('${json['drop_lng']}') ?? 0,
       distanceKm: double.tryParse('${json['distance_km']}') ?? 0,
-      estimatedDurationMin: json['estimated_duration_min'] ?? 0,
+      estimatedDurationMin: int.tryParse('${json['estimated_duration_min']}') ?? 0,
       status: json['status'] ?? '',
       expiresAt: json['expires_at'] ?? '',
-      acceptedQuoteId: json['accepted_quote_id'],
-      deliveryId: json['delivery_id'],
+      acceptedQuoteId: int.tryParse('${json['accepted_quote_id']}'),
+      deliveryId: int.tryParse('${json['delivery_id']}'),
       quotes: (json['quotes'] as List?)
               ?.map((q) => DeliveryQuoteModel.fromJson(q as Map<String, dynamic>))
               .toList() ??

@@ -39,11 +39,11 @@ class DeliveryQuoteModel {
 
   factory DeliveryQuoteModel.fromJson(Map<String, dynamic> json) {
     return DeliveryQuoteModel(
-      id: json['id'] ?? 0,
-      requestId: json['request_id'] ?? 0,
-      ownerId: json['owner_id'] ?? 0,
-      vehicleId: json['vehicle_id'] ?? 0,
-      driverId: json['driver_id'],
+      id: int.tryParse('${json['id']}') ?? 0,
+      requestId: int.tryParse('${json['request_id']}') ?? 0,
+      ownerId: int.tryParse('${json['owner_id']}') ?? 0,
+      vehicleId: int.tryParse('${json['vehicle_id']}') ?? 0,
+      driverId: int.tryParse('${json['driver_id']}'),
       distanceKm: double.tryParse('${json['distance_km']}') ?? 0,
       baseFee: double.tryParse('${json['base_fee']}') ?? 0,
       perKmFee: double.tryParse('${json['per_km_fee']}') ?? 0,
