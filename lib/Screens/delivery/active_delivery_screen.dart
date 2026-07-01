@@ -80,9 +80,6 @@ class _DeliveryDetail extends StatefulWidget {
 class _DeliveryDetailState extends State<_DeliveryDetail> {
   bool _pickupOtpGenerated = false;
   bool _dropOtpGenerated   = false;
-  // TODO(TESTING): plaintext OTP shown/auto-filled while SMS/email is pending.
-  String? _pickupTestOtp;
-  String? _dropTestOtp;
   final _pickupOtpController = TextEditingController();
   final _dropOtpController   = TextEditingController();
 
@@ -91,36 +88,6 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
     _pickupOtpController.dispose();
     _dropOtpController.dispose();
     super.dispose();
-  }
-
-  // TODO(TESTING): shows + auto-fills the plaintext OTP while SMS/email delivery
-  // is pending. Remove once real OTP delivery is live.
-  Widget _testOtpBanner(String otp) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded, size: 16.r, color: Colors.orange.shade800),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Text(
-              'TEST MODE - OTP: $otp (auto-filled; SMS/email pending)',
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.orange.shade900,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -136,16 +103,8 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
           setState(() {
             if (state.isPickup) {
               _pickupOtpGenerated = true;
-              _pickupTestOtp = state.testOtp;
-              if (state.testOtp != null && state.testOtp!.isNotEmpty) {
-                _pickupOtpController.text = state.testOtp!;
-              }
             } else {
               _dropOtpGenerated = true;
-              _dropTestOtp = state.testOtp;
-              if (state.testOtp != null && state.testOtp!.isNotEmpty) {
-                _dropOtpController.text = state.testOtp!;
-              }
             }
           });
         } else if (state is ActiveDeliveryOtpError) {
@@ -263,10 +222,6 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
                 ),
               ),
               SizedBox(height: 8.h),
-              if (_pickupTestOtp != null && _pickupTestOtp!.isNotEmpty) ...[
-                _testOtpBanner(_pickupTestOtp!),
-                SizedBox(height: 8.h),
-              ],
               TextField(
                 controller: _pickupOtpController,
                 keyboardType: TextInputType.number,
@@ -339,10 +294,6 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
                 ),
               ),
               SizedBox(height: 8.h),
-              if (_dropTestOtp != null && _dropTestOtp!.isNotEmpty) ...[
-                _testOtpBanner(_dropTestOtp!),
-                SizedBox(height: 8.h),
-              ],
               TextField(
                 controller: _dropOtpController,
                 keyboardType: TextInputType.number,

@@ -21,42 +21,43 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
     }
   }
 
-  Future<void> generatePickupOtp({required int deliveryId}) async {
-    emit(ActiveDeliveryLoading());
-    final res = await ApiServiceUnified.instance.generatePickupOtp(deliveryId);
+  // OTP generation must NOT replace the loaded delivery (that blanks the
+  // screen). Emit OtpReady only as a transient signal for the listener (which
+  // flips the OTP-entry flag), then restore the loaded delivery so the builder
+  // keeps rendering. The driver never sees the OTP - the seller/buyer reads it
+  // out to them (proof of presence).
+  Future<void> _afterOtpAction(
+      Map<String, dynamic> res, bool isPickup, ActiveDeliveryState prev) async {
     if (res['status'] == 'success') {
-      emit(ActiveDeliveryOtpReady(isPickup: true, testOtp: res['otp']?.toString()));
+      emit(ActiveDeliveryOtpReady(isPickup: isPickup));
     } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to generate OTP.'));
     }
+    if (prev is ActiveDeliveryLoaded) emit(prev);
+  }
+
+  Future<void> generatePickupOtp({required int deliveryId}) async {
+    final prev = state;
+    final res = await ApiServiceUnified.instance.generatePickupOtp(deliveryId);
+    await _afterOtpAction(res, true, prev);
   }
 
   Future<void> generateDropOtp({required int deliveryId}) async {
-    emit(ActiveDeliveryLoading());
+    final prev = state;
     final res = await ApiServiceUnified.instance.generateDropOtp(deliveryId);
-    if (res['status'] == 'success') {
-      emit(ActiveDeliveryOtpReady(isPickup: false, testOtp: res['otp']?.toString()));
-    } else {
-      emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to generate OTP.'));
-    }
+    await _afterOtpAction(res, false, prev);
   }
 
   Future<void> resendPickupOtp({required int deliveryId}) async {
+    final prev = state;
     final res = await ApiServiceUnified.instance.resendPickupOtp(deliveryId);
-    if (res['status'] == 'success') {
-      emit(ActiveDeliveryOtpReady(isPickup: true, testOtp: res['otp']?.toString()));
-    } else {
-      emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to resend OTP.'));
-    }
+    await _afterOtpAction(res, true, prev);
   }
 
   Future<void> resendDropOtp({required int deliveryId}) async {
+    final prev = state;
     final res = await ApiServiceUnified.instance.resendDropOtp(deliveryId);
-    if (res['status'] == 'success') {
-      emit(ActiveDeliveryOtpReady(isPickup: false, testOtp: res['otp']?.toString()));
-    } else {
-      emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to resend OTP.'));
-    }
+    await _afterOtpAction(res, false, prev);
   }
 
   Future<void> confirmPickup({required int deliveryId, required String otp}) async {

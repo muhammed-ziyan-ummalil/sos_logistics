@@ -16,10 +16,8 @@ class ActiveDeliveryLoaded    extends ActiveDeliveryState {
 class ActiveDeliveryCompleted extends ActiveDeliveryState {}
 class ActiveDeliveryOtpReady  extends ActiveDeliveryState {
   final bool isPickup;
-  // TODO(TESTING): plaintext OTP for in-app display until SMS/email is live.
-  final String? testOtp;
-  ActiveDeliveryOtpReady({required this.isPickup, this.testOtp});
-  @override List<Object?> get props => [isPickup, testOtp];
+  ActiveDeliveryOtpReady({required this.isPickup});
+  @override List<Object?> get props => [isPickup];
 }
 class ActiveDeliveryOtpError  extends ActiveDeliveryState {
   final String message;
