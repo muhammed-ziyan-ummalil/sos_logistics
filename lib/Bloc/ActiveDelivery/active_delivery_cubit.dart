@@ -25,7 +25,7 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
     emit(ActiveDeliveryLoading());
     final res = await ApiServiceUnified.instance.generatePickupOtp(deliveryId);
     if (res['status'] == 'success') {
-      emit(ActiveDeliveryOtpReady(isPickup: true));
+      emit(ActiveDeliveryOtpReady(isPickup: true, testOtp: res['otp']?.toString()));
     } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to generate OTP.'));
     }
@@ -35,7 +35,7 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
     emit(ActiveDeliveryLoading());
     final res = await ApiServiceUnified.instance.generateDropOtp(deliveryId);
     if (res['status'] == 'success') {
-      emit(ActiveDeliveryOtpReady(isPickup: false));
+      emit(ActiveDeliveryOtpReady(isPickup: false, testOtp: res['otp']?.toString()));
     } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to generate OTP.'));
     }
@@ -43,14 +43,18 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
 
   Future<void> resendPickupOtp({required int deliveryId}) async {
     final res = await ApiServiceUnified.instance.resendPickupOtp(deliveryId);
-    if (res['status'] != 'success') {
+    if (res['status'] == 'success') {
+      emit(ActiveDeliveryOtpReady(isPickup: true, testOtp: res['otp']?.toString()));
+    } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to resend OTP.'));
     }
   }
 
   Future<void> resendDropOtp({required int deliveryId}) async {
     final res = await ApiServiceUnified.instance.resendDropOtp(deliveryId);
-    if (res['status'] != 'success') {
+    if (res['status'] == 'success') {
+      emit(ActiveDeliveryOtpReady(isPickup: false, testOtp: res['otp']?.toString()));
+    } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to resend OTP.'));
     }
   }
