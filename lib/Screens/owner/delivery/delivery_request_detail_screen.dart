@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../Bloc/QuoteSubmit/quote_submit_cubit.dart';
 import '../../../Model/delivery_request_model.dart';
+import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../utility/api_service.dart';
 import '../../../widgets/widgets.dart';
@@ -27,6 +28,12 @@ class _DeliveryRequestDetailScreenState
   String? _error;
   bool _vehiclesLoading = false;
 
+  // Inline shipping estimate (own vehicles + calculated fee) shown on the detail
+  // screen so the owner sees the payout before opening the Send Quote picker.
+  List<Map<String, dynamic>> _vehicles = [];
+  bool _feeLoading = false;
+  String? _feeError;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +50,7 @@ class _DeliveryRequestDetailScreenState
               response['data'] as Map<String, dynamic>);
           _loading = false;
         });
+        if (_request?.status == 'open') _loadFees();
       } else {
         setState(() {
           _error = response['message'] as String? ?? 'Failed to load';
@@ -84,6 +92,40 @@ class _DeliveryRequestDetailScreenState
       }
     } finally {
       if (mounted) setState(() => _vehiclesLoading = false);
+    }
+  }
+
+  // Load own vehicles + their calculated fee for this request (same endpoint the
+  // Send Quote picker uses) so the fee summary shows inline.
+  Future<void> _loadFees() async {
+    setState(() {
+      _feeLoading = true;
+      _feeError = null;
+    });
+    try {
+      final response =
+          await ApiServiceUnified.instance.getQuoteVehicles(widget.requestId);
+      if (!mounted) return;
+      if (response['status'] == 'success') {
+        setState(() {
+          _vehicles =
+              (response['data'] as List? ?? []).cast<Map<String, dynamic>>();
+          _feeLoading = false;
+        });
+      } else {
+        setState(() {
+          _feeError =
+              response['message'] as String? ?? 'Could not load estimate';
+          _feeLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _feeError = e.toString();
+          _feeLoading = false;
+        });
+      }
     }
   }
 
@@ -228,6 +270,133 @@ class _DeliveryRequestDetailScreenState
                   color: scheme.onSurface.withValues(alpha: 0.5)),
             ),
           ],
+          if (req.status == 'open') ...[
+            SizedBox(height: 16.h),
+            _ShippingEstimateCard(
+              loading: _feeLoading,
+              error: _feeError,
+              vehicles: _vehicles,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Shipping estimate (own vehicles + calculated fee) ────────────────────────
+
+class _ShippingEstimateCard extends StatelessWidget {
+  final bool loading;
+  final String? error;
+  final List<Map<String, dynamic>> vehicles;
+
+  const _ShippingEstimateCard({
+    required this.loading,
+    required this.error,
+    required this.vehicles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SosCard(
+      padding: EdgeInsets.all(12.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.receipt_long_rounded,
+                  size: 16.r, color: AppDesignTokens.success),
+              SizedBox(width: 8.w),
+              Text(
+                'Shipping Estimate',
+                style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          if (loading)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.h),
+              child: const Center(
+                  child: SizedBox(
+                      width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+            )
+          else if (error != null)
+            Text(
+              error!,
+              style: TextStyle(fontSize: 12.sp, color: scheme.error),
+            )
+          else if (vehicles.isEmpty)
+            Text(
+              'No eligible vehicle for this delivery.',
+              style: TextStyle(
+                  fontSize: 12.sp,
+                  color: scheme.onSurface.withValues(alpha: 0.6)),
+            )
+          else
+            ...vehicles.map((v) => _vehicleRow(context, v)),
+          if (!loading && error == null && vehicles.isNotEmpty) ...[
+            SizedBox(height: 6.h),
+            Text(
+              'Tap Send Quote to pick a vehicle and confirm.',
+              style: TextStyle(
+                  fontSize: 10.sp,
+                  fontStyle: FontStyle.italic,
+                  color: scheme.onSurface.withValues(alpha: 0.5)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _vehicleRow(BuildContext context, Map<String, dynamic> v) {
+    final scheme = Theme.of(context).colorScheme;
+    final fee = v['fee_breakdown'] as Map<String, dynamic>? ?? {};
+    final total = double.tryParse('${fee['total_fee'] ?? 0}') ?? 0;
+    final base = double.tryParse('${fee['base_fee'] ?? 0}') ?? 0;
+    final extra = double.tryParse('${fee['extra_km_charge'] ?? 0}') ?? 0;
+    final reg = (v['registration_number'] ?? v['driver_name'] ?? 'Vehicle')
+        .toString();
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  reg,
+                  style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: scheme.onSurface),
+                ),
+              ),
+              Text(
+                '${AppConstants.currencySymbol}${total.toStringAsFixed(0)}',
+                style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppDesignTokens.success),
+              ),
+            ],
+          ),
+          Text(
+            'Base ${AppConstants.currencySymbol}${base.toStringAsFixed(0)}'
+            '${extra > 0 ? ' + extra km ${AppConstants.currencySymbol}${extra.toStringAsFixed(0)}' : ''}',
+            style: TextStyle(
+                fontSize: 10.sp,
+                color: scheme.onSurface.withValues(alpha: 0.55)),
+          ),
         ],
       ),
     );
