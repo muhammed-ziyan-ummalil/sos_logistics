@@ -1,6 +1,6 @@
 // Structural reuse of sosagent_flutter WalletScreen.
-// Same: balance hero card, action row, transaction list, withdrawal sheet,
-//       pending withdrawal card, KYC gate stub.
+// Statement view: balance hero card, transaction list, filter chips.
+// Withdrawals are handled on the dedicated OwnerWithdrawals screen.
 // Extended: escrow transaction type for logistics deliveries.
 
 import 'package:flutter/material.dart';
@@ -29,20 +29,7 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
 
     return Scaffold(
       appBar: const SosAppBar(title: 'My Wallet', centerTitle: true),
-      body: BlocConsumer<OwnerWalletCubit, OwnerWalletState>(
-        listener: (ctx, state) {
-          if (state is OwnerWalletActionSuccess) {
-            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppDesignTokens.success,
-            ));
-          } else if (state is OwnerWalletActionError) {
-            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-              content: Text(state.message),
-              backgroundColor: scheme.error,
-            ));
-          }
-        },
+      body: BlocBuilder<OwnerWalletCubit, OwnerWalletState>(
         builder: (ctx, state) {
           if (state is OwnerWalletLoading || state is OwnerWalletInitial) {
             return Padding(
@@ -68,12 +55,8 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
             );
           }
 
-          final loaded = state is OwnerWalletLoaded
-              ? state
-              : (state is OwnerWalletActionLoading ? state.data : null);
+          final loaded = state is OwnerWalletLoaded ? state : null;
           if (loaded == null) return const SizedBox();
-
-          final isActionLoading = state is OwnerWalletActionLoading;
 
           return RefreshIndicator(
             color: scheme.primary,
@@ -85,25 +68,9 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
                 // ── Balance hero card ─────────────────────────────────
                 _EmeraldBalanceCard(
                   balance: loaded.balance,
-                  isLoading: isActionLoading,
                   onAddMoney: () => _showAddMoneySheet(),
-                  onWithdraw: loaded.pendingWithdrawal == null
-                      ? () => _showWithdrawSheet(loaded.balance)
-                      : null,
                 ),
                 SizedBox(height: 16.h),
-
-                // ── Pending withdrawal card ───────────────────────────
-                if (loaded.pendingWithdrawal != null)
-                  _PendingWithdrawalCard(
-                    withdrawal: loaded.pendingWithdrawal!,
-                    isLoading: isActionLoading,
-                    onCancel: () => context
-                        .read<OwnerWalletCubit>()
-                        .cancelWithdrawal(
-                            loaded.pendingWithdrawal!['id']?.toString() ?? ''),
-                  ),
-                if (loaded.pendingWithdrawal != null) SizedBox(height: 16.h),
 
                 // ── Transaction filter chips ──────────────────────────
                 _FilterChips(
@@ -168,24 +135,6 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
       ),
     );
   }
-
-  // ── Withdraw sheet ────────────────────────────────────────────────────────
-  void _showWithdrawSheet(double balance) {
-    final amountCtr = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _WithdrawSheet(
-        balance: balance,
-        controller: amountCtr,
-        onConfirm: (amount) {
-          Navigator.pop(context);
-          context.read<OwnerWalletCubit>().requestWithdrawal(amount);
-        },
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,15 +142,11 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _EmeraldBalanceCard extends StatelessWidget {
   final double balance;
-  final bool isLoading;
   final VoidCallback onAddMoney;
-  final VoidCallback? onWithdraw;
 
   const _EmeraldBalanceCard({
     required this.balance,
-    required this.isLoading,
     required this.onAddMoney,
-    this.onWithdraw,
   });
 
   @override
@@ -241,57 +186,24 @@ class _EmeraldBalanceCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 20.h),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isLoading ? null : onAddMoney,
-                  icon: Icon(Icons.add_rounded, size: 16.r,
-                      color: scheme.onPrimary),
-                  label: Text('Add Money',
-                      style: TextStyle(
-                          color: scheme.onPrimary,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                        color: scheme.onPrimary.withValues(alpha: 0.35)),
-                    padding: EdgeInsets.symmetric(vertical: 10.h),
-                    shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppDesignTokens.radiusXS)),
-                  ),
-                ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isLoading ? null : onWithdraw,
-                  icon: Icon(Icons.arrow_upward_rounded, size: 16.r,
-                      color: onWithdraw == null
-                          ? scheme.onPrimary.withValues(alpha: 0.45)
-                          : scheme.onPrimary),
-                  label: Text(
-                    onWithdraw == null ? 'Request Pending' : 'Withdraw',
-                    style: TextStyle(
-                        color: onWithdraw == null
-                            ? scheme.onPrimary.withValues(alpha: 0.45)
-                            : scheme.onPrimary,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                        color: scheme.onPrimary.withValues(
-                            alpha: onWithdraw == null ? 0.20 : 0.35)),
-                    padding: EdgeInsets.symmetric(vertical: 10.h),
-                    shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppDesignTokens.radiusXS)),
-                  ),
-                ),
-              ),
-            ],
+          OutlinedButton.icon(
+            onPressed: onAddMoney,
+            icon: Icon(Icons.add_rounded, size: 16.r,
+                color: scheme.onPrimary),
+            label: Text('Add Money',
+                style: TextStyle(
+                    color: scheme.onPrimary,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                  color: scheme.onPrimary.withValues(alpha: 0.35)),
+              padding: EdgeInsets.symmetric(vertical: 10.h),
+              minimumSize: Size(double.infinity, 0),
+              shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(AppDesignTokens.radiusXS)),
+            ),
           ),
         ],
       ),
@@ -302,69 +214,6 @@ class _EmeraldBalanceCard extends StatelessWidget {
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(2)}M';
     if (v >= 1000) return '${(v / 1000).toStringAsFixed(2)}K';
     return v.toStringAsFixed(2);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Pending withdrawal card
-// ─────────────────────────────────────────────────────────────────────────────
-class _PendingWithdrawalCard extends StatelessWidget {
-  final Map<String, dynamic> withdrawal;
-  final bool isLoading;
-  final VoidCallback onCancel;
-
-  const _PendingWithdrawalCard({
-    required this.withdrawal,
-    required this.isLoading,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final amount = withdrawal['amount']?.toString() ?? '—';
-    final status =
-        (withdrawal['status'] as String? ?? 'pending').toUpperCase();
-
-    return SosCard(
-      padding: EdgeInsets.all(14.r),
-      child: Row(
-        children: [
-          Container(
-            width: 40.r,
-            height: 40.r,
-            decoration: BoxDecoration(
-              color: AppDesignTokens.warning.withValues(alpha: 0.12),
-              borderRadius:
-                  BorderRadius.circular(AppDesignTokens.radiusXS),
-            ),
-            child: Icon(Icons.hourglass_top_rounded,
-                color: AppDesignTokens.warning, size: 20.r),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Withdrawal Request',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge
-                        ?.copyWith(fontSize: 13.sp)),
-                Text(
-                    '${AppConstants.currencySymbol}$amount · $status',
-                    style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: isLoading ? null : onCancel,
-            child: Text('Cancel',
-                style: TextStyle(fontSize: 12.sp, color: scheme.error)),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -660,113 +509,6 @@ class _AddMoneySheet extends StatelessWidget {
                 final v = controller.text.trim();
                 if (v.isEmpty) return;
                 onConfirm(v);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Withdraw sheet — theme-aware (same onConfirm behavior)
-// ─────────────────────────────────────────────────────────────────────────────
-class _WithdrawSheet extends StatelessWidget {
-  final double balance;
-  final TextEditingController controller;
-  final ValueChanged<double> onConfirm;
-
-  const _WithdrawSheet({
-    required this.balance,
-    required this.controller,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                      color: scheme.outline,
-                      borderRadius: BorderRadius.circular(2.r))),
-            ),
-            SizedBox(height: 16.h),
-            Text('Withdraw Funds',
-                style: textTheme.titleLarge?.copyWith(fontSize: 16.sp)),
-            Text(
-                'Available: ${AppConstants.currencySymbol}${balance.toStringAsFixed(2)} · Credit within 24 hours',
-                style: textTheme.bodySmall),
-            SizedBox(height: 16.h),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Withdrawal Amount',
-                prefixText: '${AppConstants.currencySymbol} ',
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Container(
-              padding: EdgeInsets.all(12.r),
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.06),
-                borderRadius:
-                    BorderRadius.circular(AppDesignTokens.radiusXS),
-                border: Border.all(
-                    color: scheme.primary.withValues(alpha: 0.18)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.account_balance_outlined,
-                      size: 16.r, color: scheme.primary),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Text(
-                      'Amount will be sent to your registered bank account.',
-                      style: TextStyle(
-                          fontSize: 11.sp, color: scheme.primary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20.h),
-            SosButton(
-              label: 'Submit Withdrawal Request',
-              onPressed: () {
-                final amount = double.tryParse(controller.text.trim());
-                if (amount == null || amount <= 0) return;
-                if (amount > balance) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                          'Amount exceeds available balance.'),
-                      backgroundColor: scheme.error,
-                    ),
-                  );
-                  return;
-                }
-                onConfirm(amount);
               },
             ),
           ],

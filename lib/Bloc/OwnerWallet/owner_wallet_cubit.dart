@@ -15,13 +15,9 @@ class OwnerWalletCubit extends Cubit<OwnerWalletState> {
       final rawTx = (data['transactions'] as List?) ?? [];
       final transactions =
           rawTx.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      final pendingWithdrawal = data['pending_withdrawal'] != null
-          ? Map<String, dynamic>.from(data['pending_withdrawal'] as Map)
-          : null;
       emit(OwnerWalletLoaded(
         balance: balance,
         transactions: transactions,
-        pendingWithdrawal: pendingWithdrawal,
       ));
     } else {
       final msg = res['message'] as String? ?? '';
@@ -33,56 +29,11 @@ class OwnerWalletCubit extends Cubit<OwnerWalletState> {
         emit(OwnerWalletLoaded(
           balance: 0.0,
           transactions: [],
-          pendingWithdrawal: null,
         ));
       } else {
         emit(OwnerWalletError(
             msg.isEmpty ? 'Failed to load wallet.' : msg));
       }
     }
-  }
-
-  Future<void> requestWithdrawal(double amount) async {
-    final loaded = _loaded;
-    if (loaded == null) return;
-    emit(OwnerWalletActionLoading(loaded));
-    final res = await ApiServiceV2.instance
-        .post('owner/wallet/withdraw', data: {'amount': amount.toString()});
-    if (res['status'] == 'success') {
-      emit(OwnerWalletActionSuccess('Withdrawal request submitted.'));
-      await fetchWallet();
-    } else {
-      emit(OwnerWalletActionError(
-        message: res['message'] as String? ?? 'Failed to submit withdrawal.',
-        data: loaded,
-      ));
-      emit(loaded);
-    }
-  }
-
-  Future<void> cancelWithdrawal(String withdrawalId) async {
-    final loaded = _loaded;
-    if (loaded == null) return;
-    emit(OwnerWalletActionLoading(loaded));
-    final res = await ApiServiceV2.instance
-        .post('owner/wallet/withdraw/$withdrawalId/cancel', data: {});
-    if (res['status'] == 'success') {
-      emit(OwnerWalletActionSuccess('Withdrawal request cancelled.'));
-      await fetchWallet();
-    } else {
-      emit(OwnerWalletActionError(
-        message: res['message'] as String? ?? 'Failed to cancel withdrawal.',
-        data: loaded,
-      ));
-      emit(loaded);
-    }
-  }
-
-  OwnerWalletLoaded? get _loaded {
-    final s = state;
-    if (s is OwnerWalletLoaded) return s;
-    if (s is OwnerWalletActionLoading) return s.data;
-    if (s is OwnerWalletActionError) return s.data;
-    return null;
   }
 }
