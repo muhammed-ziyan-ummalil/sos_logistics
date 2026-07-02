@@ -140,6 +140,35 @@ class ApiServiceUnified {
   /// Owner re-issues a driver's temp password. Returns the new plaintext once.
   Future<Map<String, dynamic>> resetDriverPassword(int driverId) =>
       post('owner/drivers/$driverId/reset-password');
+
+  // --- Owner bank details ---
+
+  Future<Map<String, dynamic>> getOwnerBankDetails() =>
+      get('owner/bank-details');
+
+  Future<Map<String, dynamic>> saveOwnerBankDetails({
+    required String bankName,
+    required String accountHolderName,
+    required String accountNumber,
+    required String ifscCode,
+  }) =>
+      post('owner/bank-details', data: {
+        'bank_name': bankName,
+        'account_holder_name': accountHolderName,
+        'account_number': accountNumber,
+        'ifsc_code': ifscCode,
+      });
+
+  // --- Owner withdrawals / earnings ---
+
+  Future<Map<String, dynamic>> getOwnerWithdrawals() =>
+      get('owner/withdrawals');
+
+  Future<Map<String, dynamic>> requestOwnerWithdrawal(double amount) =>
+      post('owner/withdrawals', data: {'amount': amount.toString()});
+
+  Future<Map<String, dynamic>> cancelOwnerWithdrawal(int id) =>
+      post('owner/withdrawals/$id/cancel');
 }
 
 /// V2 API client — JWT auth with custom interceptors.

@@ -10,9 +10,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
 import '../../../Bloc/OwnerWallet/owner_wallet_cubit.dart';
+import '../../../Bloc/OwnerWithdrawals/owner_withdrawals_cubit.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../core/theme_controller.dart';
+import '../../../utility/api_service.dart';
 import '../../../utility/shared_preference.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import '../../../widgets/widgets.dart';
@@ -23,6 +25,7 @@ import 'owner_edit_profile_screen.dart';
 import 'owner_privacy_screen.dart';
 import 'owner_support_screen.dart';
 import 'owner_wallet_screen.dart';
+import 'owner_withdrawals_screen.dart';
 
 class OwnerAccountScreen extends StatefulWidget {
   const OwnerAccountScreen({super.key});
@@ -255,6 +258,11 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
         _OwnerMenuTile(
+          icon: Icons.payments_outlined,
+          title: 'Withdraw',
+          onTap: _openWithdrawals,
+        ),
+        _OwnerMenuTile(
           icon: Icons.account_balance_outlined,
           title: 'Bank Details',
           onTap: () => Navigator.push(
@@ -268,6 +276,30 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // ── Withdraw / earnings ────────────────────────────────────────────────────
+  Future<void> _openWithdrawals() async {
+    // Resolve bank-details presence up front so the screen can nudge the owner
+    // to add them first when missing.
+    bool hasBankDetails = true;
+    final res = await ApiServiceUnified.instance.getOwnerBankDetails();
+    if (res['status'] == 'success') {
+      final data = res['data'] as Map<String, dynamic>? ?? {};
+      final bank = data['bank'];
+      hasBankDetails = bank is Map &&
+          (bank['account_number'] != null || bank['bank_name'] != null);
+    }
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => OwnerWithdrawalsCubit()..fetchWithdrawals(),
+          child: OwnerWithdrawalsScreen(hasBankDetails: hasBankDetails),
+        ),
+      ),
     );
   }
 
