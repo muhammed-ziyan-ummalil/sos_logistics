@@ -518,6 +518,8 @@ class _TransactionTile extends StatelessWidget {
       'escrow_hold' => 'Delivery Escrow Hold',
       'escrow_release' => 'Delivery Escrow Released',
       'escrow_refund' => 'Escrow Refunded',
+      'delivery_compensation_hold' => 'Compensation Deposit Held',
+      'delivery_compensation_refund' => 'Compensation Deposit Refunded',
       'withdrawal' => 'Withdrawal Request',
       'withdrawal_paid' => 'Withdrawal Paid',
       'credit' => tx['remark'] as String? ?? 'Credit',
@@ -532,6 +534,8 @@ class _TransactionTile extends StatelessWidget {
       'escrow_hold' => Icons.lock_outline_rounded,
       'escrow_release' => Icons.lock_open_rounded,
       'escrow_refund' => Icons.undo_rounded,
+      'delivery_compensation_hold' => Icons.shield_outlined,
+      'delivery_compensation_refund' => Icons.undo_rounded,
       'withdrawal' || 'withdrawal_paid' => Icons.arrow_upward_rounded,
       _ => isCredit
           ? Icons.arrow_downward_rounded
