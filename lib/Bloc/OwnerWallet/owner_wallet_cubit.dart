@@ -36,4 +36,20 @@ class OwnerWalletCubit extends Cubit<OwnerWalletState> {
       }
     }
   }
+
+  /// Test-mode top-up (no real gateway yet). Credits the wallet on the backend
+  /// then refreshes the balance/transactions. Returns null on success, or the
+  /// error message on failure (the screen shows it without leaving the wallet).
+  Future<String?> addCash(double amount) async {
+    if (amount <= 0) return 'A valid amount is required.';
+    final res = await ApiServiceV2.instance.post(
+      'owner/wallet/add-cash',
+      data: {'amount': amount.toString()},
+    );
+    if (res['status'] == 'success') {
+      await fetchWallet();
+      return null;
+    }
+    return res['message'] as String? ?? 'Could not add cash to wallet.';
+  }
 }

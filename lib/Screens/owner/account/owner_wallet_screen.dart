@@ -113,8 +113,11 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
         .toList();
   }
 
-  // ── Add money sheet (Razorpay placeholder) ────────────────────────────────
+  // ── Add money sheet ───────────────────────────────────────────────────────
+  // Test-mode top-up: credits the wallet on the backend and refreshes. Swap the
+  // cubit.addCash call for a real payment-gateway flow when the gateway is live.
   void _showAddMoneySheet() {
+    final cubit = context.read<OwnerWalletCubit>();
     final amountCtr = TextEditingController();
     showModalBottomSheet(
       context: context,
@@ -122,13 +125,26 @@ class _OwnerWalletScreenState extends State<OwnerWalletScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _AddMoneySheet(
         controller: amountCtr,
-        onConfirm: (amount) {
+        onConfirm: (amount) async {
           Navigator.pop(context);
+          final parsed = double.tryParse(amount.trim()) ?? 0;
+          if (parsed <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Enter a valid amount.'),
+                backgroundColor: AppDesignTokens.warning,
+              ),
+            );
+            return;
+          }
+          final error = await cubit.addCash(parsed);
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                  'Payment gateway integration pending. Amount: ${AppConstants.currencySymbol}$amount'),
-              backgroundColor: AppDesignTokens.warning,
+              content: Text(error ??
+                  'Added ${AppConstants.currencySymbol}${parsed.toStringAsFixed(0)} to your wallet.'),
+              backgroundColor:
+                  error == null ? AppDesignTokens.success : AppDesignTokens.warning,
             ),
           );
         },
