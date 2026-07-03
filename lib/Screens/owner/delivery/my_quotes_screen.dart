@@ -8,6 +8,7 @@ import '../../../Model/delivery_quote_model.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../widgets/widgets.dart';
+import 'report_issue_sheet.dart';
 
 class MyQuotesScreen extends StatefulWidget {
   const MyQuotesScreen({super.key});
@@ -336,6 +337,27 @@ class _QuoteCard extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 11.sp,
                             color: scheme.onSurface.withValues(alpha: 0.5)),
+                      ),
+                    ],
+
+                    // ── Report an issue (only while the delivery is live) ─────
+                    if (quote.status == 'accepted') ...[
+                      SizedBox(height: 12.h),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              ReportIssueSheet.show(context, quote.requestId),
+                          icon: Icon(Icons.report_gmailerrorred_outlined,
+                              size: 18.r),
+                          label: const Text('Report an issue'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: scheme.error,
+                            side: BorderSide(
+                                color: scheme.error.withValues(alpha: 0.5)),
+                            padding: EdgeInsets.symmetric(vertical: 10.h),
+                          ),
+                        ),
                       ),
                     ],
                   ],
