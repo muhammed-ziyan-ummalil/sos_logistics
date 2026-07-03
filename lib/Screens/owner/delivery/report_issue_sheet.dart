@@ -2,24 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/app_theme.dart';
-import '../../../utility/api_service.dart';
 import '../../../widgets/widgets.dart';
 
-/// Bottom sheet letting a logistics owner raise an issue on a delivery they are
-/// running. POSTs to owner/delivery-issue (backend verifies ownership).
+/// Bottom sheet to raise a delivery issue. Shared by the owner (posts to
+/// owner/delivery-issue) and the driver (posts to delivery/report-issue) - the
+/// caller supplies [onSubmit] which performs the actual request.
 class ReportIssueSheet extends StatefulWidget {
-  final int requestId;
+  final Future<Map<String, dynamic>> Function(String issueType, String description) onSubmit;
 
-  const ReportIssueSheet({super.key, required this.requestId});
+  const ReportIssueSheet({super.key, required this.onSubmit});
 
-  static Future<void> show(BuildContext context, int requestId) {
+  static Future<void> show(
+    BuildContext context,
+    Future<Map<String, dynamic>> Function(String issueType, String description) onSubmit,
+  ) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: ReportIssueSheet(requestId: requestId),
+        child: ReportIssueSheet(onSubmit: onSubmit),
       ),
     );
   }
@@ -61,11 +64,7 @@ class _ReportIssueSheetState extends State<ReportIssueSheet> {
       return;
     }
     setState(() => _submitting = true);
-    final res = await ApiServiceUnified.instance.reportDeliveryIssue(
-      requestId: widget.requestId,
-      issueType: _type!,
-      description: _descCtr.text.trim(),
-    );
+    final res = await widget.onSubmit(_type!, _descCtr.text.trim());
     if (!mounted) return;
     setState(() => _submitting = false);
     final ok = res['status'] == 'success';

@@ -7,7 +7,9 @@ import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
 import '../../Model/delivery_model.dart';
 import '../../core/app_theme.dart';
 import '../../core/app_constants.dart';
+import '../../utility/api_service.dart';
 import '../../widgets/widgets.dart';
+import '../owner/delivery/report_issue_sheet.dart';
 
 class ActiveDeliveryScreen extends StatefulWidget {
   const ActiveDeliveryScreen({super.key});
@@ -345,6 +347,29 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
               ),
             ],
           ],
+
+          // ── Report an issue (available on any active delivery) ────────────
+          SizedBox(height: 16.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => ReportIssueSheet.show(
+                context,
+                (t, d) => ApiServiceUnified.instance.reportDriverDeliveryIssue(
+                  deliveryId: delivery.id,
+                  issueType: t,
+                  description: d,
+                ),
+              ),
+              icon: Icon(Icons.report_gmailerrorred_outlined, size: 18.r),
+              label: const Text('Report an issue'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: scheme.error,
+                side: BorderSide(color: scheme.error.withValues(alpha: 0.5)),
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+              ),
+            ),
+          ),
         ],
       ),
     );

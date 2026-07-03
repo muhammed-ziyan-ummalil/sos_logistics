@@ -7,6 +7,7 @@ import '../../../Bloc/MyQuotes/my_quotes_state.dart';
 import '../../../Model/delivery_quote_model.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
+import '../../../utility/api_service.dart';
 import '../../../widgets/widgets.dart';
 import 'report_issue_sheet.dart';
 
@@ -346,8 +347,15 @@ class _QuoteCard extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () =>
-                              ReportIssueSheet.show(context, quote.requestId),
+                          onPressed: () => ReportIssueSheet.show(
+                            context,
+                            (t, d) => ApiServiceUnified.instance
+                                .reportDeliveryIssue(
+                              requestId: quote.requestId,
+                              issueType: t,
+                              description: d,
+                            ),
+                          ),
                           icon: Icon(Icons.report_gmailerrorred_outlined,
                               size: 18.r),
                           label: const Text('Report an issue'),

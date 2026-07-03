@@ -111,6 +111,18 @@ class ApiServiceUnified {
         'description': description,
       });
 
+  // Driver raises an issue on the delivery they are running.
+  Future<Map<String, dynamic>> reportDriverDeliveryIssue({
+    required int deliveryId,
+    required String issueType,
+    String description = '',
+  }) =>
+      post('delivery/report-issue', data: {
+        'delivery_id': deliveryId,
+        'issue_type': issueType,
+        'description': description,
+      });
+
   // --- On-demand driver OTP methods ---
   // These resolve to api/v2/delivery/* (capGuard:driver). They live on this
   // client because the legacy api/logistics/v2/* group does NOT expose them.
