@@ -32,6 +32,11 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
       emit(ActiveDeliveryOtpReady(isPickup: isPickup));
     } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Failed to generate OTP.'));
+      // Delivery was cancelled server-side -> re-sync so the stale screen clears.
+      if (res['cancelled'] == true) {
+        await fetchActiveDelivery();
+        return;
+      }
     }
     if (prev is ActiveDeliveryLoaded) emit(prev);
   }
@@ -83,6 +88,10 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
         res['message'] as String? ?? 'Invalid OTP.',
         isDispute: isDispute,
       ));
+      // Delivery was cancelled server-side -> re-sync so the stale screen clears.
+      if (res['cancelled'] == true) {
+        await fetchActiveDelivery();
+      }
     }
   }
 }
