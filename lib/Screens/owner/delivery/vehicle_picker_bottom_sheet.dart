@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../Bloc/OwnerWallet/owner_wallet_cubit.dart';
 import '../../../Bloc/QuoteSubmit/quote_submit_cubit.dart';
 import '../../../Bloc/QuoteSubmit/quote_submit_state.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../widgets/widgets.dart';
+import '../account/owner_wallet_screen.dart';
 
 class VehiclePickerBottomSheet extends StatelessWidget {
   final int requestId;
@@ -35,6 +37,40 @@ class VehiclePickerBottomSheet extends StatelessWidget {
           requestId: requestId,
           vehicles: vehicles,
         ),
+      ),
+    );
+  }
+
+  /// Wallet too low for the compensation deposit. Offer a one-tap redirect to the
+  /// wallet (mirrors the buyer/seller checkout flow) - on return the sheet stays
+  /// open so the owner can retry Send Quote once topped up.
+  void _showTopUpDialog(BuildContext sheetCtx, String message) {
+    showDialog<void>(
+      context: sheetCtx,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Wallet balance too low'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx); // close the dialog first
+              await Navigator.of(sheetCtx).push(
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider(
+                    create: (_) => OwnerWalletCubit()..fetchWallet(),
+                    child: const OwnerWalletScreen(),
+                  ),
+                ),
+              );
+              // Back on the same picker sheet - the owner can tap Send Quote again.
+            },
+            child: const Text('Add Money'),
+          ),
+        ],
       ),
     );
   }
@@ -105,6 +141,9 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                           backgroundColor: Theme.of(ctx).colorScheme.error,
                         ),
                       );
+                    }
+                    if (state is QuoteSubmitInsufficientFunds) {
+                      _showTopUpDialog(ctx, state.message);
                     }
                   },
                   builder: (ctx, state) {
