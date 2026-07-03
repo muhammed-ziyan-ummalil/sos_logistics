@@ -17,6 +17,11 @@ class DeliveryRequestModel {
   final int estimatedDurationMin;
   final String status;
   final String expiresAt;
+  // Time windows from the source row (buyer order / crop post). May be empty for
+  // sources that don't define one (e.g. a seller post has no separate drop window).
+  final String pickupWindow;
+  final String dropWindow;
+  final String deliveryDate;
   final int? acceptedQuoteId;
   final int? deliveryId;
   final List<DeliveryQuoteModel> quotes;
@@ -38,6 +43,9 @@ class DeliveryRequestModel {
     required this.estimatedDurationMin,
     required this.status,
     required this.expiresAt,
+    this.pickupWindow = '',
+    this.dropWindow = '',
+    this.deliveryDate = '',
     this.acceptedQuoteId,
     this.deliveryId,
     this.quotes = const [],
@@ -61,6 +69,9 @@ class DeliveryRequestModel {
       estimatedDurationMin: int.tryParse('${json['estimated_duration_min']}') ?? 0,
       status: json['status'] ?? '',
       expiresAt: json['expires_at'] ?? '',
+      pickupWindow: json['pickup_window']?.toString() ?? '',
+      dropWindow: json['drop_window']?.toString() ?? '',
+      deliveryDate: (json['delivery_date']?.toString() ?? '').split(' ').first,
       acceptedQuoteId: int.tryParse('${json['accepted_quote_id']}'),
       deliveryId: int.tryParse('${json['delivery_id']}'),
       quotes: (json['quotes'] as List?)

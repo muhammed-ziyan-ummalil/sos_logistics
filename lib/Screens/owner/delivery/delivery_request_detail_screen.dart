@@ -256,12 +256,18 @@ class _DeliveryRequestDetailScreenState
             label: 'Pickup',
             address: req.pickupAddress,
             color: AppDesignTokens.success,
+            time: req.pickupWindow.isNotEmpty
+                ? '${req.pickupWindow}${req.deliveryDate.isNotEmpty ? ' • ${req.deliveryDate}' : ''}'
+                : null,
           ),
           SizedBox(height: 10.h),
           _AddressCard(
             label: 'Drop',
             address: req.dropAddress,
             color: scheme.error,
+            time: req.dropWindow.isNotEmpty
+                ? '${req.dropWindow}${req.deliveryDate.isNotEmpty ? ' • ${req.deliveryDate}' : ''}'
+                : null,
           ),
           SizedBox(height: 16.h),
 
@@ -451,11 +457,13 @@ class _AddressCard extends StatelessWidget {
   final String label;
   final String address;
   final Color color;
+  final String? time;
 
   const _AddressCard({
     required this.label,
     required this.address,
     required this.color,
+    this.time,
   });
 
   @override
@@ -498,6 +506,26 @@ class _AddressCard extends StatelessWidget {
                     color: scheme.onSurface,
                   ),
                 ),
+                if (time != null && time!.isNotEmpty) ...[
+                  SizedBox(height: 6.h),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule_rounded,
+                          size: 13.r, color: color),
+                      SizedBox(width: 4.w),
+                      Expanded(
+                        child: Text(
+                          time!,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
