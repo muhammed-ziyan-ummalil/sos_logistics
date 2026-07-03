@@ -129,9 +129,24 @@ class FirebaseNotificationService {
   // ─── Show local notification ────────────────────────────────────────────────
 
   static Future<void> _showNotification(RemoteMessage message) async {
-    final title =
-        message.notification?.title ?? message.data['title'] ?? 'Notification';
-    final body = message.notification?.body ?? message.data['body'] ?? '';
+    final notifTitle = (message.notification?.title ?? '').trim();
+    final notifBody = (message.notification?.body ?? '').trim();
+    final dataTitle = (message.data['title'] ?? '').toString().trim();
+    final dataBody = (message.data['body'] ?? '').toString().trim();
+
+    // Data-only / control messages (e.g. a new_delivery_request sync ping) carry
+    // no displayable text - don't render a blank "Notification".
+    if (notifTitle.isEmpty &&
+        notifBody.isEmpty &&
+        dataTitle.isEmpty &&
+        dataBody.isEmpty) {
+      return;
+    }
+
+    final title = notifTitle.isNotEmpty
+        ? notifTitle
+        : (dataTitle.isNotEmpty ? dataTitle : 'Notification');
+    final body = notifBody.isNotEmpty ? notifBody : dataBody;
 
     final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
