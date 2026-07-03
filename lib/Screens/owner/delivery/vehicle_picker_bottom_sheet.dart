@@ -177,6 +177,9 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                               double.tryParse('${fee['total_fee'] ?? 0}') ?? 0;
                           final extraKm =
                               double.tryParse('${fee['extra_km'] ?? 0}') ?? 0;
+                          final compDeposit = double.tryParse(
+                                  '${fee['compensation_deposit'] ?? 0}') ??
+                              0;
 
                           return Padding(
                             padding: EdgeInsets.only(bottom: 12.h),
@@ -241,6 +244,60 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                             tone: SosTone.error,
                                           ),
                                       ],
+                                    ),
+                                  ],
+                                  if (compDeposit > 0) ...[
+                                    SizedBox(height: 10.h),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10.w, vertical: 8.h),
+                                      decoration: BoxDecoration(
+                                        color: AppDesignTokens.success
+                                            .withValues(alpha: 0.10),
+                                        borderRadius: BorderRadius.circular(8.r),
+                                        border: Border.all(
+                                            color: AppDesignTokens.success
+                                                .withValues(alpha: 0.30)),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.savings_outlined,
+                                              size: 16.r,
+                                              color: AppDesignTokens.success),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Refundable deposit: ${AppConstants.currencySymbol}${compDeposit.toStringAsFixed(0)}',
+                                                  style: TextStyle(
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Theme.of(ctx)
+                                                        .colorScheme
+                                                        .onSurface,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 2.h),
+                                                Text(
+                                                  'Held from your wallet to send this quote. Returned after the delivery is completed.',
+                                                  style: TextStyle(
+                                                    fontSize: 11.sp,
+                                                    color: Theme.of(ctx)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withValues(alpha: 0.6),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                   SizedBox(height: 12.h),
