@@ -263,6 +263,34 @@ class _DeliveryRequestCard extends StatelessWidget {
                                 address: request.dropAddress,
                                 textColor: scheme.onSurface,
                               ),
+                              // Pickup-from date + window (seller's availability), not
+                              // the order/ad post date.
+                              if (request.deliveryDate.isNotEmpty ||
+                                  request.pickupWindow.isNotEmpty) ...[
+                                SizedBox(height: 8.h),
+                                Row(
+                                  children: [
+                                    Icon(Icons.schedule_rounded,
+                                        size: 13.r,
+                                        color: AppDesignTokens.success),
+                                    SizedBox(width: 4.w),
+                                    Expanded(
+                                      child: Text(
+                                        'Pickup from: ${[
+                                          request.deliveryDate,
+                                          request.pickupWindow
+                                        ].where((s) => s.isNotEmpty).join(' • ')}',
+                                        style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: scheme.onSurface
+                                                .withValues(alpha: 0.7)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         ),
