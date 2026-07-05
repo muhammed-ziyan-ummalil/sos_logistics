@@ -58,10 +58,19 @@ class ActiveDelivery {
     this.dropLng,
     this.dropContactName,
     this.dropContactPhone,
+    this.pickupWindow = '',
+    this.dropWindow = '',
+    this.stockFromDate = '',
+    this.stockToDate = '',
   });
 
   final String? dropContactName;
   final String? dropContactPhone;
+
+  final String pickupWindow;
+  final String dropWindow;
+  final String stockFromDate;
+  final String stockToDate;
 
   factory ActiveDelivery.fromJson(Map<String, dynamic> j) => ActiveDelivery(
     id:            int.tryParse(j['id'].toString()) ?? 0,
@@ -77,6 +86,10 @@ class ActiveDelivery {
     dropLng:       j['drop_lng']?.toString(),
     dropContactName:  (j['drop_contact_name']  as String?)?.trim(),
     dropContactPhone: (j['drop_contact_phone'] as String?)?.trim(),
+    pickupWindow:  (j['pickup_window'] ?? '').toString(),
+    dropWindow:    (j['drop_window'] ?? j['delivery_window'] ?? '').toString(),
+    stockFromDate: (j['stock_from_date'] ?? j['delivery_date'] ?? '').toString(),
+    stockToDate:   (j['stock_to_date'] ?? '').toString(),
   );
 }
 

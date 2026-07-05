@@ -202,6 +202,45 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
               _InfoCard(label: 'Type', value: _typeLabel(delivery.deliveryType)),
             ],
           ),
+
+          // ── Batch / stock timing ────────────────────────────────────────
+          if (delivery.pickupWindow.isNotEmpty ||
+              delivery.dropWindow.isNotEmpty ||
+              delivery.stockFromDate.isNotEmpty ||
+              delivery.stockToDate.isNotEmpty) ...[
+            SizedBox(height: 16.h),
+            SosCard(
+              padding: EdgeInsets.all(16.r),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TimingRow(
+                    icon: Icons.inventory_2_outlined,
+                    color: AppDesignTokens.success,
+                    label: 'Pickup',
+                    value: [
+                      if (delivery.stockFromDate.isNotEmpty ||
+                          delivery.stockToDate.isNotEmpty)
+                        '${delivery.stockFromDate} to ${delivery.stockToDate}',
+                      if (delivery.pickupWindow.isNotEmpty)
+                        delivery.pickupWindow,
+                    ].join('  ·  '),
+                  ),
+                  SizedBox(height: 10.h),
+                  _TimingRow(
+                    icon: Icons.local_shipping_outlined,
+                    color: scheme.error,
+                    label: 'Deliver by',
+                    value: [
+                      if (delivery.stockToDate.isNotEmpty)
+                        delivery.stockToDate,
+                      if (delivery.dropWindow.isNotEmpty) delivery.dropWindow,
+                    ].join('  ·  '),
+                  ),
+                ],
+              ),
+            ),
+          ],
           SizedBox(height: 32.h),
 
           // ── Pickup phase ────────────────────────────────────────────────
@@ -418,6 +457,41 @@ class _AddressRow extends StatelessWidget {
               Text(label, style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 11.sp)),
               SizedBox(height: 2.h),
               Text(address, style: TextStyle(color: scheme.onSurface, fontSize: 13.sp)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimingRow extends StatelessWidget {
+  final IconData icon;
+  final Color    color;
+  final String   label;
+  final String   value;
+  const _TimingRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 18.r),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 11.sp)),
+              SizedBox(height: 2.h),
+              Text(value, style: TextStyle(color: scheme.onSurface, fontSize: 13.sp)),
             ],
           ),
         ),
