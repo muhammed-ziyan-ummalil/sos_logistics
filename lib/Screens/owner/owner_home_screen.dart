@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../Bloc/DeliveryFeed/delivery_feed_cubit.dart';
+import '../../Bloc/DeliveryFeed/delivery_feed_state.dart';
 import '../../Bloc/Fleet/fleet_dashboard_cubit.dart';
 import '../../Bloc/Fleet/fleet_dashboard_state.dart';
 import '../../Bloc/OwnerProfile/owner_profile_cubit.dart';
+import '../../Model/delivery_request_model.dart';
 import '../../core/app_constants.dart';
 import '../../core/app_theme.dart';
 import '../../utility/api_service.dart';
@@ -13,6 +16,7 @@ import '../../widgets/widgets.dart';
 import '../notifications/notification_bell.dart';
 import 'account/owner_edit_profile_screen.dart';
 import 'delivery/delivery_feed_screen.dart';
+import 'delivery/delivery_request_detail_screen.dart';
 import 'delivery/my_quotes_screen.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
@@ -30,6 +34,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void initState() {
     super.initState();
     context.read<FleetDashboardCubit>().fetchDashboard();
+    context.read<DeliveryFeedCubit>().fetchFeed();
     _loadName();
     _checkServiceArea();
   }
@@ -87,8 +92,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   color: AppTheme.textSecondary(context), size: 20.r),
               onPressed: s is FleetDashboardLoading
                   ? null
-                  : () =>
-                      context.read<FleetDashboardCubit>().fetchDashboard(),
+                  : () {
+                      context.read<FleetDashboardCubit>().fetchDashboard();
+                      context.read<DeliveryFeedCubit>().fetchFeed();
+                    },
             ),
           ),
         ],
@@ -191,7 +198,10 @@ class _HomeBody extends StatelessWidget {
     return RefreshIndicator(
       color: AppTheme.accent(context),
       backgroundColor: AppTheme.card(context),
-      onRefresh: () => context.read<FleetDashboardCubit>().fetchDashboard(),
+      onRefresh: () async {
+        context.read<DeliveryFeedCubit>().fetchFeed();
+        await context.read<FleetDashboardCubit>().fetchDashboard();
+      },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(bottom: 32.h),
@@ -202,6 +212,14 @@ class _HomeBody extends StatelessWidget {
 
             // Stats cards
             _StatsRow(summary: state.summary),
+            SizedBox(height: 20.h),
+
+            // Available deliveries — open jobs surfaced up-front so owners
+            // don't miss them behind a button.
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: const _AvailableDeliveriesSection(),
+            ),
             SizedBox(height: 20.h),
 
             // Driver snapshot
@@ -382,6 +400,273 @@ class _StatCard extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(height: 3.h, color: data.color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Available deliveries (open jobs) section ─────────────────────────────────
+
+class _AvailableDeliveriesSection extends StatelessWidget {
+  const _AvailableDeliveriesSection();
+
+  static const int _maxPreview = 3;
+
+  void _openFeed(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const DeliveryFeedScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final successColor = AppDesignTokens.success;
+    final scheme = Theme.of(context).colorScheme;
+
+    return BlocBuilder<DeliveryFeedCubit, DeliveryFeedState>(
+      builder: (context, state) {
+        final open = state is DeliveryFeedLoaded
+            ? (state.requests.where((r) => r.status == 'open').toList()
+              ..sort((a, b) {
+                final da = DateTime.tryParse(a.expiresAt);
+                final db = DateTime.tryParse(b.expiresAt);
+                if (da == null && db == null) return 0;
+                if (da == null) return 1;
+                if (db == null) return -1;
+                return da.compareTo(db);
+              }))
+            : <DeliveryRequestModel>[];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_shipping_rounded,
+                    color: successColor, size: 14.r),
+                SizedBox(width: 6.w),
+                Text('AVAILABLE DELIVERIES',
+                    style: TextStyle(
+                        color: successColor,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8)),
+                if (open.isNotEmpty) ...[
+                  SizedBox(width: 6.w),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
+                    decoration: BoxDecoration(
+                      color: successColor,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text('${open.length}',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ],
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => _openFeed(context),
+                  child: Text('See all',
+                      style: TextStyle(
+                          color: successColor,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+
+            if (state is DeliveryFeedLoading || state is DeliveryFeedInitial)
+              SkeletonBox(width: double.infinity, height: 78.h)
+            else if (state is DeliveryFeedError)
+              SosCard(
+                padding: EdgeInsets.all(14.r),
+                onTap: () => context.read<DeliveryFeedCubit>().fetchFeed(),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline_rounded,
+                        color: AppTheme.error(context), size: 18.r),
+                    SizedBox(width: 10.w),
+                    Expanded(
+                      child: Text('Could not load deliveries. Tap to retry.',
+                          style: TextStyle(
+                              color: AppTheme.textSecondary(context),
+                              fontSize: 12.sp)),
+                    ),
+                    Icon(Icons.refresh_rounded,
+                        color: AppTheme.textSecondary(context), size: 16.r),
+                  ],
+                ),
+              )
+            else if (open.isEmpty)
+              SosCard(
+                padding: EdgeInsets.all(20.r),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox_rounded, color: scheme.outline, size: 20.r),
+                    SizedBox(width: 10.w),
+                    Text('No delivery requests right now',
+                        style: TextStyle(
+                            color: AppTheme.textSecondary(context),
+                            fontSize: 13.sp)),
+                  ],
+                ),
+              )
+            else ...[
+              ...open.take(_maxPreview).map((r) => Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child: _AvailableDeliveryTile(request: r),
+                  )),
+              if (open.length > _maxPreview)
+                GestureDetector(
+                  onTap: () => _openFeed(context),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 2.h),
+                    child: Text(
+                      'View ${open.length - _maxPreview} more',
+                      style: TextStyle(
+                          color: successColor,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AvailableDeliveryTile extends StatelessWidget {
+  final DeliveryRequestModel request;
+  const _AvailableDeliveryTile({required this.request});
+
+  String _shortAddr(String a) {
+    final parts = a.split(',');
+    return parts.isNotEmpty ? parts[0].trim() : a;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final successColor = AppDesignTokens.success;
+
+    final expiryDiff =
+        DateTime.tryParse(request.expiresAt)?.difference(DateTime.now());
+    final isExpiringSoon = expiryDiff != null &&
+        !expiryDiff.isNegative &&
+        expiryDiff.inMinutes < 60;
+
+    return SosCard(
+      padding: EdgeInsets.all(14.r),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeliveryRequestDetailScreen(requestId: request.id),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.radio_button_checked_rounded,
+                        color: successColor, size: 12.r),
+                    SizedBox(width: 5.w),
+                    Expanded(
+                      child: Text(_shortAddr(request.pickupAddress),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppTheme.textPrimary(context),
+                              fontSize: 12.5.sp,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 3.h),
+                Row(
+                  children: [
+                    Icon(Icons.location_on_rounded,
+                        color: scheme.error, size: 12.r),
+                    SizedBox(width: 5.w),
+                    Expanded(
+                      child: Text(_shortAddr(request.dropAddress),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppTheme.textPrimary(context),
+                              fontSize: 12.5.sp,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                if (expiryDiff != null) ...[
+                  SizedBox(height: 6.h),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule_rounded,
+                          size: 11.r,
+                          color: isExpiringSoon
+                              ? scheme.error
+                              : AppTheme.textSecondary(context)),
+                      SizedBox(width: 3.w),
+                      Text(
+                        expiryDiff.isNegative
+                            ? 'Expired'
+                            : isExpiringSoon
+                                ? 'Expires in ${expiryDiff.inMinutes} min'
+                                : 'Open',
+                        style: TextStyle(
+                            fontSize: 10.5.sp,
+                            fontWeight: FontWeight.w500,
+                            color: isExpiringSoon
+                                ? scheme.error
+                                : AppTheme.textSecondary(context)),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(width: 10.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${request.distanceKm.toStringAsFixed(1)} km',
+                  style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w800,
+                      color: scheme.primary,
+                      height: 1.1)),
+              SizedBox(height: 2.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: successColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Text('Quote',
+                    style: TextStyle(
+                        fontSize: 10.5.sp,
+                        fontWeight: FontWeight.w700,
+                        color: successColor)),
+              ),
+            ],
           ),
         ],
       ),
@@ -712,7 +997,6 @@ class _ManageShortcuts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accentColor = AppTheme.accent(context);
-    final successColor = AppDesignTokens.success;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -768,22 +1052,6 @@ class _ManageShortcuts extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const DeliveryFeedScreen()),
-                ),
-                child: _QuickActionCard(
-                  icon: Icons.local_shipping,
-                  label: 'Available Deliveries',
-                  color: successColor,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
                   MaterialPageRoute(builder: (_) => const MyQuotesScreen()),
                 ),
                 child: _QuickActionCard(
@@ -804,12 +1072,10 @@ class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  final TextAlign textAlign;
   const _QuickActionCard({
     required this.icon,
     required this.label,
     required this.color,
-    this.textAlign = TextAlign.center,
   });
 
   @override
@@ -826,7 +1092,7 @@ class _QuickActionCard extends StatelessWidget {
           Icon(icon, color: color, size: 22.r),
           SizedBox(height: 6.h),
           Text(label,
-              textAlign: textAlign,
+              textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,

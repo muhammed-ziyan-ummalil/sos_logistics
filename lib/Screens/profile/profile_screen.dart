@@ -9,6 +9,7 @@ import '../../core/theme_controller.dart';
 import '../../utility/api_service.dart';
 import '../../utility/shared_preference.dart';
 import '../../widgets/widgets.dart';
+import '../history/history_screen.dart';
 import '../owner/account/owner_about_screen.dart';
 import '../owner/account/owner_privacy_screen.dart';
 import '../owner/account/owner_support_screen.dart';
@@ -280,7 +281,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _DriverMenuTile(
           icon: Icons.history_rounded,
           title: 'Delivery History',
-          onTap: () {},
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HistoryScreen()),
+          ),
         ),
       ],
     );
