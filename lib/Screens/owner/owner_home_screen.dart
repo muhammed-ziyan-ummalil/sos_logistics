@@ -17,6 +17,7 @@ import '../notifications/notification_bell.dart';
 import 'account/owner_edit_profile_screen.dart';
 import 'delivery/delivery_feed_screen.dart';
 import 'delivery/delivery_request_detail_screen.dart';
+import 'delivery/failed_deliveries_screen.dart';
 import 'delivery/my_quotes_screen.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
@@ -924,7 +925,12 @@ class _PerformanceSection extends StatelessWidget {
                 value: missedJobs.toString(),
                 icon: Icons.cancel_rounded,
                 color: missedJobs == 0 ? AppDesignTokens.success : errorColor,
-                subLabel: 'this month',
+                subLabel: 'tap to view',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const FailedDeliveriesScreen()),
+                ),
               ),
             ),
             SizedBox(width: 10.w),
@@ -950,12 +956,14 @@ class _PerfCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String subLabel;
+  final VoidCallback? onTap;
   const _PerfCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
     required this.subLabel,
+    this.onTap,
   });
 
   @override
@@ -963,8 +971,11 @@ class _PerfCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return SosCard(
-      padding: EdgeInsets.all(13.r),
-      child: Column(
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.all(13.r),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 18.r),
@@ -984,6 +995,7 @@ class _PerfCard extends StatelessWidget {
               style: TextStyle(
                   color: AppTheme.textSecondary(context), fontSize: 9.sp)),
         ],
+        ),
       ),
     );
   }

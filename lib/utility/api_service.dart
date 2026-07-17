@@ -96,6 +96,11 @@ class ApiServiceUnified {
   Future<Map<String, dynamic>> getMyQuotes() =>
       get('owner/my-quotes');
 
+  // Owner's failed / forfeited deliveries (third-party jobs they won but did not
+  // complete within the window). Each carries the forfeited loss + ids for disputes.
+  Future<Map<String, dynamic>> getFailedDeliveries() =>
+      get('owner/deliveries/failed');
+
   Future<Map<String, dynamic>> getQuoteVehicles(int requestId) =>
       post('owner/quote-vehicles', data: {'request_id': requestId});
 
