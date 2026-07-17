@@ -91,5 +91,11 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="sosagent" />
         </intent>
+
+        <!-- Open web/maps links (Google Maps directions, browser) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 </manifest>

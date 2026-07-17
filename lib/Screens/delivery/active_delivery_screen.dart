@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_cubit.dart';
 import '../../Bloc/ActiveDelivery/active_delivery_state.dart';
 import '../../Model/delivery_model.dart';
@@ -11,75 +12,20 @@ import '../../utility/api_service.dart';
 import '../../widgets/widgets.dart';
 import '../owner/delivery/report_issue_sheet.dart';
 
-class ActiveDeliveryScreen extends StatefulWidget {
-  const ActiveDeliveryScreen({super.key});
-
-  @override
-  State<ActiveDeliveryScreen> createState() => _ActiveDeliveryScreenState();
-}
-
-class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<ActiveDeliveryCubit>().fetchActiveDelivery();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<ActiveDeliveryCubit, ActiveDeliveryState>(
-      listener: (ctx, state) {
-        if (state is ActiveDeliveryCompleted) {
-          ScaffoldMessenger.of(ctx).showSnackBar(
-            SnackBar(
-              content: const Text('Delivery completed! Great work.'),
-              backgroundColor: AppTheme.success(ctx),
-            ),
-          );
-          Navigator.pop(ctx);
-        } else if (state is ActiveDeliveryOtpError) {
-          ScaffoldMessenger.of(ctx).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-          );
-        }
-      },
-      child: Scaffold(
-        appBar: const SosAppBar(title: 'Active Delivery'),
-        body: BlocBuilder<ActiveDeliveryCubit, ActiveDeliveryState>(
-          builder: (ctx, state) {
-            if (state is ActiveDeliveryLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state is ActiveDeliveryNone) {
-              return const EmptyState(
-                icon: Icons.local_shipping_outlined,
-                title: 'No active delivery',
-                subtitle: 'Accepted jobs will appear here.',
-              );
-            }
-            if (state is ActiveDeliveryLoaded) {
-              return _DeliveryDetail(delivery: state.delivery);
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _DeliveryDetail extends StatefulWidget {
+class DeliveryDetailView extends StatefulWidget {
   final ActiveDelivery delivery;
-  const _DeliveryDetail({required this.delivery});
+  final EdgeInsetsGeometry padding;
+  const DeliveryDetailView({
+    super.key,
+    required this.delivery,
+    this.padding = EdgeInsets.zero,
+  });
 
   @override
-  State<_DeliveryDetail> createState() => _DeliveryDetailState();
+  State<DeliveryDetailView> createState() => _DeliveryDetailViewState();
 }
 
-class _DeliveryDetailState extends State<_DeliveryDetail> {
+class _DeliveryDetailViewState extends State<DeliveryDetailView> {
   bool _pickupOtpGenerated = false;
   bool _dropOtpGenerated   = false;
   final _pickupOtpController = TextEditingController();
@@ -118,9 +64,11 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
           );
         }
       },
-      child: ListView(
-        padding: EdgeInsets.all(20.r),
-        children: [
+      child: Padding(
+        padding: widget.padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // State badge
           Center(
             child: Container(
@@ -153,12 +101,16 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
                   label: 'Pickup',
                   address: delivery.pickupAddress,
                   color: AppDesignTokens.success,
+                  lat: delivery.pickupLat,
+                  lng: delivery.pickupLng,
                 ),
                 Divider(color: scheme.outline, height: 24.h),
                 _AddressRow(
                   label: 'Drop',
                   address: delivery.dropAddress,
                   color: scheme.error,
+                  lat: delivery.dropLat,
+                  lng: delivery.dropLng,
                 ),
                 if ((delivery.dropContactName?.isNotEmpty ?? false) ||
                     (delivery.dropContactPhone?.isNotEmpty ?? false)) ...[
@@ -409,7 +361,8 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -437,30 +390,108 @@ class _DeliveryDetailState extends State<_DeliveryDetail> {
 }
 
 class _AddressRow extends StatelessWidget {
-  final String label;
-  final String address;
-  final Color  color;
-  const _AddressRow({required this.label, required this.address, required this.color});
+  final String  label;
+  final String  address;
+  final Color   color;
+  final String? lat;
+  final String? lng;
+  const _AddressRow({
+    required this.label,
+    required this.address,
+    required this.color,
+    this.lat,
+    this.lng,
+  });
+
+  /// Build a Google Maps directions link — turn-by-turn from the driver's
+  /// current location. Prefers precise coordinates; falls back to the address
+  /// text. Universal URL opens the Maps app (Android/iOS) or a browser.
+  Uri? _mapsUri() {
+    final la = double.tryParse(lat ?? '');
+    final ln = double.tryParse(lng ?? '');
+    if (la != null && ln != null && !(la == 0 && ln == 0)) {
+      return Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$la,$ln');
+    }
+    if (address.trim().isNotEmpty) {
+      final q = Uri.encodeComponent(address.trim());
+      return Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$q');
+    }
+    return null;
+  }
+
+  Future<void> _navigate(BuildContext context) async {
+    final uri = _mapsUri();
+    if (uri == null) return;
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Maps.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Maps.')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.location_on, color: color, size: 18.r),
-        SizedBox(width: 10.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 11.sp)),
-              SizedBox(height: 2.h),
-              Text(address, style: TextStyle(color: scheme.onSurface, fontSize: 13.sp)),
+    final scheme      = Theme.of(context).colorScheme;
+    final hasMap      = _mapsUri() != null;
+
+    return InkWell(
+      onTap: hasMap ? () => _navigate(context) : null,
+      borderRadius: BorderRadius.circular(8.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 4.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.location_on, color: color, size: 18.r),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 11.sp)),
+                  SizedBox(height: 2.h),
+                  Text(address, style: TextStyle(color: scheme.onSurface, fontSize: 13.sp)),
+                ],
+              ),
+            ),
+            if (hasMap) ...[
+              SizedBox(width: 8.w),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: color.withValues(alpha: 0.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.directions_rounded, color: color, size: 15.r),
+                    SizedBox(width: 4.w),
+                    Text(
+                      'Directions',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

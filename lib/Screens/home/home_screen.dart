@@ -125,16 +125,20 @@ class _DashboardTab extends StatelessWidget {
             // The owner assigns vehicles + deliveries to the driver. The driver
             // only performs the delivery actions (OTP, status, photos); there
             // is no online/offline toggle and no offer feed.
-            BlocBuilder<ActiveDeliveryCubit, ActiveDeliveryState>(
+            BlocConsumer<ActiveDeliveryCubit, ActiveDeliveryState>(
+              listener: (ctx, state) {
+                if (state is ActiveDeliveryCompleted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(
+                      content: const Text('Delivery completed! Great work.'),
+                      backgroundColor: AppTheme.success(ctx),
+                    ),
+                  );
+                }
+              },
               builder: (ctx, state) {
                 if (state is ActiveDeliveryLoaded) {
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      ctx,
-                      MaterialPageRoute(builder: (_) => const ActiveDeliveryScreen()),
-                    ),
-                    child: _ActiveDeliveryBanner(),
-                  );
+                  return DeliveryDetailView(delivery: state.delivery);
                 }
                 if (state is ActiveDeliveryError) {
                   return ErrorState(
@@ -151,40 +155,6 @@ class _DashboardTab extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Active delivery banner ───────────────────────────────────────────────────
-class _ActiveDeliveryBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final accent = AppTheme.accent(context);
-    return SosCard(
-      onTap: null, // tap handled by GestureDetector parent
-      padding: EdgeInsets.all(16.r),
-      child: Row(
-        children: [
-          Icon(Icons.local_shipping_rounded, color: accent, size: 24.r),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Active Delivery',
-                  style: TextStyle(color: accent, fontSize: 13.sp, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  'Tap to continue',
-                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12.sp),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 14.r),
-        ],
       ),
     );
   }

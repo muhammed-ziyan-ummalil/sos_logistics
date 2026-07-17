@@ -65,22 +65,30 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
     await _afterOtpAction(res, false, prev);
   }
 
+  // Do NOT emit Loading here: on the home screen the loaded delivery detail is
+  // rendered inline, so a Loading state would unmount it (and its OTP-error
+  // listener + OTP-entry field) mid-verify. On a wrong OTP we instead emit the
+  // transient OtpError (caught by the detail view's listener -> snackbar) and
+  // then re-emit the previous Loaded so the builder settles back on the detail
+  // view without ever unmounting it - the driver keeps their OTP field, sees the
+  // error, and can retype. Mirrors _afterOtpAction.
   Future<void> confirmPickup({required int deliveryId, required String otp}) async {
-    emit(ActiveDeliveryLoading());
-    final res = await ApiServiceUnified.instance.verifyPickupOtp(deliveryId, otp);
+    final prev = state;
+    final res  = await ApiServiceUnified.instance.verifyPickupOtp(deliveryId, otp);
     if (res['status'] == 'success') {
       await fetchActiveDelivery();
     } else {
       emit(ActiveDeliveryOtpError(res['message'] as String? ?? 'Invalid OTP.'));
+      if (prev is ActiveDeliveryLoaded) emit(prev);
     }
   }
 
   Future<void> confirmDelivery({required int deliveryId, required String otp}) async {
-    emit(ActiveDeliveryLoading());
-    final res = await ApiServiceUnified.instance.verifyDropOtp(deliveryId, otp);
+    final prev = state;
+    final res  = await ApiServiceUnified.instance.verifyDropOtp(deliveryId, otp);
     if (res['status'] == 'success') {
       emit(ActiveDeliveryCompleted());
-      // Re-sync so the home banner clears (server now has no active delivery).
+      // Re-sync so the home detail clears (server now has no active delivery).
       await fetchActiveDelivery();
     } else {
       final isDispute = res['code'] == 'DISPUTE';
@@ -89,8 +97,11 @@ class ActiveDeliveryCubit extends Cubit<ActiveDeliveryState> {
         isDispute: isDispute,
       ));
       // Delivery was cancelled server-side -> re-sync so the stale screen clears.
+      // Otherwise restore the loaded detail so the OTP field + error snackbar show.
       if (res['cancelled'] == true) {
         await fetchActiveDelivery();
+      } else if (prev is ActiveDeliveryLoaded) {
+        emit(prev);
       }
     }
   }
