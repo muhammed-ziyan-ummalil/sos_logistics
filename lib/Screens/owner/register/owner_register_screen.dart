@@ -62,6 +62,44 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     try {
       final authService  = context.read<AuthCubit>().authService;
       final tokenStorage = context.read<AuthCubit>().tokenStorage;
+
+      // Existing SOS account (any role) → don't re-register or re-ask details.
+      // Sign in with the existing password and the Owner role is added from
+      // the details on file (no OTP, no new password).
+      try {
+        final existingCaps = await authService.discover(_emailCtr.text.trim());
+        if (existingCaps.isNotEmpty) {
+          if (!mounted) return;
+          setState(() => _isSendingOtp = false);
+          final signIn = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Account already exists'),
+              content: const Text(
+                  'This email already has an SOS account. Sign in with your '
+                  'existing password to add the Fleet Owner role — your '
+                  'details are reused automatically, nothing to re-enter.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Use another email')),
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Sign In')),
+              ],
+            ),
+          );
+          if (signIn == true && mounted) {
+            Navigator.pushReplacementNamed(context, AppRoutes.login,
+                arguments: UserRole.owner);
+          }
+          return;
+        }
+      } on AuthException {
+        // discover unavailable — fall through to the normal OTP flow;
+        // the backend still rejects duplicate emails at register.
+      }
+
       final session = await authService.sendRegistrationOtps(
         email: _emailCtr.text.trim(),
         phone: _phoneCtr.text.trim(),
