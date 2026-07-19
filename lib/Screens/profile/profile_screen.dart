@@ -80,19 +80,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: _loading
                   ? _buildLoadingSkeleton()
                   : SingleChildScrollView(
-                      child: Builder(builder: (context) {
-                        final authState = context.watch<AuthCubit>().state;
-                        final hasBuyer = authState is AuthAuthenticated &&
-                            authState.person.hasCap(Capability.buyer);
-                        return Column(
+                      child: Column(
                         children: [
-                          if (hasBuyer) ...[
-                            SizedBox(height: 8.h),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w),
-                              child: const _MarketplaceBadge(),
-                            ),
-                          ],
                           SizedBox(height: 8.h),
                           _buildFleetSection(context),
                           SizedBox(height: 8.h),
@@ -110,8 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           SizedBox(height: 80.h),
                         ],
-                      );
-                      }),
+                      ),
                     ),
             ),
           ],
@@ -534,69 +522,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(children: tiles),
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _MarketplaceBadge — shown when driver also has buyer capability
-// ─────────────────────────────────────────────────────────────────────────────
-class _MarketplaceBadge extends StatelessWidget {
-  const _MarketplaceBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = AppTheme.primary(context);
-    final textPrimary = AppTheme.textPrimary(context);
-    final textSecondary = AppTheme.textSecondary(context);
-
-    return GestureDetector(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Open the SOS Farmer app on your device to buy crops'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      ),
-      child: SosCard(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(7.r),
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Icon(Icons.storefront_rounded,
-                  size: 18.r, color: primary),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Marketplace Access',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Open SOS Farmer app to buy & sell crops',
-                    style: TextStyle(
-                        fontSize: 11.sp, color: textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.open_in_new_rounded,
-                size: 14.r, color: textSecondary),
-          ],
-        ),
-      ),
     );
   }
 }

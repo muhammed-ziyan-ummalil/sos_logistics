@@ -72,20 +72,8 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             _buildProfileCard(context),
             Expanded(
               child: SingleChildScrollView(
-                child: Builder(builder: (context) {
-                  final authState = context.watch<AuthCubit>().state;
-                  final hasMarketplace = authState is AuthAuthenticated &&
-                      (authState.person.hasCap(Capability.buyer) ||
-                          authState.person.hasCap(Capability.seller));
-                  return Column(
+                child: Column(
                     children: [
-                      if (hasMarketplace) ...[
-                        SizedBox(height: 8.h),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: const _MarketplaceBadge(),
-                        ),
-                      ],
                       SizedBox(height: 8.h),
                       _buildServicesSection(context),
                       SizedBox(height: 8.h),
@@ -101,8 +89,7 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
                       ),
                       SizedBox(height: 80.h),
                     ],
-                  );
-                }),
+                  ),
               ),
             ),
           ],
@@ -558,74 +545,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
             color: AppTheme.surface(context),
             child: Column(children: tiles)),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _MarketplaceBadge — shown when owner also has buyer or seller capability
-// ─────────────────────────────────────────────────────────────────────────────
-class _MarketplaceBadge extends StatelessWidget {
-  const _MarketplaceBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return GestureDetector(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Open the SOS Farmer app on your device to buy & sell crops'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-        decoration: BoxDecoration(
-          color: AppTheme.surface(context),
-          borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: primary.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(7.r),
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Icon(Icons.storefront_rounded,
-                  size: 18.r, color: primary),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Marketplace Access',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary(context),
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Open SOS Farmer app to buy & sell crops',
-                    style: TextStyle(
-                        fontSize: 11.sp,
-                        color: AppTheme.textSecondary(context)),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.open_in_new_rounded,
-                size: 14.r, color: AppTheme.textSecondary(context)),
-          ],
-        ),
-      ),
     );
   }
 }
