@@ -19,7 +19,6 @@ import '../../../utility/shared_preference.dart';
 import '../../../Bloc/OwnerProfile/owner_profile_cubit.dart';
 import '../../../widgets/widgets.dart';
 import 'owner_about_screen.dart';
-import 'owner_analytics_screen.dart';
 import 'owner_bank_details_screen.dart';
 import 'owner_edit_profile_screen.dart';
 import 'owner_privacy_screen.dart';
@@ -222,15 +221,6 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
       context: context,
       title: 'Services',
       tiles: [
-        _OwnerMenuTile(
-          icon: Icons.analytics_outlined,
-          title: 'Reporting & Analytics',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const OwnerAnalyticsScreen()),
-          ),
-        ),
         _OwnerMenuTile(
           icon: Icons.account_balance_wallet_outlined,
           title: 'My Wallet',
