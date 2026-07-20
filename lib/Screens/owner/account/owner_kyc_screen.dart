@@ -70,6 +70,7 @@ class _OwnerKycScreenState extends State<OwnerKycScreen> {
       firstDate: DateTime(1900),
       lastDate: now,
     );
+    if (!mounted) return;
     if (picked != null) {
       setState(() {
         _dobCtrl.text =
@@ -84,6 +85,7 @@ class _OwnerKycScreenState extends State<OwnerKycScreen> {
       imageQuality: 70,
       maxWidth: 1280,
     );
+    if (!mounted) return;
     if (file != null) {
       setState(() => onPicked(File(file.path)));
     }
@@ -229,9 +231,9 @@ class _OwnerKycScreenState extends State<OwnerKycScreen> {
         children: [
           banner,
           SizedBox(height: 20.h),
-          if (state.status == 'approved' && hasDocument)
-            _readOnlyDetails(document)
-          else
+          if (state.status == 'approved') ...[
+            if (hasDocument) _readOnlyDetails(document),
+          ] else
             _form(context, state),
           SizedBox(height: 24.h),
         ],
