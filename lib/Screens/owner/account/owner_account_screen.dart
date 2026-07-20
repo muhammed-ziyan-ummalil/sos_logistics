@@ -336,6 +336,10 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
       final status =
           ((kycRes['data'] as Map<String, dynamic>?)?['kyc_status'] ?? 'none')
               as String;
+      // Keep the Services tile badge in sync with the freshly fetched status.
+      if (mounted && status != _kycStatus) {
+        setState(() => _kycStatus = status);
+      }
       if (status != 'approved') {
         if (!mounted) return;
         final goToKyc = await showDialog<bool>(
