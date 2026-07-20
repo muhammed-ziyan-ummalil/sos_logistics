@@ -259,7 +259,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     SizedBox(height: 12.h),
                     SosTextField(
                       label:
-                          'Minimum charge (covers included distance) (${AppConstants.currencySymbol})',
+                          'Minimum charge per kg/litre (covers included distance) (${AppConstants.currencySymbol})',
                       controller: minFeeCtr,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
@@ -275,13 +275,16 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'Minimum charge covers the included distance; per-km applies beyond it, up to max distance.',
+                      'Charges are per kg / litre: (minimum charge + per-km beyond the included distance) '
+                      'is multiplied by the total order weight. e.g. ${AppConstants.currencySymbol}2 min + '
+                      '${AppConstants.currencySymbol}1/km for 10 extra km = ${AppConstants.currencySymbol}12 per kg; '
+                      'a 50 kg order = ${AppConstants.currencySymbol}600 (before GST).',
                       style: Theme.of(sheetCtx).textTheme.labelSmall,
                     ),
                     SizedBox(height: 8.h),
                     SosTextField(
                       label:
-                          'Per-km charge (beyond included distance) (${AppConstants.currencySymbol})',
+                          'Per-km charge per kg/litre (beyond included distance) (${AppConstants.currencySymbol})',
                       controller: perKmFeeCtr,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
