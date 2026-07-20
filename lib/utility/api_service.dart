@@ -198,6 +198,45 @@ class ApiServiceUnified {
 
   Future<Map<String, dynamic>> cancelOwnerWithdrawal(int id) =>
       post('owner/withdrawals/$id/cancel');
+
+  // --- Owner KYC (person-level) ---
+
+  Future<Map<String, dynamic>> getOwnerKycDetails() => post('owner/kyc/details');
+
+  /// Multipart submit. File params are local paths; null = not re-uploaded.
+  Future<Map<String, dynamic>> submitOwnerKyc({
+    required String fullName,
+    required String dob,
+    required String panNumber,
+    required String aadharNumber,
+    String? panDocumentPath,
+    String? aadharFrontPath,
+    String? aadharBackPath,
+  }) async {
+    try {
+      final map = <String, dynamic>{
+        'full_name': fullName,
+        'dob': dob,
+        'pan_number': panNumber,
+        'aadhar_number': aadharNumber,
+      };
+      if (panDocumentPath != null) {
+        map['pan_document'] = await MultipartFile.fromFile(panDocumentPath);
+      }
+      if (aadharFrontPath != null) {
+        map['aadhar_front'] = await MultipartFile.fromFile(aadharFrontPath);
+      }
+      if (aadharBackPath != null) {
+        map['aadhar_back'] = await MultipartFile.fromFile(aadharBackPath);
+      }
+      final res = await _dio.post('owner/kyc', data: FormData.fromMap(map));
+      return res.data is Map<String, dynamic>
+          ? res.data as Map<String, dynamic>
+          : {'status': 'error', 'message': 'Invalid response'};
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
 }
 
 /// V2 API client — JWT auth with custom interceptors.
