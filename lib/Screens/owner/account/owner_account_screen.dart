@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:sos_auth/sos_auth.dart';
 import '../../../Bloc/OwnerBankDetails/owner_bank_details_cubit.dart';
+import '../../../Bloc/OwnerKyc/owner_kyc_cubit.dart';
 import '../../../Bloc/OwnerWallet/owner_wallet_cubit.dart';
 import '../../../Bloc/OwnerWithdrawals/owner_withdrawals_cubit.dart';
 import '../../../core/app_constants.dart';
@@ -21,6 +22,7 @@ import '../../../widgets/widgets.dart';
 import 'owner_about_screen.dart';
 import 'owner_bank_details_screen.dart';
 import 'owner_edit_profile_screen.dart';
+import 'owner_kyc_screen.dart';
 import 'owner_privacy_screen.dart';
 import 'owner_support_screen.dart';
 import 'owner_wallet_screen.dart';
@@ -36,11 +38,13 @@ class OwnerAccountScreen extends StatefulWidget {
 class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   String _name = '';
   String _phone = '';
+  String _kycStatus = '';
 
   @override
   void initState() {
     super.initState();
     _loadOwnerInfo();
+    _loadKycStatus();
   }
 
   Future<void> _loadOwnerInfo() async {
@@ -50,6 +54,14 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
         _name = info['name'] ?? '';
         _phone = info['phone'] ?? '';
       });
+    }
+  }
+
+  Future<void> _loadKycStatus() async {
+    final res = await ApiServiceUnified.instance.getOwnerKycDetails();
+    if (res['status'] == 'success' && mounted) {
+      final data = res['data'] as Map<String, dynamic>? ?? {};
+      setState(() => _kycStatus = (data['kyc_status'] ?? 'none') as String);
     }
   }
 
@@ -222,6 +234,12 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
       title: 'Services',
       tiles: [
         _OwnerMenuTile(
+          icon: Icons.verified_user_outlined,
+          title: 'KYC Verification',
+          trailing: _kycStatus.isEmpty ? null : _kycStatusTrailing(context),
+          onTap: _openKyc,
+        ),
+        _OwnerMenuTile(
           icon: Icons.account_balance_wallet_outlined,
           title: 'My Wallet',
           onTap: () => Navigator.push(
@@ -256,8 +274,92 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
     );
   }
 
+  // ── KYC ───────────────────────────────────────────────────────────────────
+  Widget _kycStatusTrailing(BuildContext context) {
+    String label;
+    Color color;
+    switch (_kycStatus) {
+      case 'approved':
+        label = 'Approved';
+        color = AppDesignTokens.success;
+        break;
+      case 'pending':
+        label = 'Pending';
+        color = AppDesignTokens.warning;
+        break;
+      case 'rejected':
+        label = 'Rejected';
+        color = AppTheme.error(context);
+        break;
+      default:
+        label = 'Required';
+        color = AppTheme.textSecondary(context);
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+        SizedBox(width: 4.w),
+        Icon(Icons.chevron_right_rounded,
+            size: 18.r, color: AppTheme.divider(context)),
+      ],
+    );
+  }
+
+  Future<void> _openKyc() async {
+    // Screen-owned fetch: OwnerKycScreen.initState calls fetchDetails(),
+    // so the provider does NOT pre-fetch (avoids a double load).
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => OwnerKycCubit(),
+          child: const OwnerKycScreen(),
+        ),
+      ),
+    );
+    if (mounted) _loadKycStatus();
+  }
+
   // ── Withdraw / earnings ────────────────────────────────────────────────────
   Future<void> _openWithdrawals() async {
+    // Person-level KYC gate — server enforces too; this is the friendly prompt.
+    final kycRes = await ApiServiceUnified.instance.getOwnerKycDetails();
+    if (kycRes['status'] == 'success') {
+      final status =
+          ((kycRes['data'] as Map<String, dynamic>?)?['kyc_status'] ?? 'none')
+              as String;
+      if (status != 'approved') {
+        if (!mounted) return;
+        final goToKyc = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('KYC Required'),
+            content: Text(status == 'pending'
+                ? 'Your KYC is under review. Withdrawals unlock once it is approved.'
+                : 'Complete KYC verification to enable wallet withdrawals.'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Later')),
+              if (status != 'pending')
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Complete KYC')),
+            ],
+          ),
+        );
+        if (goToKyc == true && mounted) _openKyc();
+        return;
+      }
+    }
     // Resolve bank-details presence up front so the screen can nudge the owner
     // to add them first when missing.
     bool hasBankDetails = true;
