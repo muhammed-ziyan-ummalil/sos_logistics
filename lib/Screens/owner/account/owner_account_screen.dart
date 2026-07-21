@@ -22,7 +22,7 @@ import '../../../widgets/widgets.dart';
 import 'owner_about_screen.dart';
 import 'owner_bank_details_screen.dart';
 import 'owner_edit_profile_screen.dart';
-import 'owner_kyc_screen.dart';
+import 'owner_kyc_details_screen.dart';
 import 'owner_privacy_screen.dart';
 import 'owner_support_screen.dart';
 import 'owner_wallet_screen.dart';
@@ -314,14 +314,14 @@ class _OwnerAccountScreenState extends State<OwnerAccountScreen> {
   }
 
   Future<void> _openKyc() async {
-    // Screen-owned fetch: OwnerKycScreen.initState calls fetchDetails(),
+    // Screen-owned fetch: OwnerKycDetailsScreen.initState calls fetchDetails(),
     // so the provider does NOT pre-fetch (avoids a double load).
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider(
           create: (_) => OwnerKycCubit(),
-          child: const OwnerKycScreen(),
+          child: const OwnerKycDetailsScreen(),
         ),
       ),
     );
