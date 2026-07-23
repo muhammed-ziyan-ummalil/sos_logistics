@@ -11,6 +11,63 @@ import '../../../core/app_theme.dart';
 import '../../../utility/image_source_picker.dart';
 import '../../../widgets/widgets.dart';
 
+/// `vehicles.type` ENUM, in DB order. The backend rejects anything else, so the
+/// picker and the server agree on exactly these keys.
+const List<String> _vehicleTypeKeys = [
+  'bike',
+  'three_wheeler',
+  'mini_truck',
+  'truck',
+  'reefer',
+];
+
+/// Human label for a changed column name, for the "awaiting approval" line.
+String _changedFieldLabel(String key) {
+  switch (key) {
+    case 'type':
+      return 'type';
+    case 'capacity_kg':
+      return 'capacity';
+    case 'minimum_fee':
+      return 'minimum fee';
+    case 'per_km_fee':
+      return 'per-km fee';
+    case 'included_distance_km':
+      return 'included distance';
+    case 'logistic_gst_percent':
+      return 'GST %';
+    case 'insurance_expiry':
+      return 'insurance expiry';
+    case 'image_front_url':
+      return 'front photo';
+    case 'image_back_url':
+      return 'back photo';
+    case 'rc_doc_url':
+      return 'RC document';
+    case 'insurance_doc_url':
+      return 'insurance document';
+    default:
+      return key;
+  }
+}
+
+String _vehicleTypeLabel(String key) {
+  switch (key) {
+    case 'bike':
+      return 'Bike';
+    case 'three_wheeler':
+      return 'Three Wheeler';
+    case 'mini_truck':
+      return 'Mini Truck';
+    case 'truck':
+      return 'Truck';
+    case 'reefer':
+      return 'Reefer (refrigerated)';
+    default:
+      return key;
+  }
+}
+
 class OwnerVehiclesScreen extends StatefulWidget {
   const OwnerVehiclesScreen({super.key});
 
@@ -136,9 +193,13 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     final perKmFeeCtr   = TextEditingController(text: fieldText('per_km_fee'));
     final gstPctCtr     = TextEditingController(
         text: isEdit ? fieldText('logistic_gst_percent') : '12');
-    // Vehicle type is free text (e.g. Bike, Mini Truck, Reefer); prefilled with
-    // the existing value when editing.
-    final typeCtr = TextEditingController(text: fieldText('type'));
+    // Vehicle type is a fixed set server-side (`vehicles.type` is an ENUM). It used
+    // to be a free-text field, and because MySQL runs non-strict every unmatched
+    // value was silently written as '' - which is why existing vehicles come back
+    // with no type and an edit could not be saved. Pick from the enum only.
+    String? selectedType = _vehicleTypeKeys.contains(fieldText('type'))
+        ? fieldText('type')
+        : null;
 
     String? imageFrontPath;
     String? imageBackPath;
@@ -170,7 +231,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
         return c.text.trim() != init.trim();
       }
 
-      return diff(typeCtr, 'type') ||
+      return (selectedType ?? '') != (isEdit ? fieldText('type') : '') ||
           diff(nameCtr, 'vehicle_name') ||
           diff(rcNumberCtr, 'rc_number') ||
           diff(capacityCtr, 'capacity_kg') ||
@@ -182,7 +243,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
 
     if (isEdit) {
       for (final c in [
-        typeCtr, nameCtr, rcNumberCtr, capacityCtr, minFeeCtr,
+        nameCtr, rcNumberCtr, capacityCtr, minFeeCtr,
         includedKmCtr, perKmFeeCtr, gstPctCtr,
       ]) {
         c.addListener(() => dirty.value = computeDirty());
@@ -299,10 +360,31 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       prefixIcon: Icons.percent_rounded,
                     ),
                     SizedBox(height: 12.h),
-                    SosTextField(
-                      label: 'Vehicle Type',
-                      controller: typeCtr,
-                      prefixIcon: Icons.local_shipping_outlined,
+                    Text('Vehicle Type',
+                        style: Theme.of(sheetCtx).textTheme.labelMedium),
+                    SizedBox(height: 6.h),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedType,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.local_shipping_outlined),
+                        hintText: 'Select vehicle type',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w, vertical: 4.h),
+                      ),
+                      items: _vehicleTypeKeys
+                          .map((k) => DropdownMenuItem(
+                                value: k,
+                                child: Text(_vehicleTypeLabel(k)),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        setSheetState(() => selectedType = v);
+                        dirty.value = computeDirty();
+                      },
                     ),
                     SizedBox(height: 16.h),
                     Text('Vehicle Photos',
@@ -386,8 +468,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         final reg = regCtr.text.trim();
                         if (!isEdit && reg.isEmpty) return;
                         final rcNumber = rcNumberCtr.text.trim();
-                        if (typeCtr.text.trim().isEmpty) {
-                          setSheetState(() => formError = 'Vehicle type is required.');
+                        if (selectedType == null) {
+                          setSheetState(() => formError = 'Select a vehicle type.');
                           return;
                         }
                         if (!isEdit) {
@@ -432,7 +514,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         if (isEdit) {
                           context.read<OwnerVehiclesCubit>().updateVehicle(
                             vehicleId: vehicle['id'] as int,
-                            type: typeCtr.text.trim(),
+                            type: selectedType!,
                             capacityKg: cap,
                             minimumFee: minFee,
                             includedDistanceKm: includedKm,
@@ -447,7 +529,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           final name = nameCtr.text.trim();
                           context.read<OwnerVehiclesCubit>().addVehicle(
                             regNumber: reg,
-                            type: typeCtr.text.trim(),
+                            type: selectedType!,
                             vehicleName: name,
                             rcNumber: rcNumber,
                             imageFrontPath: imageFrontPath,
@@ -487,7 +569,14 @@ class _VehicleTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final regNum        = vehicle['reg_number'] as String? ?? '—';
-    final type          = (vehicle['type'] as String? ?? 'vehicle').toUpperCase();
+    final rawType       = (vehicle['type'] as String? ?? '').trim();
+    final type = rawType.isEmpty
+        ? 'TYPE NOT SET'
+        : _vehicleTypeLabel(rawType).toUpperCase();
+    // Fields the owner edited that the admin has not approved yet.
+    final pendingChanges = vehicle['pending_changes'] is Map
+        ? Map<String, dynamic>.from(vehicle['pending_changes'] as Map)
+        : const <String, dynamic>{};
     final assignedDriver = vehicle['assigned_driver'] as Map<String, dynamic>?;
     final driverName    = assignedDriver?['name'] as String? ?? 'Unassigned';
     final isAssigned    = assignedDriver != null;
@@ -543,6 +632,15 @@ class _VehicleTile extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 10.sp,
                         color: AppTheme.textSecondary(context)),
+                  ),
+                ],
+                if (isPending && pendingChanges.isNotEmpty) ...[
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Awaiting admin approval for: '
+                    '${pendingChanges.keys.map(_changedFieldLabel).join(', ')}',
+                    style: TextStyle(
+                        fontSize: 10.sp, color: AppDesignTokens.warning),
                   ),
                 ],
                 if (isRejected) ...[
