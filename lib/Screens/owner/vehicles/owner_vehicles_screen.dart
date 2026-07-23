@@ -11,16 +11,6 @@ import '../../../core/app_theme.dart';
 import '../../../utility/image_source_picker.dart';
 import '../../../widgets/widgets.dart';
 
-/// `vehicles.type` ENUM, in DB order. The backend rejects anything else, so the
-/// picker and the server agree on exactly these keys.
-const List<String> _vehicleTypeKeys = [
-  'bike',
-  'three_wheeler',
-  'mini_truck',
-  'truck',
-  'reefer',
-];
-
 /// Human label for a changed column name, for the "awaiting approval" line.
 String _changedFieldLabel(String key) {
   switch (key) {
@@ -46,23 +36,6 @@ String _changedFieldLabel(String key) {
       return 'RC document';
     case 'insurance_doc_url':
       return 'insurance document';
-    default:
-      return key;
-  }
-}
-
-String _vehicleTypeLabel(String key) {
-  switch (key) {
-    case 'bike':
-      return 'Bike';
-    case 'three_wheeler':
-      return 'Three Wheeler';
-    case 'mini_truck':
-      return 'Mini Truck';
-    case 'truck':
-      return 'Truck';
-    case 'reefer':
-      return 'Reefer (refrigerated)';
     default:
       return key;
   }
@@ -193,13 +166,10 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
     final perKmFeeCtr   = TextEditingController(text: fieldText('per_km_fee'));
     final gstPctCtr     = TextEditingController(
         text: isEdit ? fieldText('logistic_gst_percent') : '12');
-    // Vehicle type is a fixed set server-side (`vehicles.type` is an ENUM). It used
-    // to be a free-text field, and because MySQL runs non-strict every unmatched
-    // value was silently written as '' - which is why existing vehicles come back
-    // with no type and an edit could not be saved. Pick from the enum only.
-    String? selectedType = _vehicleTypeKeys.contains(fieldText('type'))
-        ? fieldText('type')
-        : null;
+    // Vehicle type is free text the owner writes themselves. The column was an
+    // ENUM until 2026-07-24; on non-strict MySQL that silently blanked anything
+    // outside the list, which is why older vehicles come back with no type.
+    final typeCtr = TextEditingController(text: fieldText('type'));
 
     String? imageFrontPath;
     String? imageBackPath;
@@ -231,7 +201,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
         return c.text.trim() != init.trim();
       }
 
-      return (selectedType ?? '') != (isEdit ? fieldText('type') : '') ||
+      return diff(typeCtr, 'type') ||
           diff(nameCtr, 'vehicle_name') ||
           diff(rcNumberCtr, 'rc_number') ||
           diff(capacityCtr, 'capacity_kg') ||
@@ -243,7 +213,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
 
     if (isEdit) {
       for (final c in [
-        nameCtr, rcNumberCtr, capacityCtr, minFeeCtr,
+        typeCtr, nameCtr, rcNumberCtr, capacityCtr, minFeeCtr,
         includedKmCtr, perKmFeeCtr, gstPctCtr,
       ]) {
         c.addListener(() => dirty.value = computeDirty());
@@ -360,31 +330,11 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       prefixIcon: Icons.percent_rounded,
                     ),
                     SizedBox(height: 12.h),
-                    Text('Vehicle Type',
-                        style: Theme.of(sheetCtx).textTheme.labelMedium),
-                    SizedBox(height: 6.h),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedType,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.local_shipping_outlined),
-                        hintText: 'Select vehicle type',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12.w, vertical: 4.h),
-                      ),
-                      items: _vehicleTypeKeys
-                          .map((k) => DropdownMenuItem(
-                                value: k,
-                                child: Text(_vehicleTypeLabel(k)),
-                              ))
-                          .toList(),
-                      onChanged: (v) {
-                        setSheetState(() => selectedType = v);
-                        dirty.value = computeDirty();
-                      },
+                    SosTextField(
+                      label: 'Vehicle Type',
+                      controller: typeCtr,
+                      hint: 'e.g. Mini Truck, Reefer, Tractor',
+                      prefixIcon: Icons.local_shipping_outlined,
                     ),
                     SizedBox(height: 16.h),
                     Text('Vehicle Photos',
@@ -468,8 +418,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         final reg = regCtr.text.trim();
                         if (!isEdit && reg.isEmpty) return;
                         final rcNumber = rcNumberCtr.text.trim();
-                        if (selectedType == null) {
-                          setSheetState(() => formError = 'Select a vehicle type.');
+                        if (typeCtr.text.trim().isEmpty) {
+                          setSheetState(() => formError = 'Vehicle type is required.');
                           return;
                         }
                         if (!isEdit) {
@@ -514,7 +464,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                         if (isEdit) {
                           context.read<OwnerVehiclesCubit>().updateVehicle(
                             vehicleId: vehicle['id'] as int,
-                            type: selectedType!,
+                            type: typeCtr.text.trim(),
                             capacityKg: cap,
                             minimumFee: minFee,
                             includedDistanceKm: includedKm,
@@ -529,7 +479,7 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           final name = nameCtr.text.trim();
                           context.read<OwnerVehiclesCubit>().addVehicle(
                             regNumber: reg,
-                            type: selectedType!,
+                            type: typeCtr.text.trim(),
                             vehicleName: name,
                             rcNumber: rcNumber,
                             imageFrontPath: imageFrontPath,
@@ -570,9 +520,9 @@ class _VehicleTile extends StatelessWidget {
 
     final regNum        = vehicle['reg_number'] as String? ?? '—';
     final rawType       = (vehicle['type'] as String? ?? '').trim();
-    final type = rawType.isEmpty
-        ? 'TYPE NOT SET'
-        : _vehicleTypeLabel(rawType).toUpperCase();
+    // Legacy rows lost their type to the old ENUM column, so say so rather than
+    // rendering an empty line - the owner fixes it on the next edit.
+    final type = rawType.isEmpty ? 'TYPE NOT SET' : rawType.toUpperCase();
     // Fields the owner edited that the admin has not approved yet.
     final pendingChanges = vehicle['pending_changes'] is Map
         ? Map<String, dynamic>.from(vehicle['pending_changes'] as Map)
