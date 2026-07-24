@@ -107,6 +107,12 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     // Authenticated but no logistics capability — send to role selection / login.
+    // Logged because this lands on the SAME screen as "no session at all": if a
+    // restored session ever parses with empty caps it looks identical to a
+    // logout, and the two need telling apart from the console.
+    debugPrint('[splash] authenticated as person ${state.person.id} but no '
+        'driver/fleet_owner capability (caps=${caps.map((c) => "${c.capability}:${c.status}").toList()}) '
+        '- routing to role selection');
     Navigator.pushReplacementNamed(context, AppRoutes.roleSelection);
   }
 

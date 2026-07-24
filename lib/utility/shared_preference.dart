@@ -1,12 +1,14 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_constants.dart';
+import 'v2_token_storage.dart';
 
-// V2 token stored in encrypted secure storage.
-// Non-sensitive metadata (name, phone, roles) stored in SharedPreferences.
-const _secureStorage = FlutterSecureStorage(
-  aOptions: AndroidOptions(encryptedSharedPreferences: true),
-);
+// V2 token goes through [V2TokenStorage] (encrypted store, with a
+// SharedPreferences fallback so the session survives a process restart — see
+// the note there). Reading/writing the encrypted store directly from here too
+// would reintroduce the restart logout for every ApiServiceV2 request, so this
+// class MUST delegate rather than keep its own FlutterSecureStorage instance.
+// Non-sensitive metadata (name, phone, roles) stays in SharedPreferences.
+final _tokenStore = V2TokenStorage();
 
 class AppPrefs {
   static Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
@@ -25,8 +27,8 @@ class AppPrefs {
     String? driverStatus,
     required String selectedRole,
   }) async {
-    // Token in secure storage
-    await _secureStorage.write(key: StorageKeys.v2Token, value: token);
+    // Token via the shared dual-store
+    await _tokenStore.saveToken(token);
     // Non-sensitive metadata in SharedPreferences
     final p = await _prefs;
     await p.setString(StorageKeys.v2UserId, userId);
@@ -41,8 +43,7 @@ class AppPrefs {
     await p.setString(StorageKeys.v2SelectedRole, selectedRole);
   }
 
-  static Future<String?> getV2Token() async =>
-      _secureStorage.read(key: StorageKeys.v2Token);
+  static Future<String?> getV2Token() async => _tokenStore.getToken();
 
   static Future<bool> getV2MustReset() async =>
       (await _prefs).getBool(StorageKeys.v2MustReset) ?? false;
@@ -58,7 +59,7 @@ class AppPrefs {
   static Future<Map<String, String?>> getV2Session() async {
     final p = await _prefs;
     return {
-      'token':        await _secureStorage.read(key: StorageKeys.v2Token),
+      'token':        await _tokenStore.getToken(),
       'userId':       p.getString(StorageKeys.v2UserId),
       'name':         p.getString(StorageKeys.v2UserName),
       'phone':        p.getString(StorageKeys.v2UserPhone),
@@ -72,7 +73,7 @@ class AppPrefs {
   }
 
   static Future<void> clearV2() async {
-    await _secureStorage.delete(key: StorageKeys.v2Token);
+    await _tokenStore.clearToken();
     final p = await _prefs;
     for (final key in [
       StorageKeys.v2UserId, StorageKeys.v2UserName,
@@ -87,6 +88,6 @@ class AppPrefs {
   // ── Clear all (full wipe) ─────────────────────────────────────────────────
   static Future<void> clearAll() async {
     await (await _prefs).clear();
-    await _secureStorage.delete(key: StorageKeys.v2Token);
+    await _tokenStore.clearToken();
   }
 }
