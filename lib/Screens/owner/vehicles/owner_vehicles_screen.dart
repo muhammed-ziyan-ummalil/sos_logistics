@@ -91,7 +91,19 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
         label: Text('Add Vehicle',
             style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600)),
       ),
-      body: BlocBuilder<OwnerVehiclesCubit, OwnerVehiclesState>(
+      // A failed add/update reports through the cubit's error state; snackbar it so
+      // the reason is seen even though the list re-renders straight after.
+      body: BlocConsumer<OwnerVehiclesCubit, OwnerVehiclesState>(
+        listener: (ctx, state) {
+          if (state is OwnerVehiclesError) {
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+            );
+          }
+        },
         builder: (ctx, state) {
           if (state is OwnerVehiclesInitial || state is OwnerVehiclesLoading) {
             return ListView.builder(
@@ -414,33 +426,51 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                       onPressed: (isEdit && !isDirty)
                           ? null
                           : () {
+                        // Drop the keyboard first: an inline error under an open
+                        // keyboard is invisible, which made a blocked Save look
+                        // like a dead button.
+                        FocusScope.of(sheetCtx).unfocus();
+                        void fail(String msg) {
+                          setSheetState(() => formError = msg);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(msg),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
+                            ),
+                          );
+                        }
+
                         setSheetState(() => formError = null);
                         final reg = regCtr.text.trim();
-                        if (!isEdit && reg.isEmpty) return;
+                        if (!isEdit && reg.isEmpty) {
+                          fail('Registration number is required.');
+                          return;
+                        }
                         final rcNumber = rcNumberCtr.text.trim();
                         if (typeCtr.text.trim().isEmpty) {
-                          setSheetState(() => formError = 'Vehicle type is required.');
+                          fail('Vehicle type is required.');
                           return;
                         }
                         if (!isEdit) {
                           if (rcNumber.isEmpty) {
-                            setSheetState(() => formError = 'Vehicle RC number is required.');
+                            fail('Vehicle RC number is required.');
                             return;
                           }
                           if (imageFrontPath == null || imageBackPath == null) {
-                            setSheetState(() => formError = 'Please add both front and back vehicle photos.');
+                            fail('Please add both front and back vehicle photos.');
                             return;
                           }
                           if (rcDocPath == null) {
-                            setSheetState(() => formError = 'Please upload the RC document photo.');
+                            fail('Please upload the RC document photo.');
                             return;
                           }
                           if (insuranceDocPath == null) {
-                            setSheetState(() => formError = 'Please upload the insurance document photo.');
+                            fail('Please upload the insurance document photo.');
                             return;
                           }
                           if (nameCtr.text.trim().isEmpty) {
-                            setSheetState(() => formError = 'Vehicle name is required.');
+                            fail('Vehicle name is required.');
                             return;
                           }
                         }
@@ -452,12 +482,12 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                             includedKm == null || includedKm < 0 ||
                             perKm == null || perKm < 0 ||
                             gstPct == null || gstPct < 0 || gstPct > 100) {
-                          setSheetState(() => formError = 'Enter valid values. GST must be 0-100.');
+                          fail('Enter valid values. GST must be 0-100.');
                           return;
                         }
                         final cap = double.tryParse(capacityCtr.text.trim());
                         if (cap == null || cap <= 0) {
-                          setSheetState(() => formError = 'Enter a valid capacity (kg).');
+                          fail('Enter a valid capacity (kg).');
                           return;
                         }
                         Navigator.pop(sheetCtx);

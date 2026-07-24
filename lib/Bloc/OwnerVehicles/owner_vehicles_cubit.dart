@@ -63,7 +63,10 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
     if (res['status'] == 'success') {
       await fetchVehicles();
     } else {
+      // Surface the reason, then restore the list. Leaving the screen parked on a
+      // full-page error after a failed WRITE hides the fleet the owner still has.
       emit(OwnerVehiclesError(res['message'] as String? ?? 'Failed to add vehicle.'));
+      await fetchVehicles();
     }
   }
 
@@ -109,6 +112,7 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
       await fetchVehicles();
     } else {
       emit(OwnerVehiclesError(res['message'] as String? ?? 'Failed to update vehicle.'));
+      await fetchVehicles();
     }
   }
 }
