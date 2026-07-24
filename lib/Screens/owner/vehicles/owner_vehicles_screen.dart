@@ -490,10 +490,19 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           fail('Enter a valid capacity (kg).');
                           return;
                         }
+                        // API serves DB columns as strings ("id": "5"); a hard
+                        // `as int` cast here threw after the sheet was already
+                        // popped, so Save silently did nothing.
+                        final vehicleId =
+                            isEdit ? int.tryParse('${vehicle['id']}') : null;
+                        if (isEdit && vehicleId == null) {
+                          fail('Could not resolve this vehicle. Pull to refresh and retry.');
+                          return;
+                        }
                         Navigator.pop(sheetCtx);
                         if (isEdit) {
                           context.read<OwnerVehiclesCubit>().updateVehicle(
-                            vehicleId: vehicle['id'] as int,
+                            vehicleId: vehicleId!,
                             type: typeCtr.text.trim(),
                             capacityKg: cap,
                             minimumFee: minFee,
