@@ -16,6 +16,10 @@ String _changedFieldLabel(String key) {
   switch (key) {
     case 'type':
       return 'type';
+    case 'vehicle_name':
+      return 'name';
+    case 'rc_number':
+      return 'RC number';
     case 'capacity_kg':
       return 'capacity';
     case 'minimum_fee':
@@ -504,6 +508,8 @@ class _OwnerVehiclesScreenState extends State<OwnerVehiclesScreen> {
                           context.read<OwnerVehiclesCubit>().updateVehicle(
                             vehicleId: vehicleId!,
                             type: typeCtr.text.trim(),
+                            vehicleName: nameCtr.text.trim(),
+                            rcNumber: rcNumberCtr.text.trim(),
                             capacityKg: cap,
                             minimumFee: minFee,
                             includedDistanceKm: includedKm,

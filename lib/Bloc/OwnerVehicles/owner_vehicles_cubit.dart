@@ -73,6 +73,8 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
   Future<void> updateVehicle({
     required int vehicleId,
     String? type,
+    String? vehicleName,
+    String? rcNumber,
     double? capacityKg,
     String? insuranceExpiry,
     double? minimumFee,
@@ -88,6 +90,8 @@ class OwnerVehiclesCubit extends Cubit<OwnerVehiclesState> {
 
     final fields = <String, dynamic>{
       if (type != null) 'type': type,
+      if (vehicleName != null && vehicleName.isNotEmpty) 'vehicle_name': vehicleName,
+      if (rcNumber != null && rcNumber.isNotEmpty) 'rc_number': rcNumber,
       if (capacityKg != null) 'capacity_kg': capacityKg,
       if (insuranceExpiry != null && insuranceExpiry.isNotEmpty) 'insurance_expiry': insuranceExpiry,
       if (minimumFee != null) 'minimum_fee': minimumFee,
