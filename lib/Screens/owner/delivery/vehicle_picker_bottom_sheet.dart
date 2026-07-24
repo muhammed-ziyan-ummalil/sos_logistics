@@ -9,6 +9,7 @@ import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../widgets/widgets.dart';
 import '../account/owner_wallet_screen.dart';
+import 'fee_display.dart';
 
 class VehiclePickerBottomSheet extends StatelessWidget {
   final int requestId;
@@ -180,6 +181,17 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                           final compDeposit = double.tryParse(
                                   '${fee['compensation_deposit'] ?? 0}') ??
                               0;
+                          // BUG-REQ-17: requirement-sourced orders carry a cap
+                          // (the seller's net that funds the fee) - an estimate
+                          // above it is a guaranteed rejection, so Send Quote is
+                          // disabled with reduce-by guidance instead.
+                          final exceedsCap = fee['exceeds_cap'] == true;
+                          final reduceBy = double.tryParse(
+                                  '${fee['reduce_by'] ?? 0}') ??
+                              0;
+                          final orderCap = fee['order_cap'] == null
+                              ? null
+                              : double.tryParse('${fee['order_cap']}');
 
                           return Padding(
                             padding: EdgeInsets.only(bottom: 12.h),
@@ -222,6 +234,16 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                             .withValues(alpha: 0.5)),
                                   ),
                                   if (fee.isNotEmpty) ...[
+                                    SizedBox(height: 6.h),
+                                    Text(
+                                      feeDerivationText(fee),
+                                      style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: Theme.of(ctx)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6)),
+                                    ),
                                     SizedBox(height: 8.h),
                                     Wrap(
                                       spacing: 4.w,
@@ -300,11 +322,63 @@ class VehiclePickerBottomSheet extends StatelessWidget {
                                       ),
                                     ),
                                   ],
+                                  if (exceedsCap) ...[
+                                    SizedBox(height: 10.h),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10.w, vertical: 8.h),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(ctx)
+                                            .colorScheme
+                                            .error
+                                            .withValues(alpha: 0.10),
+                                        borderRadius:
+                                            BorderRadius.circular(8.r),
+                                        border: Border.all(
+                                            color: Theme.of(ctx)
+                                                .colorScheme
+                                                .error
+                                                .withValues(alpha: 0.30)),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.block_rounded,
+                                              size: 16.r,
+                                              color: Theme.of(ctx)
+                                                  .colorScheme
+                                                  .error),
+                                          SizedBox(width: 8.w),
+                                          Expanded(
+                                            child: Text(
+                                              'This order can support '
+                                              '${orderCap != null ? '${AppConstants.currencySymbol}${orderCap.toStringAsFixed(2)}' : 'less than this quote'}'
+                                              '. Reduce your charge by ${AppConstants.currencySymbol}${reduceBy.toStringAsFixed(2)} to quote. '
+                                              'The charge comes from this vehicle\'s per-kg rates - lower them or pick a smaller vehicle.',
+                                              style: TextStyle(
+                                                fontSize: 11.sp,
+                                                fontWeight: FontWeight.w500,
+                                                color: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .onSurface,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                   SizedBox(height: 12.h),
                                   SosButton(
-                                    label: 'Send Quote',
-                                    onPressed: () =>
-                                        ctx.read<QuoteSubmitCubit>().submitQuote(
+                                    label: exceedsCap
+                                        ? 'Quote exceeds order cap'
+                                        : 'Send Quote',
+                                    onPressed: exceedsCap
+                                        ? null
+                                        : () => ctx
+                                            .read<QuoteSubmitCubit>()
+                                            .submitQuote(
                                               requestId,
                                               int.tryParse('${v['id']}') ?? 0,
                                             ),

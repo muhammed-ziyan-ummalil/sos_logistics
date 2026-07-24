@@ -10,6 +10,7 @@ import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../utility/api_service.dart';
 import '../../../widgets/widgets.dart';
+import 'fee_display.dart';
 import 'vehicle_picker_bottom_sheet.dart';
 
 class DeliveryRequestDetailScreen extends StatefulWidget {
@@ -319,9 +320,23 @@ class _ShippingEstimateCard extends StatelessWidget {
     required this.vehicles,
   });
 
+  /// Order cap (max gross fee the order can fund) - same for every vehicle on
+  /// this request, so read it off the first fee breakdown. Null = no cap
+  /// (seller-post third-party: the buyer pays the fee on top).
+  double? get _orderCap {
+    for (final v in vehicles) {
+      final fee = v['fee_breakdown'] as Map<String, dynamic>? ?? {};
+      if (fee['order_cap'] != null) {
+        return double.tryParse('${fee['order_cap']}');
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final cap = _orderCap;
     return SosCard(
       padding: EdgeInsets.all(12.w),
       child: Column(
@@ -341,6 +356,18 @@ class _ShippingEstimateCard extends StatelessWidget {
               ),
             ],
           ),
+          if (cap != null) ...[
+            SizedBox(height: 6.h),
+            Text(
+              'This order can support up to '
+              '${AppConstants.currencySymbol}${cap.toStringAsFixed(2)} '
+              '(incl. GST). Quotes above this cannot be sent.',
+              style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w500,
+                  color: scheme.onSurface.withValues(alpha: 0.7)),
+            ),
+          ],
           SizedBox(height: 10.h),
           if (loading)
             Padding(
@@ -382,8 +409,8 @@ class _ShippingEstimateCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final fee = v['fee_breakdown'] as Map<String, dynamic>? ?? {};
     final total = double.tryParse('${fee['total_fee'] ?? 0}') ?? 0;
-    final base = double.tryParse('${fee['base_fee'] ?? 0}') ?? 0;
-    final extra = double.tryParse('${fee['extra_km_charge'] ?? 0}') ?? 0;
+    final exceeds = fee['exceeds_cap'] == true;
+    final reduceBy = double.tryParse('${fee['reduce_by'] ?? 0}') ?? 0;
     final reg = (v['registration_number'] ?? v['driver_name'] ?? 'Vehicle')
         .toString();
     return Padding(
@@ -408,17 +435,26 @@ class _ShippingEstimateCard extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w700,
-                    color: AppDesignTokens.success),
+                    color: exceeds ? scheme.error : AppDesignTokens.success),
               ),
             ],
           ),
           Text(
-            'Base ${AppConstants.currencySymbol}${base.toStringAsFixed(0)}'
-            '${extra > 0 ? ' + extra km ${AppConstants.currencySymbol}${extra.toStringAsFixed(0)}' : ''}',
+            feeDerivationText(fee),
             style: TextStyle(
                 fontSize: 10.sp,
                 color: scheme.onSurface.withValues(alpha: 0.55)),
           ),
+          if (exceeds)
+            Text(
+              'Exceeds the order cap by '
+              '${AppConstants.currencySymbol}${reduceBy.toStringAsFixed(2)}. '
+              'Lower this vehicle\'s per-kg rates or pick a smaller vehicle to quote.',
+              style: TextStyle(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.error),
+            ),
         ],
       ),
     );
