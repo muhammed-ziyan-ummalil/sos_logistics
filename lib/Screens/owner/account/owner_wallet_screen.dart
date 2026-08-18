@@ -378,19 +378,27 @@ class _TransactionTile extends StatelessWidget {
     );
   }
 
+  // Product/item name behind this ledger row (order commission, ad charge,
+  // requirement payout, etc), resolved server-side. Null for non-item
+  // transactions (top-up, withdraw) - falls back to the plain remark/label.
+  String _withItem(String label, Map<String, dynamic> tx) {
+    final itemName = tx['item_name'] as String?;
+    return (itemName != null && itemName.isNotEmpty) ? '$label - $itemName' : label;
+  }
+
   String _title(String type, Map<String, dynamic> tx) {
     return switch (type.toLowerCase()) {
-      'escrow_hold' => 'Delivery Escrow Hold',
-      'escrow_release' => 'Delivery Escrow Released',
-      'escrow_refund' => 'Escrow Refunded',
-      'delivery_compensation_hold' => 'Compensation Deposit Held',
-      'delivery_compensation_refund' => 'Compensation Deposit Refunded',
+      'escrow_hold' => _withItem('Delivery Escrow Hold', tx),
+      'escrow_release' => _withItem('Delivery Escrow Released', tx),
+      'escrow_refund' => _withItem('Escrow Refunded', tx),
+      'delivery_compensation_hold' => _withItem('Compensation Deposit Held', tx),
+      'delivery_compensation_refund' => _withItem('Compensation Deposit Refunded', tx),
       'withdrawal' => 'Withdrawal Request',
       'withdrawal_paid' => 'Withdrawal Paid',
-      'credit' => tx['remark'] as String? ?? 'Credit',
-      'debit' => tx['remark'] as String? ?? 'Debit',
-      _ => tx['remark'] as String? ??
-          type.replaceAll('_', ' ').toUpperCase(),
+      'credit' => _withItem(tx['remark'] as String? ?? 'Credit', tx),
+      'debit' => _withItem(tx['remark'] as String? ?? 'Debit', tx),
+      _ => _withItem(
+          tx['remark'] as String? ?? type.replaceAll('_', ' ').toUpperCase(), tx),
     };
   }
 
