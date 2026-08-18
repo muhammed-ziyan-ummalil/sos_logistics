@@ -5,10 +5,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../Bloc/QuoteSubmit/quote_submit_cubit.dart';
 import '../../../Bloc/QuoteSubmit/quote_submit_state.dart';
+import '../../../Model/delivery_quote_model.dart';
 import '../../../Model/delivery_request_model.dart';
 import '../../../core/app_constants.dart';
 import '../../../core/app_theme.dart';
 import '../../../utility/api_service.dart';
+import '../../../utility/shared_preference.dart';
 import '../../../widgets/widgets.dart';
 import 'fee_display.dart';
 import 'vehicle_picker_bottom_sheet.dart';
@@ -29,6 +31,7 @@ class _DeliveryRequestDetailScreenState
   bool _loading = true;
   String? _error;
   bool _vehiclesLoading = false;
+  int? _myOwnerId;
 
   // Inline shipping estimate (own vehicles + calculated fee) shown on the detail
   // screen so the owner sees the payout before opening the Send Quote picker.
@@ -44,6 +47,8 @@ class _DeliveryRequestDetailScreenState
 
   Future<void> _loadDetail() async {
     try {
+      _myOwnerId ??= int.tryParse(
+          (await AppPrefs.getV2Session())['ownerId'] ?? '');
       final response =
           await ApiServiceUnified.instance.getDeliveryFeedDetail(widget.requestId);
       if (response['status'] == 'success') {
@@ -192,6 +197,19 @@ class _DeliveryRequestDetailScreenState
     );
   }
 
+  // This owner's own quote on the request, if they submitted one. The request's
+  // overall `status` (open/quoted/accepted/...) is the same for every owner who
+  // quoted, so it can't tell a winning owner apart from a losing one once a quote
+  // is accepted - this resolves that ambiguity from the per-quote status instead.
+  DeliveryQuoteModel? get _myQuote {
+    final req = _request;
+    if (req == null || _myOwnerId == null) return null;
+    for (final q in req.quotes) {
+      if (q.ownerId == _myOwnerId) return q;
+    }
+    return null;
+  }
+
   Widget _buildBody() {
     final req = _request!;
     final scheme = Theme.of(context).colorScheme;
@@ -293,6 +311,10 @@ class _DeliveryRequestDetailScreenState
                   color: scheme.onSurface.withValues(alpha: 0.5)),
             ),
           ],
+          if (_myQuote != null) ...[
+            SizedBox(height: 12.h),
+            _MyQuoteOutcomeBanner(quote: _myQuote!),
+          ],
           if (req.status == 'open') ...[
             SizedBox(height: 16.h),
             _ShippingEstimateCard(
@@ -301,6 +323,67 @@ class _DeliveryRequestDetailScreenState
               vehicles: _vehicles,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Your quote outcome banner ─────────────────────────────────────────────────
+// Tells THIS owner whether their own quote won, lost, or is still pending -
+// distinct from the request's overall status, which reads the same for every
+// owner who quoted once one of them is accepted.
+
+class _MyQuoteOutcomeBanner extends StatelessWidget {
+  final DeliveryQuoteModel quote;
+
+  const _MyQuoteOutcomeBanner({required this.quote});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    late final Color color;
+    late final IconData icon;
+    late final String message;
+    switch (quote.status) {
+      case 'accepted':
+        color = AppDesignTokens.success;
+        icon = Icons.check_circle_rounded;
+        message = 'Your quote was accepted.';
+        break;
+      case 'rejected':
+        color = scheme.error;
+        icon = Icons.cancel_rounded;
+        message = 'Your quote was not selected.';
+        break;
+      case 'expired':
+        color = scheme.onSurface.withValues(alpha: 0.5);
+        icon = Icons.hourglass_disabled_rounded;
+        message = 'Your quote expired.';
+        break;
+      default:
+        color = AppDesignTokens.warning;
+        icon = Icons.hourglass_top_rounded;
+        message = 'Your quote is submitted, awaiting decision.';
+    }
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18.r, color: color),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                  fontSize: 12.5.sp, fontWeight: FontWeight.w600, color: color),
+            ),
+          ),
         ],
       ),
     );
